@@ -82,6 +82,9 @@ private const val IntroDbUrl = "https://introdb.app/"
 private const val ImdbDatasetsUrl = "https://developer.imdb.com/non-commercial-datasets/"
 private const val JellyfinUrl = "https://jellyfin.org"
 private const val TrashGuidesUrl = "https://github.com/TRaSH-Guides/Guides"
+private const val GoogleDriveBrandUrl = "https://developers.google.com/drive/branding"
+private const val TeraBoxUrl = "https://www.terabox.com"
+private const val AniListUrl = "https://anilist.co"
 private const val ApacheLicenseUrl = "https://www.apache.org/licenses/LICENSE-2.0"
 private const val HazeLicenseUrl = "https://github.com/chrisbanes/haze/blob/1.7.2/LICENSE"
 private const val LibMpvAndroidUrl = "https://github.com/jarnedemeulemeester/libmpv-android"
@@ -460,6 +463,25 @@ private fun dataAttributionItems() = listOfNotNull(
         title = stringResource(R.string.licenses_attributions_media_servers_title),
         body = stringResource(R.string.licenses_attributions_media_servers_body),
         url = JellyfinUrl
+    ),
+    // NuvioArcKai: brand notices for the logos that identify the added integrations.
+    LicenseAttributionItem(
+        title = stringResource(R.string.kai_licenses_google_drive_title),
+        body = stringResource(R.string.kai_licenses_google_drive_body),
+        url = GoogleDriveBrandUrl,
+        logo = LicenseLogo.Raw(R.raw.google_drive_logo)
+    ),
+    LicenseAttributionItem(
+        title = stringResource(R.string.kai_licenses_terabox_title),
+        body = stringResource(R.string.kai_licenses_terabox_body),
+        url = TeraBoxUrl,
+        logo = LicenseLogo.Raw(R.raw.terabox_logo)
+    ),
+    LicenseAttributionItem(
+        title = stringResource(R.string.kai_licenses_anilist_title),
+        body = stringResource(R.string.kai_licenses_anilist_body),
+        url = AniListUrl,
+        logo = LicenseLogo.Raw(R.raw.anilist_logo)
     ),
     LicenseAttributionItem(
         title = stringResource(R.string.licenses_attributions_trash_title),

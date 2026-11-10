@@ -32,6 +32,9 @@ internal val SETTINGS_SEARCH_ENTRIES: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.calendar_setting_hidden, R.string.calendar_setting_hidden_sub, SettingsCategory.LAYOUT, layout = LayoutSection.CALENDAR, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.addon_title, R.string.settings_content_discovery_addons_subtitle, SettingsCategory.CONTENT_DISCOVERY, keywords = listOf("stremio", "add-ons")),
     SettingsSearchEntry(R.string.settings_media_servers, R.string.settings_media_servers_subtitle, SettingsCategory.CONTENT_DISCOVERY),
+    // NuvioArcKai: cloud storage accounts live under Media servers.
+    SettingsSearchEntry(R.string.settings_media_servers, R.string.kai_cloud_add_terabox_description, SettingsCategory.CONTENT_DISCOVERY, literalTitle = "TeraBox", keywords = listOf("terabox", "cloud", "nube")),
+    SettingsSearchEntry(R.string.settings_media_servers, R.string.kai_cloud_add_google_drive_description, SettingsCategory.CONTENT_DISCOVERY, literalTitle = "Google Drive", keywords = listOf("google drive", "drive", "cloud", "nube")),
     SettingsSearchEntry(R.string.plugin_title, R.string.settings_content_discovery_plugins_subtitle, SettingsCategory.CONTENT_DISCOVERY),
     SettingsSearchEntry(R.string.party_title, R.string.party_settings_row_subtitle, SettingsCategory.CONTENT_DISCOVERY),
     SettingsSearchEntry(R.string.debrid_cloud_library, R.string.debrid_cloud_library_description, SettingsCategory.INTEGRATION, integration = IntegrationSettingsSection.Debrid),
@@ -275,6 +278,7 @@ internal val SETTINGS_SEARCH_ENTRIES: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.mdblist_name, 0, SettingsCategory.TRACKING),
     SettingsSearchEntry(R.string.floppy_name, 0, SettingsCategory.TRACKING),
     SettingsSearchEntry(R.string.wetrakr_name, 0, SettingsCategory.TRACKING),
+    SettingsSearchEntry(R.string.anilist_name, R.string.anilist_description, SettingsCategory.TRACKING, keywords = listOf("anilist", "anime")),
     SettingsSearchEntry(R.string.trakt_library_source_title, R.string.trakt_library_source_subtitle, SettingsCategory.TRACKING),
     SettingsSearchEntry(R.string.library_transfer_row_title, R.string.library_transfer_row_subtitle, SettingsCategory.TRACKING),
     SettingsSearchEntry(R.string.trakt_watch_progress_title, R.string.trakt_watch_progress_subtitle, SettingsCategory.TRACKING),

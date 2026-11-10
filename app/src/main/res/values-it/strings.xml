@@ -1,5 +1,5 @@
 <resources>
-<string name="app_name">Nuvio Arc</string>
+<string name="app_name">Nuvio Arc Kai</string>
 <string name="tv_channel_continue_watching">Continua a guardare</string>
 <string name="type_movie">Film</string>
 <string name="type_movies">Film</string>
@@ -1819,6 +1819,12 @@
 <string name="skip_ending">Salta Fine</string>
 <string name="skip_recap">Salta Riassunto</string>
 <string name="skip_generic">Salta</string>
+<string name="skip_segment_opening">Salta Intro</string>
+<string name="skip_segment_intro">Salta Intro</string>
+<string name="skip_segment_ending">Salta Fine</string>
+<string name="skip_segment_outro">Salta Fine</string>
+<string name="skip_segment_credits">Salta i titoli di coda</string>
+<string name="skip_segment_recap">Salta Riassunto</string>
 <string name="display_mode_refresh">Frequenza di aggiornamento</string>
 <string name="display_mode_resolution">Risoluzione</string>
 

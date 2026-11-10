@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kai_licenses_google_drive_body">Google Drive es una marca comercial de Google LLC. Su uso está sujeto a los permisos de Google. El logotipo de Google Drive solo identifica la integración con Google Drive y se muestra sin alteraciones.</string>
+    <string name="kai_licenses_terabox_body">TeraBox y su logotipo son marcas comerciales de Flextech Inc. El logotipo solo identifica la integración con TeraBox; NuvioArcKai no está afiliado a Flextech ni cuenta con su respaldo.</string>
+    <string name="kai_licenses_anilist_body">AniList y su logotipo son marcas comerciales de AniList. El logotipo solo identifica la integración con AniList; NuvioArcKai no está afiliado a AniList ni cuenta con su respaldo. Datos de la API de AniList.</string>
+    <string name="kai_cloud_add_terabox_description">Experimental. Indexa tus carpetas de TeraBox y reprodúcelas como fuentes; se configura desde el móvil.</string>
+    <string name="kai_cloud_add_google_drive_description">Indexa tus carpetas de Google Drive (solo lectura) y reprodúcelas como fuentes; se configura desde el móvil con tu propio cliente OAuth.</string>
+    <string name="kai_anilist_connect_phone">Conectar con el móvil (QR)</string>
+    <string name="kai_anilist_connect_tv">Conectar en esta TV</string>
+    <string name="kai_anilist_pin_instructions">Escanea el QR con un móvil en la misma red. Abre AniList desde esa página, autoriza, copia el token que muestra AniList y pégalo allí junto a este código.</string>
+    <string name="kai_anilist_pin_code">Código: %1$s</string>
+    <string name="kai_anilist_pin_unavailable">El inicio de sesión con el móvil necesita el Client ID de AniList propio de esta compilación. Puedes conectar en esta TV.</string>
+</resources>

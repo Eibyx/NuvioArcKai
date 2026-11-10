@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Verder kijken</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Films</string>
@@ -1825,6 +1825,12 @@
     <string name="skip_ending">Einde overslaan</string>
     <string name="skip_recap">Samenvatting overslaan</string>
     <string name="skip_generic">Overslaan</string>
+    <string name="skip_segment_opening">Intro overslaan</string>
+    <string name="skip_segment_intro">Intro overslaan</string>
+    <string name="skip_segment_ending">Einde overslaan</string>
+    <string name="skip_segment_outro">Einde overslaan</string>
+    <string name="skip_segment_credits">Einde overslaan</string>
+    <string name="skip_segment_recap">Samenvatting overslaan</string>
     <string name="display_mode_refresh">Vernieuwen</string>
     <string name="display_mode_resolution">Resolutie</string>
 

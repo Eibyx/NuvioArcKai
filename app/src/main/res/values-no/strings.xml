@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="type_movie">Film</string>
     <string name="type_series">Serie</string>
     <string name="type_unknown">Ukjent</string>
@@ -891,6 +891,12 @@
     <string name="skip_ending">Hopp over ending</string>
     <string name="skip_recap">Hopp over recap</string>
     <string name="skip_generic">Hopp</string>
+    <string name="skip_segment_opening">Hopp over intro</string>
+    <string name="skip_segment_intro">Hopp over intro</string>
+    <string name="skip_segment_ending">Hopp over ending</string>
+    <string name="skip_segment_outro">Hopp over ending</string>
+    <string name="skip_segment_credits">Hopp over ending</string>
+    <string name="skip_segment_recap">Hopp over recap</string>
     <string name="display_mode_refresh">Oppfrisk</string>
     <string name="display_mode_resolution">Oppløsning</string>
 

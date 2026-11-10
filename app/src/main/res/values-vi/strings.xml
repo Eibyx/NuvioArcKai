@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Tiếp tục xem</string>
     <string name="type_movie">Phim</string>
     <string name="type_movies">Phim</string>
@@ -2023,6 +2023,12 @@
     <string name="skip_ending">Bỏ qua kết thúc</string>
     <string name="skip_recap">Bỏ qua tóm tắt</string>
     <string name="skip_generic">Bỏ qua</string>
+    <string name="skip_segment_opening">Bỏ qua giới thiệu</string>
+    <string name="skip_segment_intro">Bỏ qua giới thiệu</string>
+    <string name="skip_segment_ending">Bỏ qua kết thúc</string>
+    <string name="skip_segment_outro">Bỏ qua kết thúc</string>
+    <string name="skip_segment_credits">Bỏ qua Danh đề</string>
+    <string name="skip_segment_recap">Bỏ qua tóm tắt</string>
     <string name="display_mode_refresh">Làm mới</string>
     <string name="display_mode_resolution">Độ phân giải</string>
 

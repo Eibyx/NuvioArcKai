@@ -2208,7 +2208,10 @@ fun PlayerScreen(
                 canFocus = skipIntroCanFocus,
                 onSkip = { viewModel.onEvent(PlayerEvent.OnSkipIntro) },
                 onDismiss = { viewModel.onEvent(PlayerEvent.OnDismissSkipIntro) },
-                onVisibilityChanged = { skipButtonActuallyVisible = it },
+                onVisibilityChanged = {
+                    skipButtonActuallyVisible = it
+                    com.nuvio.tv.kai.segments.ArcSkipDiag.button(it, uiState.activeSkipInterval)
+                },
                 onFocused = { viewModel.scheduleHideControls() },
                 focusRequester = skipIntroFocusRequester,
                 downFocusRequester = if (uiState.showControls) progressBarFocusRequester else null,

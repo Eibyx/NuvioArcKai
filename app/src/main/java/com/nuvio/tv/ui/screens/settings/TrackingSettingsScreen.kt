@@ -69,6 +69,7 @@ internal fun TrackingSettingsContent(
     mdbListViewModel: MdbListTrackerViewModel = hiltViewModel(),
     floppyViewModel: FloppyTrackerViewModel = hiltViewModel(),
     weTrakrViewModel: WeTrakrTrackerViewModel = hiltViewModel(),
+    aniListViewModel: AniListSettingsViewModel = hiltViewModel(),
     initialFocusRequester: FocusRequester? = null,
     standalone: Boolean = false,
     onBackPress: (() -> Unit)? = null
@@ -81,6 +82,9 @@ internal fun TrackingSettingsContent(
     val weTrakrState by weTrakrViewModel.uiState.collectAsStateWithLifecycle()
     val weTrakrUpload by weTrakrViewModel.uploadState.collectAsStateWithLifecycle()
     val trackingState by trackingViewModel.uiState.collectAsStateWithLifecycle()
+    val aniListState by aniListViewModel.state.collectAsStateWithLifecycle()
+    val aniListFocusRequester = remember { FocusRequester() }
+    var showAniList by remember { mutableStateOf(false) }
     val defaultTraktFocusRequester = remember { FocusRequester() }
     val traktFocusRequester = initialFocusRequester ?: defaultTraktFocusRequester
     val simklFocusRequester = remember { FocusRequester() }
@@ -105,7 +109,7 @@ internal fun TrackingSettingsContent(
     var showMdbListLibraryListsDialog by remember { mutableStateOf(false) }
     var showWeTrakrDaysDialog by remember { mutableStateOf(false) }
 
-    val hasOverlay = activeProvider != null ||
+    val hasOverlay = showAniList || activeProvider != null ||
         disconnectProvider != null ||
         showLibrarySourceDialog ||
         showWatchProgressDialog ||
@@ -161,6 +165,7 @@ internal fun TrackingSettingsContent(
                 TrackingFocusTarget.MDBLIST -> mdbListFocusRequester.requestFocus()
                 TrackingFocusTarget.FLOPPY -> floppyFocusRequester.requestFocus()
                 TrackingFocusTarget.WETRAKR -> weTrakrFocusRequester.requestFocus()
+                TrackingFocusTarget.ANILIST -> aniListFocusRequester.requestFocus()
                 TrackingFocusTarget.LIBRARY -> libraryFocusRequester.requestFocus()
                 TrackingFocusTarget.WATCH_PROGRESS -> watchProgressFocusRequester.requestFocus()
                 TrackingFocusTarget.CONTINUE_WATCHING -> continueWatchingFocusRequester.requestFocus()
@@ -248,6 +253,9 @@ internal fun TrackingSettingsContent(
         onSimklClick = { openProvider(TrackingProviderId.SIMKL) },
         onMdbListClick = { openProvider(TrackingProviderId.MDBLIST) },
         onWeTrakrClick = { openProvider(TrackingProviderId.WETRAKR) },
+        aniListState = aniListState,
+        aniListFocusRequester = aniListFocusRequester,
+        onAniListClick = { showAniList = true; restoreFocusTarget = TrackingFocusTarget.ANILIST },
         onWeTrakrDaysClick = { showWeTrakrDaysDialog = true },
         onWeTrakrUploadClick = weTrakrViewModel::onUploadOpened,
         onLibrarySourceClick = {
@@ -280,6 +288,19 @@ internal fun TrackingSettingsContent(
             showMdbListLibraryListsDialog = true
         }
     )
+
+    if (showAniList) AniListAccountDialog(
+        state = aniListState,
+        onConnect = aniListViewModel::connect,
+        onConnectWithPhone = aniListViewModel::connectWithPhone,
+        onDisconnect = aniListViewModel::disconnect,
+        onSync = aniListViewModel::sync,
+        onDismiss = { showAniList = false; aniListViewModel.cancel() }
+    )
+    aniListState.webAuthorizationUrl?.takeIf { showAniList }?.let { url ->
+        AniListWebAuthDialog(url = url, onCallback = aniListViewModel::handleWebCallback,
+            onDismiss = aniListViewModel::cancel)
+    }
 
     when (activeProvider) {
         TrackingProviderId.TRAKT -> {
@@ -617,6 +638,9 @@ internal fun TrackingSettingsOverview(
     floppyFocusRequester: FocusRequester = remember { FocusRequester() },
     onFloppyClick: () -> Unit = {},
     weTrakrFocusRequester: FocusRequester = FocusRequester(),
+    aniListState: com.nuvio.tv.data.anilist.AniListTvState = com.nuvio.tv.data.anilist.AniListTvState(),
+    aniListFocusRequester: FocusRequester = FocusRequester(),
+    onAniListClick: () -> Unit = {},
     libraryFocusRequester: FocusRequester,
     watchProgressFocusRequester: FocusRequester,
     continueWatchingFocusRequester: FocusRequester,
@@ -729,6 +753,18 @@ internal fun TrackingSettingsOverview(
                                 modifier = Modifier
                                     .focusRequester(weTrakrFocusRequester)
                                     .testTag(TrackingSettingsTestTags.WETRAKR_PROVIDER)
+                            )
+                            // NuvioArcKai: AniList, after WeTrakr.
+                            SettingsActionRow(
+                                title = stringResource(R.string.anilist_name),
+                                subtitle = stringResource(R.string.anilist_description),
+                                value = stringResource(if (aniListState.connected) R.string.anilist_connected else R.string.anilist_disconnected),
+                                leadingRawIconRes = R.raw.anilist_logo,
+                                leadingArtworkSize = 40.dp,
+                                onClick = onAniListClick,
+                                modifier = Modifier
+                                    .focusRequester(aniListFocusRequester)
+                                    .testTag(TrackingSettingsTestTags.ANILIST_PROVIDER)
                             )
                         }
                     }
@@ -1062,6 +1098,7 @@ private enum class TrackingFocusTarget {
     MDBLIST,
     FLOPPY,
     WETRAKR,
+    ANILIST,
     LIBRARY,
     WATCH_PROGRESS,
     CONTINUE_WATCHING,
@@ -1075,6 +1112,7 @@ internal object TrackingSettingsTestTags {
     const val MDBLIST_PROVIDER = "tracking_provider_mdblist"
     const val FLOPPY_PROVIDER = "tracking_provider_floppy"
     const val WETRAKR_PROVIDER = "tracking_provider_wetrakr"
+    const val ANILIST_PROVIDER = "tracking_provider_anilist"
     const val WETRAKR_CONTINUE_WATCHING = "tracking_wetrakr_continue_watching"
     const val WETRAKR_UPLOAD = "tracking_wetrakr_upload"
     const val MDBLIST_LIBRARY_LISTS = "tracking_mdblist_library_lists"

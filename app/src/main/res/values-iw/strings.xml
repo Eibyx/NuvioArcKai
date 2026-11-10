@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">המשך צפייה</string>
     <string name="type_movie">סרט</string>
     <string name="type_movies">סרטים</string>
@@ -2012,6 +2012,12 @@
     <string name="skip_ending">דילוג על הסיום</string>
     <string name="skip_recap">דילוג על התקציר</string>
     <string name="skip_generic">דילוג</string>
+    <string name="skip_segment_opening">דילוג על ההקדמה</string>
+    <string name="skip_segment_intro">דילוג על ההקדמה</string>
+    <string name="skip_segment_ending">דילוג על הסיום</string>
+    <string name="skip_segment_outro">דילוג על הסיום</string>
+    <string name="skip_segment_credits">דילוג על הקרדיטים</string>
+    <string name="skip_segment_recap">דילוג על התקציר</string>
     <string name="display_mode_refresh">ריענון</string>
     <string name="display_mode_resolution">רזולוציה</string>
 

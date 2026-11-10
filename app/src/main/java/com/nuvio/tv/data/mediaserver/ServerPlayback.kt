@@ -2,6 +2,7 @@ package com.nuvio.tv.data.mediaserver
 
 import android.os.SystemClock
 import android.util.Log
+import com.nuvio.tv.core.cloudstorage.CloudStreams
 import com.nuvio.tv.domain.model.WatchProgress
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -21,12 +22,15 @@ import kotlinx.coroutines.withTimeoutOrNull
 class ServerPlayback internal constructor(
     private val repository: ServerRepository,
     private val scope: CoroutineScope,
+    /** NuvioArcKai cloud storage (Google Drive, TeraBox); its files play from a loopback server, not a media server. */
+    private val cloud: CloudStreams? = null,
     private val clock: () -> Long
 ) {
     @Inject
-    constructor(repository: ServerRepository) : this(
+    constructor(repository: ServerRepository, cloud: CloudStreams) : this(
         repository = repository,
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+        cloud = cloud,
         clock = SystemClock::elapsedRealtime
     )
 
@@ -42,7 +46,8 @@ class ServerPlayback internal constructor(
      * the same server, that session is closed first and the server is asked once more.
      */
     suspend fun prepare(target: ServerPlaybackTarget, replacing: String? = null): ServerPlaybackSession = try {
-        open(target)
+        // Cloud files play straight from the loopback server: no media server session to open or report.
+        if (cloud != null && cloud.isCloudTarget(target)) cloud.prepare(target) else open(target)
     } catch (error: ServerException) {
         if (error.failure != ServerFailure.STREAM_LIMIT || !closeForReplacement(replacing, target)) throw error
         Log.i(TAG, "Stream limit reached: closed the current session and asking again")
@@ -121,7 +126,7 @@ class ServerPlayback internal constructor(
     fun session(url: String?): ServerPlaybackSession? = url?.let { synchronized(lock) { active[it] } }?.playback
 
     /** A link to read [target]'s file directly, without a playback session on the server; null when there is none. */
-    suspend fun staticUrl(target: ServerPlaybackTarget): String? = try {
+    suspend fun staticUrl(target: ServerPlaybackTarget): String? = if (cloud?.isCloudTarget(target) == true) null else try {
         repository.call(target.item.connectionId) { provider, session -> provider.staticStreamUrl(session, target) }
     } catch (error: CancellationException) {
         throw error
@@ -243,7 +248,11 @@ class ServerPlayback internal constructor(
         return details?.userStates?.singleOrNull()
     }
 
-    fun isServerSource(url: String?): Boolean = url != null && synchronized(lock) { url in active }
+    fun isServerSource(url: String?): Boolean =
+        url != null && (synchronized(lock) { url in active } || cloud?.isCloudUrl(url) == true)
+
+    /** A cloud storage file served on loopback; it has no media server behind it (no segments, tracks or reports). */
+    fun isCloudSource(url: String?): Boolean = cloud?.isCloudUrl(url) == true
 
     fun onPlaybackSnapshot(url: String?, positionMs: Long, isPlaying: Boolean, isLoading: Boolean, isEnded: Boolean) {
         val playback = url?.let { synchronized(lock) { active[it] } } ?: return
@@ -256,6 +265,7 @@ class ServerPlayback internal constructor(
     }
 
     fun stop(url: String?) {
+        cloud?.takeIf { it.isCloudUrl(url) }?.stop(url)
         val playback = url?.let { key ->
             synchronized(lock) {
                 active.remove(key)?.also {

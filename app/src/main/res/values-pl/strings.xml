@@ -929,6 +929,12 @@
     <string name="skip_ending">Pomiń zakończenie</string>
     <string name="skip_recap">Pomiń podsumowanie</string>
     <string name="skip_generic">Pomiń</string>
+    <string name="skip_segment_opening">Pomiń czołówkę</string>
+    <string name="skip_segment_intro">Pomiń czołówkę</string>
+    <string name="skip_segment_ending">Pomiń zakończenie</string>
+    <string name="skip_segment_outro">Pomiń zakończenie</string>
+    <string name="skip_segment_credits">Pomiń napisy końcowe</string>
+    <string name="skip_segment_recap">Pomiń podsumowanie</string>
     <string name="skip_movie_credits">Pomiń napisy końcowe</string>
     <string name="skip_to_post_credits">Do sceny po napisach</string>
     <string name="display_mode_refresh">Odświeżanie</string>
@@ -1413,7 +1419,7 @@
     <string name="genre_war_politics">Wojna i polityka</string>
     <string name="genre_western">Western</string>
 
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="type_unknown">Nieznany</string>
 
     <string name="cd_play">Odtwórz</string>

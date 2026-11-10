@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="type_movie">Фильм</string>
     <string name="type_series">Сериал</string>
     <string name="type_unknown">Неизвестно</string>
@@ -1203,6 +1203,12 @@
     <string name="skip_ending">Пропустить титры</string>
     <string name="skip_recap">Пропустить рекап</string>
     <string name="skip_generic">Пропустить</string>
+    <string name="skip_segment_opening">Пропустить заставку</string>
+    <string name="skip_segment_intro">Пропустить заставку</string>
+    <string name="skip_segment_ending">Пропустить титры</string>
+    <string name="skip_segment_outro">Пропустить титры</string>
+    <string name="skip_segment_credits">Пропустить титры</string>
+    <string name="skip_segment_recap">Пропустить рекап</string>
     <string name="display_mode_refresh">Обновление</string>
     <string name="display_mode_resolution">Разрешение</string>
 

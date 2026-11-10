@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- NuvioArcKai strings kept apart from Arc's strings.xml so Arc can be merged without conflicts. -->
+<resources>
+    <string name="kai_licenses_google_drive_title" translatable="false">Google Drive</string>
+    <string name="kai_licenses_google_drive_body">Google Drive is a trademark of Google LLC. Use of this trademark is subject to Google Permissions. The Google Drive logo only identifies the Google Drive integration and is shown unaltered.</string>
+    <string name="kai_licenses_terabox_title" translatable="false">TeraBox</string>
+    <string name="kai_licenses_terabox_body">TeraBox and its logo are trademarks of Flextech Inc. The logo only identifies the TeraBox integration; NuvioArcKai is not affiliated with or endorsed by Flextech.</string>
+    <string name="kai_licenses_anilist_title" translatable="false">AniList</string>
+    <string name="kai_licenses_anilist_body">AniList and its logo are trademarks of AniList. The logo only identifies the AniList integration; NuvioArcKai is not affiliated with or endorsed by AniList. Data from the AniList API.</string>
+    <string name="kai_cloud_add_terabox_description">Experimental. Index your TeraBox folders and play them as sources; set up from your phone.</string>
+    <string name="kai_cloud_add_google_drive_description">Index your Google Drive folders (read only) and play them as sources; set up from your phone with your own OAuth client.</string>
+    <string name="kai_anilist_connect_phone">Connect with your phone (QR)</string>
+    <string name="kai_anilist_connect_tv">Connect on this TV</string>
+    <string name="kai_anilist_pin_instructions">Scan the QR with a phone on the same network. Open AniList from that page, authorize, copy the token AniList shows and paste it there with this code.</string>
+    <string name="kai_anilist_pin_code">Code: %1$s</string>
+    <string name="kai_anilist_pin_unavailable">Phone sign-in needs this build\'s own AniList client ID. You can still connect on this TV.</string>
+</resources>

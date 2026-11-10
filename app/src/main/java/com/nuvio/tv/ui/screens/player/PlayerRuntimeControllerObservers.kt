@@ -821,7 +821,37 @@ internal fun PlayerRuntimeController.fetchSkipIntervals(id: String?, season: Int
         return
     }
 
-    val imdbId = effectiveId.split(":").firstOrNull()?.takeIf { it.startsWith("tt") } ?: return
+    // AniList / AniDB video IDs ("anilist:21:5"): mapped to the same MAL entry, so the episode carries over.
+    val animePrefix = effectiveId.substringBefore(':').lowercase()
+    if (animePrefix == "anilist" || animePrefix == "anidb") {
+        val parts = effectiveId.split(":")
+        val animeId = parts.getOrNull(1)?.takeIf { it.all(Char::isDigit) } ?: return
+        val animeEpisode = parts.getOrNull(2)?.toIntOrNull() ?: episode ?: return
+        val key = "$animePrefix:$animeId:$animeEpisode"
+        if (skipIntroFetchedKey == key) return
+        skipIntroFetchedKey = key
+        val imdbId = id.takeIf { it.startsWith("tt") } ?: metaImdbId
+        scope.launch {
+            val fetchedIntervals = withTimeoutOrNull(15_000L) {
+                skipIntroRepository.getSkipIntervalsForAnimeId(animePrefix, animeId, animeEpisode, imdbId = imdbId, imdbSeason = season, imdbEpisode = episode)
+            }
+            com.nuvio.tv.kai.segments.ArcSkipDiag.fetch(skipDiagEngine(), id, effectiveId, animePrefix, fetchedIntervals?.size)
+            if (skipIntroEnabled && skipIntroFetchedKey == key && currentVideoId == requestedVideoId) {
+                providerSkipIntervals = fetchedIntervals.orEmpty()
+                recomputeMergedSkipIntervals()
+            }
+        }
+        return
+    }
+
+    // tmdb:/tvdb: (and any other non-IMDb ID) use the IMDb ID the metadata already gave, when it has one.
+    val imdbId = effectiveId.split(":").firstOrNull()?.takeIf { it.startsWith("tt") }
+        ?: id.substringBefore(':').takeIf { it.startsWith("tt") }
+        ?: metaImdbId
+    if (imdbId == null) {
+        com.nuvio.tv.kai.segments.ArcSkipDiag.fetch(skipDiagEngine(), id, effectiveId, "no-imdb", 0)
+        return
+    }
     if (season == null || episode == null) return
 
     val key = "$imdbId:$season:$episode"
@@ -833,6 +863,7 @@ internal fun PlayerRuntimeController.fetchSkipIntervals(id: String?, season: Int
         val fetchedIntervals = withTimeoutOrNull(15_000L) {
             skipIntroRepository.getSkipIntervals(imdbId, season, episode)
         } ?: emptyList()
+        com.nuvio.tv.kai.segments.ArcSkipDiag.fetch(skipDiagEngine(), id, effectiveId, "imdb", fetchedIntervals.size)
         if (!skipIntroEnabled || skipIntroFetchedKey != key || currentVideoId != requestedVideoId) return@launch
         providerSkipIntervals = fetchedIntervals
         recomputeMergedSkipIntervals()
@@ -863,7 +894,19 @@ internal fun PlayerRuntimeController.recomputeMergedSkipIntervals() {
     val isMovie = contentType.equals("movie", ignoreCase = true)
     val others = mergeSkipIntervals(providerSkipIntervals, chapterSkipIntervals, isMovie = isMovie)
     skipIntervals = mergeServerSkipIntervals(serverSkipIntervals, others)
+    if (com.nuvio.tv.kai.segments.ArcSkipDiag.enabled()) {
+        val engine = skipDiagEngine()
+        com.nuvio.tv.kai.segments.ArcSkipDiag.intervals(engine, chapterSkipIntervals, serverSkipIntervals, providerSkipIntervals, skipIntervals)
+        val named = skipDetectionChapters.filter { it.title != null || it.allTitles.isNotEmpty() }
+        val classified = named.count { com.nuvio.tv.kai.segments.SegmentVocabulary.classifyAny(listOf(it.title) + it.allTitles) != null }
+        val case = com.nuvio.tv.kai.segments.ArcSkipDiag.classify(named.size, classified, skipIntervals.size, sawActiveInterval = false, sawButton = false)
+        if (case != com.nuvio.tv.kai.segments.ArcSkipDiag.Case.OK) {
+            com.nuvio.tv.kai.segments.ArcSkipDiag.case(engine, case, "namedChapters=${named.size} classified=$classified merged=${skipIntervals.size}")
+        }
+    }
 }
+
+internal fun PlayerRuntimeController.skipDiagEngine(): String = if (isUsingMpvEngine()) "mpv" else "exoplayer"
 
 internal fun PlayerRuntimeController.tryApplyPendingResumeProgress(player: Player) {
     val saved = pendingResumeProgress ?: return

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">தொடர்ந்து பார்க்கவும்</string>
     <string name="type_movie">திரைப்படம்</string>
     <string name="type_movies">திரைப்படங்கள்</string>
@@ -1333,6 +1333,12 @@
     <string name="skip_ending">முடிவை தவிர்</string>
     <string name="skip_recap">மறுபார்வையை தவிர்</string>
     <string name="skip_generic">தவிர்</string>
+    <string name="skip_segment_opening">அறிமுகத்தை தவிர்</string>
+    <string name="skip_segment_intro">அறிமுகத்தை தவிர்</string>
+    <string name="skip_segment_ending">முடிவை தவிர்</string>
+    <string name="skip_segment_outro">முடிவை தவிர்</string>
+    <string name="skip_segment_credits">முடிவை தவிர்</string>
+    <string name="skip_segment_recap">மறுபார்வையை தவிர்</string>
     <string name="display_mode_refresh">புதுப்பிப்பு</string>
     <string name="display_mode_resolution">தெளிவுத்திறன்</string>
 

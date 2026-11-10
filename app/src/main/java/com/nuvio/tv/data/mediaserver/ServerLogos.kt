@@ -10,6 +10,9 @@ fun serverLogoRes(providerId: String): Int? = when (providerId) {
     "emby" -> R.raw.emby_logo
     "silo", "silo-native" -> R.raw.silo_logo
     "plex" -> R.raw.plex_logo
+    // NuvioArcKai cloud storage accounts (official brand marks, see docs/kai/brand-assets.md).
+    "terabox" -> R.raw.terabox_logo
+    "gdrive" -> R.raw.google_drive_logo
     else -> null
 }
 

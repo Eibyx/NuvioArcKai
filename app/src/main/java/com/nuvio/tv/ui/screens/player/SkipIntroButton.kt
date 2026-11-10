@@ -76,8 +76,8 @@ fun SkipIntroButton(
     modifier: Modifier = Modifier
 ) {
 
-    var lastType by remember { mutableStateOf(interval?.type) }
-    if (interval != null) lastType = interval.type
+    var lastType by remember { mutableStateOf(interval?.labelKind()) }
+    if (interval != null) lastType = interval.labelKind()
     val hasActiveInterval = interval != null
     val shouldShow = hasActiveInterval && (!dismissed || controlsVisible)
 
@@ -237,12 +237,21 @@ fun SkipIntroButton(
     }
 }
 
+/** The source's own name for the segment when it has one (chapters say op/intro/ed/credits), else its type. */
+private fun SkipInterval.labelKind(): String = label ?: type
+
 @Composable
-private fun getSkipLabel(type: String?, targetsPostCredits: Boolean): String = when (type?.trim()?.lowercase()) {
-    "op", "opening", "mixed-op", "intro" -> stringResource(R.string.skip_intro)
-    "ed", "ending", "mixed-ed", "outro", "credits" ->
-        stringResource(if (targetsPostCredits) R.string.skip_to_post_credits else R.string.skip_ending)
-    "movie-credits" -> stringResource(if (targetsPostCredits) R.string.skip_to_post_credits else R.string.skip_movie_credits)
-    "recap" -> stringResource(R.string.skip_recap)
-    else -> stringResource(R.string.skip_generic)
+private fun getSkipLabel(type: String?, targetsPostCredits: Boolean): String =
+    stringResource(skipLabelRes(type, targetsPostCredits))
+
+/** Opening, intro, ending, outro, credits and recap each have their own label; post-credits targets keep theirs. */
+internal fun skipLabelRes(type: String?, targetsPostCredits: Boolean): Int = when (type?.trim()?.lowercase()) {
+    "op", "opening", "mixed-op" -> R.string.skip_segment_opening
+    "intro" -> R.string.skip_segment_intro
+    "ed", "ending", "mixed-ed" -> if (targetsPostCredits) R.string.skip_to_post_credits else R.string.skip_segment_ending
+    "outro" -> if (targetsPostCredits) R.string.skip_to_post_credits else R.string.skip_segment_outro
+    "credits" -> if (targetsPostCredits) R.string.skip_to_post_credits else R.string.skip_segment_credits
+    "movie-credits" -> if (targetsPostCredits) R.string.skip_to_post_credits else R.string.skip_movie_credits
+    "recap" -> R.string.skip_segment_recap
+    else -> R.string.skip_generic
 }

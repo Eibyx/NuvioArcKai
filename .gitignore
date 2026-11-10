@@ -50,6 +50,9 @@ scripts/*
 !scripts/verify_native_apk.py
 !scripts/tests/
 !scripts/tests/*.py
+# NuvioArcKai tooling
+!scripts/kai/
+!scripts/kai/*
 /supabase
 /SUPPORTER_COSMETICS.md
 tv-samples

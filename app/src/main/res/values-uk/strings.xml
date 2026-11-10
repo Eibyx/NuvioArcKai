@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Продовжити перегляд</string>
     <string name="type_movie">Фільм</string>
     <string name="type_movies">Фільми</string>
@@ -1548,6 +1548,12 @@
     <string name="skip_ending">Пропустити титри</string>
     <string name="skip_recap">Пропустити рекап</string>
     <string name="skip_generic">Пропустити</string>
+    <string name="skip_segment_opening">Пропустити заставку</string>
+    <string name="skip_segment_intro">Пропустити заставку</string>
+    <string name="skip_segment_ending">Пропустити титри</string>
+    <string name="skip_segment_outro">Пропустити титри</string>
+    <string name="skip_segment_credits">Пропустити титри</string>
+    <string name="skip_segment_recap">Пропустити рекап</string>
     <string name="display_mode_refresh">Оновлення</string>
     <string name="display_mode_resolution">Роздільна здатність</string>
 

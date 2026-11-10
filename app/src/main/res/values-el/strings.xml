@@ -1,5 +1,5 @@
 ﻿<resources>
-  <string name="app_name">Nuvio Arc</string>
+  <string name="app_name">Nuvio Arc Kai</string>
   <string name="tv_channel_continue_watching">Συνέχεια παρακολούθησης</string>
   <string name="type_movie">Ταινία</string>
   <string name="type_movies">Ταινίες</string>
@@ -1829,6 +1829,12 @@
   <string name="skip_ending">Παράλειψη τέλους</string>
   <string name="skip_recap">Παράλειψη ανασκόπισης</string>
   <string name="skip_generic">Παράλειψη</string>
+  <string name="skip_segment_opening">Παράλειψη αρχής</string>
+  <string name="skip_segment_intro">Παράλειψη αρχής</string>
+  <string name="skip_segment_ending">Παράλειψη τέλους</string>
+  <string name="skip_segment_outro">Παράλειψη τέλους</string>
+  <string name="skip_segment_credits">Παράλειψη τίτλων</string>
+  <string name="skip_segment_recap">Παράλειψη ανασκόπισης</string>
   <string name="display_mode_refresh">Ανανέωση</string>
   <string name="display_mode_resolution">Ανάλυση</string>
   <!-- SearchScreen -->

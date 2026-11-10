@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">继续观看</string>
     <string name="type_movie">电影</string>
     <string name="type_movies">电影</string>
@@ -1906,6 +1906,12 @@
     <string name="skip_ending">跳过片尾</string>
     <string name="skip_recap">跳过前情提要</string>
     <string name="skip_generic">跳过</string>
+    <string name="skip_segment_opening">跳过片头</string>
+    <string name="skip_segment_intro">跳过片头</string>
+    <string name="skip_segment_ending">跳过片尾</string>
+    <string name="skip_segment_outro">跳过片尾</string>
+    <string name="skip_segment_credits">跳过片尾字幕</string>
+    <string name="skip_segment_recap">跳过前情提要</string>
     <string name="display_mode_refresh">刷新率</string>
     <string name="display_mode_resolution">分辨率</string>
 

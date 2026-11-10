@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Vazhdo shikimin</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filma</string>
@@ -1677,6 +1677,12 @@
     <string name="skip_ending">Kapërce fundin</string>
     <string name="skip_recap">Kapërce përmbledhjen</string>
     <string name="skip_generic">Kapërce</string>
+    <string name="skip_segment_opening">Kapërce hyrjen</string>
+    <string name="skip_segment_intro">Kapërce hyrjen</string>
+    <string name="skip_segment_ending">Kapërce fundin</string>
+    <string name="skip_segment_outro">Kapërce fundin</string>
+    <string name="skip_segment_credits">Kapërce fundin</string>
+    <string name="skip_segment_recap">Kapërce përmbledhjen</string>
     <string name="display_mode_refresh">Rifresko</string>
     <string name="display_mode_resolution">Rezolucioni</string>
     <string name="search_keyboard_hint">Shtyp U krye në tastierë për të kërkuar</string>

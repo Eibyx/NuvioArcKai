@@ -156,6 +156,8 @@ class WatchProgressRepositoryImpl @Inject constructor(
     private val trackingHistoryWriters: TrackingHistoryWriterRegistry,
     private val mutationStore: WatchStateMutationStore,
     private val serverWatched: ServerWatched,
+    /** NuvioArcKai: AniList gets every real completion, from the player or marked by hand, through its own queue. */
+    private val aniList: com.nuvio.tv.data.anilist.AniListRepository? = null,
 ) : WatchProgressRepository {
     companion object {
         private const val TAG = "WatchProgressRepo"
@@ -1096,6 +1098,10 @@ class WatchProgressRepositoryImpl @Inject constructor(
         }
         triggerRemoteSync(profileId = profileId)
         triggerWatchedItemsSync(listOf(watchedItem), profileId = profileId)
+        // AniList receives the real completed event even when other history broadcasts are disabled (the player
+        // passes false). Its queue is persisted before any network call and never writes to other services.
+        runCatching { aniList?.episodeWatched(profileId, completed) }
+            .onFailure { Log.w(TAG, "Unable to persist AniList completion", it) }
     }
 
     override suspend fun markAsCompletedBatch(progressList: List<WatchProgress>) {
@@ -1139,6 +1145,10 @@ class WatchProgressRepositoryImpl @Inject constructor(
         syncServerWatched(completedList.map { it.toServerWatchMark() }, played = true, profileId = profileId)
         triggerRemoteSync(profileId = profileId)
         triggerWatchedItemsSync(watchedItems, profileId = profileId)
+        completedList.forEach { completed ->
+            runCatching { aniList?.episodeWatched(profileId, completed) }
+                .onFailure { Log.w(TAG, "Unable to persist AniList completion", it) }
+        }
     }
 
     private fun syncServerWatched(marks: List<ServerWatchMark>, played: Boolean, profileId: Int) {

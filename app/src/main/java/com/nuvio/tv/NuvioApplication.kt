@@ -117,6 +117,8 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
     override fun onCreate() {
         com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("app_create")
         com.nuvio.tv.core.network.ArcDns.init(this)
+        // NuvioArcKai: physical-RAM tier for cloud storage limits; read before any injected singleton needs it.
+        com.nuvio.tv.core.device.DeviceMemoryTier.init(this)
         super.onCreate()
         com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("app_injected")
         PluginRuntimeHooks.onApplicationCreate(this)

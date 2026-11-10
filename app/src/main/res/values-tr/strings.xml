@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">İzlemeye Devam Et</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmler</string>
@@ -2006,6 +2006,12 @@
     <string name="skip_ending">Kapanışı Atla</string>
     <string name="skip_recap">Özeti Atla</string>
     <string name="skip_generic">Atla</string>
+    <string name="skip_segment_opening">İntroyu Atla</string>
+    <string name="skip_segment_intro">İntroyu Atla</string>
+    <string name="skip_segment_ending">Kapanışı Atla</string>
+    <string name="skip_segment_outro">Kapanışı Atla</string>
+    <string name="skip_segment_credits">Jeneriği Atla</string>
+    <string name="skip_segment_recap">Özeti Atla</string>
     <string name="display_mode_refresh">Yenile</string>
     <string name="display_mode_resolution">Çözünürlük</string>
 

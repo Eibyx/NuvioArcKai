@@ -743,6 +743,7 @@ internal fun PlayerRuntimeController.updateActiveSkipInterval(positionMs: Long) 
 
     val active = nextActiveSkipInterval(skipIntervals, positionMs)
     val currentActive = _uiState.value.activeSkipInterval
+    if (active != currentActive) com.nuvio.tv.kai.segments.ArcSkipDiag.active(skipDiagEngine(), positionMs, active)
 
     if (active != null) {
         val targetsPostCredits = active.followingPostCreditsScene(skipIntervals, currentPlaybackDurationMs()) != null

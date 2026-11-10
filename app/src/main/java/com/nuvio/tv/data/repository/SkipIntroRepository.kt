@@ -16,6 +16,9 @@ import com.nuvio.tv.data.remote.api.IntroDbSegmentsResponse
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.nuvio.tv.kai.arm.ArmIdLookup
+import com.nuvio.tv.kai.arm.armEntryForImdbEpisode
+import com.nuvio.tv.kai.segments.ArcSkipDiag
 import kotlinx.coroutines.async
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
@@ -24,7 +27,9 @@ data class SkipInterval(
     val startTime: Double, // seconds
     val endTime: Double,   // seconds
     val type: String,      // intro/op, recap, outro/ed, movie-credits, post-credits
-    val provider: String   // "introdb", "aniskip", "animeskip"
+    val provider: String,  // "introdb", "aniskip", "animeskip"
+    /** What the source called the segment (op, intro, ed, outro, credits, recap) when [type] is coarser; labels only. */
+    val label: String? = null
 )
 
 internal fun IntroDbSegmentsResponse.toSkipIntervals(movie: Boolean): List<SkipInterval> {
@@ -59,7 +64,9 @@ class SkipIntroRepository @Inject constructor(
     private val animeSkipApi: AnimeSkipApi,
     private val simklResolver: SimklIdResolver,
     private val animeSkipSettingsDataStore: AnimeSkipSettingsDataStore,
-    private val tmdbService: TmdbService
+    private val tmdbService: TmdbService,
+    /** Key-less fallback when Simkl is not configured (NuvioArcKai). */
+    private val armIds: ArmIdLookup = ArmIdLookup.None
 ) {
     private data class CacheKey(val identity: String, val settings: AnimeSkipSettingsSnapshot)
     private val cache = ConcurrentHashMap<CacheKey, List<SkipInterval>>()
@@ -100,8 +107,13 @@ class SkipIntroRepository @Inject constructor(
         // Resolve IMDB -> season-specific MAL/AniList via Simkl episode mapping
         val simklIdsDeferred = async { simklResolver.resolveIdsForImdbEpisode(imdbId, season, episode) }
         val simklIds = simklIdsDeferred.await()
-        val malId = simklIds?.mal
-        val anilistId = simklIds?.anilist
+        // Without Simkl, ARM's season table, only when one anime entry owns the whole TVDB season.
+        val armEntry = if (simklIds == null) {
+            armEntryForImdbEpisode(armIds.imdbRows(imdbId), season, episode)?.first
+        } else null
+        val malId = simklIds?.mal ?: armEntry?.mal
+        val anilistId = simklIds?.anilist ?: armEntry?.anilist
+        ArcSkipDiag.ids("imdb", imdbId, mal = malId, anilist = anilistId, via = if (simklIds != null) "simkl" else if (armEntry != null) "arm" else "none")
 
         // Remap the TVDB episode number to the anime-entry-local episode number.
         // When the resolved entry owns a specific TVDB season, its episode mapping
@@ -142,6 +154,7 @@ class SkipIntroRepository @Inject constructor(
 
         val simklIdsDeferred = async { simklResolver.resolveIds("mal", malId) }
         val simklIds = simklIdsDeferred.await()
+        val armIdsForMal = if (simklIds == null) armIds.ids("mal", malId) else null
         val resolvedImdbId = imdbId ?: simklIds?.imdb
 
         val tvdbDeferred = async {
@@ -151,7 +164,8 @@ class SkipIntroRepository @Inject constructor(
         }
 
         // Anime-Skip only needs the AniList id, so it must not depend on the IntroDB episode mapping.
-        val anilistId = simklIds?.anilist
+        val anilistId = simklIds?.anilist ?: armIdsForMal?.anilist
+        ArcSkipDiag.ids("mal", malId, mal = malId, anilist = anilistId, via = if (simklIds != null) "simkl" else if (armIdsForMal != null) "arm" else "none")
         val animeSkipDeferred = async {
             if (anilistId != null) fetchFromAnimeSkip(anilistId, episode, season = null, settings = settings) else emptyList()
         }
@@ -170,6 +184,24 @@ class SkipIntroRepository @Inject constructor(
             .also { cache[cacheKey] = it }
     }
 
+    /**
+     * AniList and AniDB video IDs (`anilist:<id>:<ep>`, `anidb:<id>:<ep>`): ARM maps the entry to MAL, which is
+     * the same entry, so the episode number carries over. Without a MAL entry there is nothing to look up.
+     */
+    suspend fun getSkipIntervalsForAnimeId(
+        source: String,
+        id: String,
+        episode: Int,
+        imdbId: String? = null,
+        imdbSeason: Int? = null,
+        imdbEpisode: Int? = null
+    ): List<SkipInterval> {
+        val mal = simklResolver.resolveIds(source, id)?.mal ?: armIds.ids(source, id)?.mal
+        ArcSkipDiag.ids(source, id, mal = mal, anilist = id.takeIf { source == "anilist" }, via = if (mal != null) "simkl/arm" else "none")
+        if (mal == null) return emptyList()
+        return getSkipIntervalsForMal(mal, episode, imdbId = imdbId, imdbSeason = imdbSeason, imdbEpisode = imdbEpisode)
+    }
+
     suspend fun getSkipIntervalsForKitsu(
         kitsuId: String,
         episode: Int,
@@ -184,7 +216,8 @@ class SkipIntroRepository @Inject constructor(
         // Resolve all IDs via Simkl
         val simklIdsDeferred = async { simklResolver.resolveIds("kitsu", kitsuId) }
         val simklIds = simklIdsDeferred.await()
-        val malIdStr = simklIds?.mal
+        val armIdsForKitsu = if (simklIds == null) armIds.ids("kitsu", kitsuId) else null
+        val malIdStr = simklIds?.mal ?: armIdsForKitsu?.mal
         val resolvedImdbId = imdbId ?: simklIds?.imdb
 
         val aniSkipDeferred = async {
@@ -198,7 +231,8 @@ class SkipIntroRepository @Inject constructor(
         }
 
         // Anime-Skip only needs the AniList id, so it must not depend on the IntroDB episode mapping.
-        val anilistId = simklIds?.anilist
+        val anilistId = simklIds?.anilist ?: armIdsForKitsu?.anilist
+        ArcSkipDiag.ids("kitsu", kitsuId, mal = malIdStr, anilist = anilistId, via = if (simklIds != null) "simkl" else if (armIdsForKitsu != null) "arm" else "none")
         val animeSkipDeferred = async {
             if (anilistId != null) fetchFromAnimeSkip(anilistId, episode, season = null, settings = settings) else emptyList()
         }

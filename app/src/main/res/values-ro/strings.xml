@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="type_movie">Film</string>
     <string name="type_series">Serial</string>
 
@@ -623,6 +623,12 @@
     <string name="skip_ending">Omite finalul</string>
     <string name="skip_recap">Omite recapitularea</string>
     <string name="skip_generic">Omite</string>
+    <string name="skip_segment_opening">Omite intro</string>
+    <string name="skip_segment_intro">Omite intro</string>
+    <string name="skip_segment_ending">Omite finalul</string>
+    <string name="skip_segment_outro">Omite finalul</string>
+    <string name="skip_segment_credits">Omite finalul</string>
+    <string name="skip_segment_recap">Omite recapitularea</string>
     <string name="display_mode_refresh">Actualizează</string>
     <string name="display_mode_resolution">Rezoluție</string>
 

@@ -27,6 +27,8 @@ concurrency:
 jobs:
   release:
     name: ${{ inputs.mode }} Android TV release
+    # NuvioArcKai publishes only through kai-release-armv7.yml (one armeabi-v7a APK); Arc's two-ABI release stays upstream.
+    if: github.repository == 'ysosrs123/NuvioTV-Fork'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}

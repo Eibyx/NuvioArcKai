@@ -6,10 +6,19 @@ import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import com.nuvio.tv.core.player.dvmkv.ChaptersMetadata
 import com.nuvio.tv.data.mediaserver.ServerChapter
+import com.nuvio.tv.kai.segments.SegmentVocabulary
 import java.util.Locale
 
-/** A chapter as the player shows it; [title] is null when the file only numbers its chapters. */
-data class PlayerChapter(val number: Int, val startMs: Long, val title: String?)
+/**
+ * A chapter as the player shows it; [title] is null when the file only numbers its chapters.
+ * [allTitles] holds every name the file gives the chapter (one per language), for segment detection only.
+ */
+data class PlayerChapter(
+    val number: Int,
+    val startMs: Long,
+    val title: String?,
+    val allTitles: List<String> = emptyList()
+)
 
 internal object PlayerChapters {
 
@@ -24,13 +33,6 @@ internal object PlayerChapters {
         RegexOption.IGNORE_CASE
     )
 
-    private val segmentName = Regex(
-        "(?iu)^(?:recap|previously|previously on\\b.*|intro|opening|opening (?:credits|titles|theme|song)|op|" +
-            "vorspann|r[üu]ckblick|was bisher geschah|zuvor bei\\b.*|g[ée]n[ée]rique(?: de d[ée]but)?|r[ée]sum[ée]|" +
-            "pr[ée]c[ée]demment(?: dans\\b.*)?|riassunto|sigla(?: iniziale)?|nelle puntate precedenti|" +
-            "resumen|anteriormente(?: en\\b.*)?|cabecera|abertura|eerder(?: in\\b.*)?|" +
-            "オープニング|あらすじ|前回のあらすじ)(?:[\\s._#-]*\\d+)?[.:!]?$"
-    )
 
     /** Matroska files often use the ISO 639-2/B codes; Locale gives the /T ones. */
     private val bibliographic = mapOf(
@@ -63,10 +65,12 @@ internal object PlayerChapters {
             for (i in 0 until group.length) {
                 val chapters = group.getTrackFormat(i).metadata?.chapters() ?: continue
                 return chapters.chapters.take(MAX_CHAPTERS).mapIndexed { index, chapter ->
+                    val names = chapter.names.map { name -> name.text to name.language }
                     PlayerChapter(
                         index + 1,
                         chapter.startUs / 1000,
-                        chosenName(chapter.names.map { name -> name.text to name.language }, locale)
+                        chosenName(names, locale),
+                        allTitles = names.map { it.first.trim() }.filter { it.isNotEmpty() }.distinct()
                     )
                 }
             }
@@ -106,7 +110,7 @@ internal object PlayerChapters {
         }
     }
 
-    fun isSegmentName(name: String): Boolean = segmentName.matches(name.trim())
+    fun isSegmentName(name: String): Boolean = SegmentVocabulary.isLeadingSegment(name)
 
     /** The name in the viewer's language when the file has one, else the first; generic "Chapter 3" names are dropped. */
     fun pickName(names: List<Pair<String, String?>>, locale: Locale): String? =

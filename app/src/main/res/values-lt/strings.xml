@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="type_movie">Filmas</string>
     <string name="type_series">Serialas</string>
     <string name="type_unknown">Nežinoma</string>
@@ -776,6 +776,12 @@ Klaida: Bandomoji simuliuojama klaida — tai nėra tikras gedimas. Šaltinis gr
     <string name="skip_ending">Praleisti pabaigą</string>
     <string name="skip_recap">Praleisti santrauką</string>
     <string name="skip_generic">Praleisti</string>
+    <string name="skip_segment_opening">Praleisti Intro</string>
+    <string name="skip_segment_intro">Praleisti Intro</string>
+    <string name="skip_segment_ending">Praleisti pabaigą</string>
+    <string name="skip_segment_outro">Praleisti pabaigą</string>
+    <string name="skip_segment_credits">Praleisti pabaigą</string>
+    <string name="skip_segment_recap">Praleisti santrauką</string>
     <string name="display_mode_refresh">Atnaujinimas (Refresh)</string>
     <string name="display_mode_resolution">Skiriamoji geba</string>
 

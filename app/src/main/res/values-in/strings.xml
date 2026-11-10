@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Lanjutkan Menonton</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Film</string>
@@ -1491,6 +1491,12 @@
     <string name="skip_ending">Lewati Penutup</string>
     <string name="skip_recap">Lewati Rekap</string>
     <string name="skip_generic">Lewati</string>
+    <string name="skip_segment_opening">Lewati Intro</string>
+    <string name="skip_segment_intro">Lewati Intro</string>
+    <string name="skip_segment_ending">Lewati Penutup</string>
+    <string name="skip_segment_outro">Lewati Penutup</string>
+    <string name="skip_segment_credits">Lewati Penutup</string>
+    <string name="skip_segment_recap">Lewati Rekap</string>
     <string name="display_mode_refresh">Perbarui</string>
     <string name="display_mode_resolution">Resolusi</string>
 

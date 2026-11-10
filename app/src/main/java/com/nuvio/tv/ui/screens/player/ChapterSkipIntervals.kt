@@ -2,6 +2,7 @@ package com.nuvio.tv.ui.screens.player
 
 import com.nuvio.tv.data.repository.SkipInterval
 import com.nuvio.tv.data.repository.segmentCategory
+import com.nuvio.tv.kai.segments.SegmentVocabulary
 
 /**
  * Derive skip intervals from container chapters (MKV/Matroska).
@@ -10,8 +11,13 @@ import com.nuvio.tv.data.repository.segmentCategory
  * the segment label itself (with an optional number suffix) are matched, to avoid
  * false positives on scene-named chapters like "The Opening" or "Alternate Ending".
  *
- * Matched types: OP/Opening, ED/Ending/Credits, Recap/Previously, Intro.
+ * Matched types: OP/Opening, ED/Ending/Credits/Outro, Recap/Previously, Intro, in the languages of
+ * [SegmentVocabulary]. Every name the chapter carries is checked, not only the one shown, so a file whose
+ * chapters are named in several languages gives the same intervals whatever the device language.
  * "Intro" is promoted to opening only when no dedicated OP/Opening chapter exists.
+ *
+ * Interval types stay intro/outro/recap (auto-skip, next-episode and merge rules read them);
+ * [SkipInterval.label] keeps what the chapter said (op, intro, ed, outro, credits, recap) for the button.
  *
  * Titles containing "post-credits", "mid-credits", or "after-credits" are excluded
  * to avoid skipping post-credits scenes.
@@ -22,16 +28,6 @@ internal object ChapterSkipIntervals {
 
     private const val MIN_DURATION_SEC = 5.0
     private const val MAX_DURATION_SEC = 240.0 // 4 minutes max for OP/ED/recap
-
-    // Strict: title must be essentially the label, optionally followed by a number.
-    // e.g. "OP", "OP 2", "Opening", "Opening Credits", but NOT "The Opening Scene".
-    private val OPENING_PATTERN = Regex("^\\s*(op(ening)?)(\\s*(credits|theme))?\\s*\\d*\\s*$", RegexOption.IGNORE_CASE)
-    private val ENDING_PATTERN = Regex("^\\s*(ed|ending)(\\s*(credits|theme))?\\s*\\d*\\s*$", RegexOption.IGNORE_CASE)
-    private val CREDITS_PATTERN = Regex("^\\s*(end|closing)?\\s*credits\\s*$", RegexOption.IGNORE_CASE)
-    private val RECAP_PATTERN = Regex("^\\s*(recap|previously(\\s+on.*)?)\\s*$", RegexOption.IGNORE_CASE)
-    private val INTRO_PATTERN = Regex("^\\s*intro\\s*$", RegexOption.IGNORE_CASE)
-
-    private val POST_CREDITS_PATTERN = Regex("(post|mid|after)[\\s-]credits", RegexOption.IGNORE_CASE)
 
     fun fromChapters(
         chapters: List<PlayerChapter>,
@@ -48,7 +44,7 @@ internal object ChapterSkipIntervals {
             ClassifiedChapter(
                 chapter = chapter,
                 endMs = endMs,
-                type = classifyTitle(chapter.title)
+                type = classify(chapter)
             )
         }
 
@@ -77,29 +73,33 @@ internal object ChapterSkipIntervals {
                 startTime = startSec,
                 endTime = endSec,
                 type = skipType,
-                provider = PROVIDER
+                provider = PROVIDER,
+                label = type.label
             )
         }
     }
 
-    private fun classifyTitle(title: String?): ChapterType? {
-        if (title.isNullOrBlank()) return null
-        // Check post-credits first (before credits pattern would match)
-        if (POST_CREDITS_PATTERN.containsMatchIn(title)) return ChapterType.POST_CREDITS
-        if (OPENING_PATTERN.matches(title)) return ChapterType.OPENING
-        if (ENDING_PATTERN.matches(title)) return ChapterType.ENDING
-        if (CREDITS_PATTERN.matches(title)) return ChapterType.ENDING
-        if (RECAP_PATTERN.matches(title)) return ChapterType.RECAP
-        if (INTRO_PATTERN.matches(title)) return ChapterType.INTRO
-        return null
-    }
+    private fun classify(chapter: PlayerChapter): ChapterType? =
+        // All of the file's names in file order, so the device language never changes the result; mpv gives one title.
+        when (SegmentVocabulary.classifyAny(chapter.allTitles.ifEmpty { listOf(chapter.title) })) {
+            SegmentVocabulary.Kind.OPENING -> ChapterType.OPENING
+            SegmentVocabulary.Kind.INTRO -> ChapterType.INTRO
+            SegmentVocabulary.Kind.RECAP -> ChapterType.RECAP
+            SegmentVocabulary.Kind.ENDING -> ChapterType.ENDING
+            SegmentVocabulary.Kind.OUTRO -> ChapterType.OUTRO
+            SegmentVocabulary.Kind.CREDITS -> ChapterType.CREDITS
+            SegmentVocabulary.Kind.POST_CREDITS -> ChapterType.POST_CREDITS
+            null -> null
+        }
 
-    private enum class ChapterType(val skipIntervalType: String) {
-        OPENING("intro"),
-        ENDING("outro"),
-        RECAP("recap"),
-        INTRO("intro"),
-        POST_CREDITS("post-credits"),
+    private enum class ChapterType(val skipIntervalType: String, val label: String) {
+        OPENING("intro", "op"),
+        ENDING("outro", "ed"),
+        OUTRO("outro", "outro"),
+        CREDITS("outro", "credits"),
+        RECAP("recap", "recap"),
+        INTRO("intro", "intro"),
+        POST_CREDITS("post-credits", "post-credits"),
     }
 
     private data class ClassifiedChapter(

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Continue Watching</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Movies</string>
@@ -1349,6 +1349,12 @@
     <string name="skip_ending">Ende überspringen</string>
     <string name="skip_recap">Zusammenfassung überspringen</string>
     <string name="skip_generic">Überspringen</string>
+    <string name="skip_segment_opening">Intro überspringen</string>
+    <string name="skip_segment_intro">Intro überspringen</string>
+    <string name="skip_segment_ending">Ende überspringen</string>
+    <string name="skip_segment_outro">Ende überspringen</string>
+    <string name="skip_segment_credits">Ende überspringen</string>
+    <string name="skip_segment_recap">Zusammenfassung überspringen</string>
     <string name="display_mode_refresh">Bildwiederholrate</string>
     <string name="display_mode_resolution">Auflösung</string>
 

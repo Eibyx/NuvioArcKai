@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">視聴を続ける</string>
     <string name="type_movie">映画</string>
     <string name="type_movies">映画</string>
@@ -1557,6 +1557,12 @@
     <string name="skip_ending">エンディングをスキップ</string>
     <string name="skip_recap">リキャップをスキップ</string>
     <string name="skip_generic">スキップ</string>
+    <string name="skip_segment_opening">イントロをスキップ</string>
+    <string name="skip_segment_intro">イントロをスキップ</string>
+    <string name="skip_segment_ending">エンディングをスキップ</string>
+    <string name="skip_segment_outro">エンディングをスキップ</string>
+    <string name="skip_segment_credits">クレジットをスキップ</string>
+    <string name="skip_segment_recap">リキャップをスキップ</string>
     <string name="display_mode_refresh">更新</string>
     <string name="display_mode_resolution">解像度</string>
 

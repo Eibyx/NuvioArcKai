@@ -1,4 +1,5 @@
 """Validate the fork's required native playback components before distributing an APK."""
+from __future__ import annotations
 import argparse
 import hashlib
 import json
@@ -39,12 +40,59 @@ def verify(apk: Path, abi: str) -> dict:
     return {"apk": str(apk), "abi": abi, "sha256": hashlib.sha256(apk.read_bytes()).hexdigest(), "nativeLibraries": hashes}
 
 
+# NuvioArcKai: one armeabi-v7a APK, with every library of the measured baseline still present.
+KAI_ABI = "armeabi-v7a"
+KAI_REQUIRED = REQUIRED | {"libnuviothumb.so", "libc++_shared.so"}
+KAI_MPV_MARKERS = ("libmpv.so", "libplayer.so")
+
+
+def verify_kai(apk: Path, baseline: Path | None = None) -> dict:
+    """Kai rules on top of verify(): ARM 32-bit only, mpv and thumbnail libraries, nothing lost from the baseline."""
+    result = verify(apk, KAI_ABI)
+    names = {name.rsplit("/", 1)[-1] for name in result["nativeLibraries"]}
+    missing = KAI_REQUIRED - names
+    if missing:
+        raise ValueError(f"Missing Kai native libraries: {sorted(missing)}")
+    if not any(marker in names for marker in KAI_MPV_MARKERS):
+        raise ValueError("Missing the mpv engine library")
+    with zipfile.ZipFile(apk) as archive:
+        sizes = {info.filename: info.file_size for info in archive.infolist()}
+        if any(name.endswith(".aab") for name in sizes):
+            raise ValueError("App bundle inside the APK")
+    report = {
+        "apk": result["apk"],
+        "abi": KAI_ABI,
+        "sha256": result["sha256"],
+        "elf": {"class": "ELFCLASS32", "encoding": "little-endian", "e_machine": 40},
+        "libraries": [
+            {"name": name.rsplit("/", 1)[-1], "size": sizes[name], "sha256": digest}
+            for name, digest in sorted(result["nativeLibraries"].items())
+        ],
+    }
+    if baseline is not None:
+        expected = {entry["name"] for entry in json.loads(baseline.read_text())["libraries"]}
+        lost = sorted(expected - names)
+        if lost:
+            raise ValueError(f"Native libraries lost against the baseline: {lost}")
+        report["addedSinceBaseline"] = sorted(names - expected)
+    return report
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("apk", type=Path)
-    parser.add_argument("--abi", required=True, choices=MACHINES)
+    parser.add_argument("--abi", choices=MACHINES)
+    parser.add_argument("--kai", action="store_true", help="NuvioArcKai rules (armeabi-v7a only)")
+    parser.add_argument("--baseline", type=Path, help="docs/kai/baseline-native.json, with --kai")
+    parser.add_argument("--output", type=Path, help="write the report here as well (native-inventory.json)")
     args = parser.parse_args()
+    if not args.kai and args.abi is None:
+        parser.error("--abi is required without --kai")
     try:
-        print(json.dumps(verify(args.apk, args.abi), indent=2))
+        report = verify_kai(args.apk, args.baseline) if args.kai else verify(args.apk, args.abi)
+        text = json.dumps(report, indent=2)
+        if args.output:
+            args.output.write_text(text + "\n")
+        print(text)
     except (ValueError, zipfile.BadZipFile, OSError) as error:
         parser.exit(1, f"Native APK validation failed: {error}\n")

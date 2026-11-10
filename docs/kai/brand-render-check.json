@@ -1,0 +1,146 @@
+[
+  {
+    "file": "terabox_logo.png",
+    "background": "light",
+    "dp": 24,
+    "visibleShare": 0.806,
+    "aspect": 1,
+    "screenshot": "terabox_logo_light_24dp.png"
+  },
+  {
+    "file": "terabox_logo.png",
+    "background": "light",
+    "dp": 32,
+    "visibleShare": 0.804,
+    "aspect": 1,
+    "screenshot": "terabox_logo_light_32dp.png"
+  },
+  {
+    "file": "terabox_logo.png",
+    "background": "light",
+    "dp": 48,
+    "visibleShare": 0.786,
+    "aspect": 1,
+    "screenshot": "terabox_logo_light_48dp.png"
+  },
+  {
+    "file": "terabox_logo.png",
+    "background": "dark",
+    "dp": 24,
+    "visibleShare": 0.96,
+    "aspect": 1,
+    "screenshot": "terabox_logo_dark_24dp.png"
+  },
+  {
+    "file": "terabox_logo.png",
+    "background": "dark",
+    "dp": 32,
+    "visibleShare": 0.958,
+    "aspect": 1,
+    "screenshot": "terabox_logo_dark_32dp.png"
+  },
+  {
+    "file": "terabox_logo.png",
+    "background": "dark",
+    "dp": 48,
+    "visibleShare": 0.955,
+    "aspect": 1,
+    "screenshot": "terabox_logo_dark_48dp.png"
+  },
+  {
+    "file": "google_drive_logo.png",
+    "background": "light",
+    "dp": 24,
+    "visibleShare": 0.484,
+    "aspect": 1,
+    "screenshot": "google_drive_logo_light_24dp.png"
+  },
+  {
+    "file": "google_drive_logo.png",
+    "background": "light",
+    "dp": 32,
+    "visibleShare": 0.475,
+    "aspect": 1,
+    "screenshot": "google_drive_logo_light_32dp.png"
+  },
+  {
+    "file": "google_drive_logo.png",
+    "background": "light",
+    "dp": 48,
+    "visibleShare": 0.473,
+    "aspect": 1,
+    "screenshot": "google_drive_logo_light_48dp.png"
+  },
+  {
+    "file": "google_drive_logo.png",
+    "background": "dark",
+    "dp": 24,
+    "visibleShare": 0.481,
+    "aspect": 1,
+    "screenshot": "google_drive_logo_dark_24dp.png"
+  },
+  {
+    "file": "google_drive_logo.png",
+    "background": "dark",
+    "dp": 32,
+    "visibleShare": 0.476,
+    "aspect": 1,
+    "screenshot": "google_drive_logo_dark_32dp.png"
+  },
+  {
+    "file": "google_drive_logo.png",
+    "background": "dark",
+    "dp": 48,
+    "visibleShare": 0.472,
+    "aspect": 1,
+    "screenshot": "google_drive_logo_dark_48dp.png"
+  },
+  {
+    "file": "anilist_logo.png",
+    "background": "light",
+    "dp": 24,
+    "visibleShare": 0.868,
+    "aspect": 1,
+    "screenshot": "anilist_logo_light_24dp.png"
+  },
+  {
+    "file": "anilist_logo.png",
+    "background": "light",
+    "dp": 32,
+    "visibleShare": 0.862,
+    "aspect": 1,
+    "screenshot": "anilist_logo_light_32dp.png"
+  },
+  {
+    "file": "anilist_logo.png",
+    "background": "light",
+    "dp": 48,
+    "visibleShare": 0.863,
+    "aspect": 1,
+    "screenshot": "anilist_logo_light_48dp.png"
+  },
+  {
+    "file": "anilist_logo.png",
+    "background": "dark",
+    "dp": 24,
+    "visibleShare": 0.242,
+    "aspect": 1,
+    "screenshot": "anilist_logo_dark_24dp.png"
+  },
+  {
+    "file": "anilist_logo.png",
+    "background": "dark",
+    "dp": 32,
+    "visibleShare": 0.234,
+    "aspect": 1,
+    "screenshot": "anilist_logo_dark_32dp.png"
+  },
+  {
+    "file": "anilist_logo.png",
+    "background": "dark",
+    "dp": 48,
+    "visibleShare": 0.229,
+    "aspect": 1,
+    "screenshot": "anilist_logo_dark_48dp.png"
+  }
+]

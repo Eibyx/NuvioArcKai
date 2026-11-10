@@ -224,20 +224,27 @@ internal fun PlayerRuntimeController.skipActiveInterval(): Boolean {
 
 internal fun PlayerRuntimeController.skipInterval(interval: SkipInterval): Boolean {
     if (interval.type == "post-credits") return false
-    val duration = currentPlaybackDurationMs().takeIf { it > 0 } ?: Long.MAX_VALUE
     val postCredits = interval.followingPostCreditsScene(skipIntervals, currentPlaybackDurationMs())
     val targetTime = postCredits?.startTime ?: interval.endTime
-    val seekMs = if (targetTime == Double.MAX_VALUE) {
-        duration
-    } else {
-        (targetTime * 1000).toLong()
-    }
-    val seekParameters = if (postCredits != null || interval.type == "movie-credits") {
+    // Land just past the end: NEXT_SYNC could overshoot by a whole GOP, and mpv's keyframe seek could land inside
+    // the segment again. Exact, or a keyframe at most 300 ms after the target.
+    val plan = com.nuvio.tv.kai.segments.SkipSeekTarget.plan(
+        targetSec = targetTime,
+        durationMs = currentPlaybackDurationMs(),
+        toPostCredits = postCredits != null,
+        movieCredits = interval.type == "movie-credits"
+    )
+    val seekParameters = if (plan.exactOnly) {
         SeekParameters.EXACT
-    } else SeekParameters.NEXT_SYNC
-    val requested = seekMs.coerceAtMost(duration)
-    val target = requested
-    seekPlaybackTo(target, seekParameters)
+    } else SeekParameters(0L, com.nuvio.tv.kai.segments.SkipSeekTarget.TOLERANCE_AFTER_US)
+    com.nuvio.tv.kai.segments.ArcSkipDiag.skip(this, interval, plan.positionMs)
+    seekPlaybackTo(plan.positionMs, seekParameters, exact = true)
+    if (com.nuvio.tv.kai.segments.ArcSkipDiag.enabled()) {
+        scope.launch {
+            kotlinx.coroutines.delay(1_500L)
+            com.nuvio.tv.kai.segments.ArcSkipDiag.reached(skipDiagEngine(), plan.positionMs, currentPlaybackPositionMs() ?: -1L)
+        }
+    }
     scheduleProgressSyncAfterSeek()
     _uiState.update { it.copy(activeSkipInterval = null, skipIntervalDismissed = true) }
     return true

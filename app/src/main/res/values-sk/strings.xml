@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Pokračovať v sledovaní</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmy</string>
@@ -1497,6 +1497,12 @@
     <string name="skip_ending">Preskočiť záver</string>
     <string name="skip_recap">Preskočiť rekapituláciu</string>
     <string name="skip_generic">Preskočiť</string>
+    <string name="skip_segment_opening">Preskočiť intro</string>
+    <string name="skip_segment_intro">Preskočiť intro</string>
+    <string name="skip_segment_ending">Preskočiť záver</string>
+    <string name="skip_segment_outro">Preskočiť záver</string>
+    <string name="skip_segment_credits">Preskočiť titulky</string>
+    <string name="skip_segment_recap">Preskočiť rekapituláciu</string>
     <string name="display_mode_refresh">Obnovovacia frekvencia</string>
     <string name="display_mode_resolution">Rozlíšenie</string>
 

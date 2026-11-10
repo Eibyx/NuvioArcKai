@@ -1,6 +1,7 @@
 package com.nuvio.tv.data.mediaserver
 
 import android.util.Log
+import com.nuvio.tv.core.cloudstorage.CloudStreams
 import com.nuvio.tv.data.mediaserver.mediabrowser.formatBitrate
 import com.nuvio.tv.domain.model.Stream
 import com.nuvio.tv.domain.model.StreamBehaviorHints
@@ -25,12 +26,15 @@ class ServerStreamSource(
 @Singleton
 class ServerStreams @Inject constructor(
     private val repository: ServerRepository,
-    private val matcher: ServerMatcher
+    private val matcher: ServerMatcher,
+    /** NuvioArcKai cloud storage accounts; their sources are listed after the media servers'. */
+    private val cloudStreams: CloudStreams? = null
 ) {
+
     val revision: Int
         get() = repository.uiState.value.let {
             4 * it.revision + (if (it.fullSourceText) 1 else 0) + (if (it.showServerLogos) 2 else 0)
-        }
+        } * 31 + (cloudStreams?.revision ?: 0)
 
     fun isNativeRequest(videoId: String): Boolean = ServerItemRef.isServerId(videoId)
 
@@ -52,8 +56,10 @@ class ServerStreams @Inject constructor(
             val connection = repository.connection(ref.connectionId) ?: return emptyList()
             return listOf(source(connection, preferred = true) { matchedItems = 1; candidates(ref) })
         }
-        val connections = repository.enabledConnections().ifEmpty { return emptyList() }
-        val request = matcher.request(type, videoId, season, episode) ?: return emptyList()
+        // Cloud storage accounts (Google Drive, TeraBox): empty when none is connected; also offered with no server.
+        val cloud = cloudSources(type, videoId, season, episode)
+        val connections = repository.enabledConnections().ifEmpty { return cloud }
+        val request = matcher.request(type, videoId, season, episode) ?: return cloud
         return connections
             .filter { matcher.supports(it, request.kind) }
             .map { connection ->
@@ -70,7 +76,18 @@ class ServerStreams @Inject constructor(
                         load()
                     }
                 }
+            } + cloud
+    }
+
+    /** Cloud sources, with their logo only when server logos are shown, as for media servers. */
+    private fun cloudSources(type: String, videoId: String, season: Int?, episode: Int?): List<ServerStreamSource> {
+        val sources = cloudStreams?.sources(type, videoId, season, episode).orEmpty()
+        if (sources.isEmpty() || repository.uiState.value.showServerLogos) return sources
+        return sources.map { source ->
+            ServerStreamSource(source.name, source.preferred) {
+                source.load().map { it.copy(addonLogo = null) }.also { matchedItems = source.matchedItems }
             }
+        }
     }
 
     /** One log line for each connected server that a stream search for this title leaves out. */

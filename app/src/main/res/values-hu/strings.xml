@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Megtekintés folytatása</string>
     <string name="type_movie">Film</string>
     <string name="type_movies">Filmek</string>
@@ -1980,6 +1980,12 @@
     <string name="skip_ending">Stáblista átugrása</string>
     <string name="skip_recap">Összefoglaló átugrása</string>
     <string name="skip_generic">Átugrás</string>
+    <string name="skip_segment_opening">Intro átugrása</string>
+    <string name="skip_segment_intro">Intro átugrása</string>
+    <string name="skip_segment_ending">Stáblista átugrása</string>
+    <string name="skip_segment_outro">Stáblista átugrása</string>
+    <string name="skip_segment_credits">Stáblista átugrása</string>
+    <string name="skip_segment_recap">Összefoglaló átugrása</string>
     <string name="display_mode_refresh">Frissítés</string>
     <string name="display_mode_resolution">Felbontás</string>
 

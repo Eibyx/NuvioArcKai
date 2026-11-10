@@ -102,7 +102,12 @@ internal fun ContentDiscoverySettingsContent(
                 initialFocusRequester = serversRequester,
                 onOpenServer = { openPage(it) }
             )
-            else -> MediaServerSettingsContent(
+            // NuvioArcKai: a Google Drive or TeraBox account opens like a media server and comes back to the list.
+            else -> if (page.startsWith(CLOUD_ACCOUNT_PAGE_PREFIX)) CloudAccountSettingsContent(
+                accountId = page.removePrefix(CLOUD_ACCOUNT_PAGE_PREFIX),
+                initialFocusRequester = serverRequester,
+                onBack = { openPage(SERVERS_PAGE) }
+            ) else MediaServerSettingsContent(
                 connectionId = page,
                 initialFocusRequester = serverRequester,
                 onOpenServer = { openPage(it) },

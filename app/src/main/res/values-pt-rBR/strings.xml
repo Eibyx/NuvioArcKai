@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">Continuar Assistindo</string>
     <string name="type_movie">Filme</string>
     <string name="type_movies">Filmes</string>
@@ -2017,6 +2017,12 @@
     <string name="skip_ending">Pular Créditos</string>
     <string name="skip_recap">Pular Resumo</string>
     <string name="skip_generic">Pular</string>
+    <string name="skip_segment_opening">Pular Abertura</string>
+    <string name="skip_segment_intro">Pular Abertura</string>
+    <string name="skip_segment_ending">Pular Créditos</string>
+    <string name="skip_segment_outro">Pular Créditos</string>
+    <string name="skip_segment_credits">Pular créditos</string>
+    <string name="skip_segment_recap">Pular Resumo</string>
     <string name="display_mode_refresh">Taxa de atualização</string>
     <string name="display_mode_resolution">Resolução</string>
 

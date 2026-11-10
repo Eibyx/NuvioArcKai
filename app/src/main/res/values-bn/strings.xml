@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="tv_channel_continue_watching">দেখা চালিয়ে যান</string>
     <string name="type_movie">মুভি</string>
     <string name="type_movies">সিনেমা</string>
@@ -1905,6 +1905,12 @@
     <string name="skip_ending">এন্ডিং এড়িয়ে যান</string>
     <string name="skip_recap">রিক্যাপ স্কিপ করুন</string>
     <string name="skip_generic">স্কিপ</string>
+    <string name="skip_segment_opening">ইন্ট্রো স্কিপ করুন</string>
+    <string name="skip_segment_intro">ইন্ট্রো স্কিপ করুন</string>
+    <string name="skip_segment_ending">এন্ডিং এড়িয়ে যান</string>
+    <string name="skip_segment_outro">এন্ডিং এড়িয়ে যান</string>
+    <string name="skip_segment_credits">ক্রেডিট স্কিপ করুন</string>
+    <string name="skip_segment_recap">রিক্যাপ স্কিপ করুন</string>
     <string name="display_mode_refresh">রিফ্রেশ</string>
     <string name="display_mode_resolution">রেজোলিউশন</string>
     <string name="search_keyboard_hint">সার্চ করতে কীবোর্ডে Done চাপুন</string>

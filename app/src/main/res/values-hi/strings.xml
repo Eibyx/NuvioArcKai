@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
     <string name="type_movie">फ़िल्म</string>
     <string name="type_series">सीरीज़</string>
     <string name="type_unknown">अज्ञात</string>
@@ -774,6 +774,12 @@
     <string name="skip_ending">एंडिंग स्किप करें</string>
     <string name="skip_recap">रिकैप स्किप करें</string>
     <string name="skip_generic">स्किप करें</string>
+    <string name="skip_segment_opening">इंट्रो स्किप करें</string>
+    <string name="skip_segment_intro">इंट्रो स्किप करें</string>
+    <string name="skip_segment_ending">एंडिंग स्किप करें</string>
+    <string name="skip_segment_outro">एंडिंग स्किप करें</string>
+    <string name="skip_segment_credits">एंडिंग स्किप करें</string>
+    <string name="skip_segment_recap">रिकैप स्किप करें</string>
     <string name="display_mode_refresh">रिफ्रेश</string>
     <string name="display_mode_resolution">रिज़ॉल्यूशन</string>
 

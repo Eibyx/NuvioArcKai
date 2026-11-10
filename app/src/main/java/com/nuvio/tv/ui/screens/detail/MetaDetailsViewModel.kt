@@ -79,6 +79,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
@@ -155,7 +156,9 @@ class MetaDetailsViewModel @Inject constructor(
     private val profileManager: com.nuvio.tv.core.profile.ProfileManager,
     private val streamBadgeSettingsDataStore: com.nuvio.tv.data.local.StreamBadgeSettingsDataStore,
     private val serverEpisodeStates: com.nuvio.tv.data.mediaserver.ServerEpisodeStates,
-    private val addonRepository: com.nuvio.tv.domain.repository.AddonRepository
+    private val addonRepository: com.nuvio.tv.domain.repository.AddonRepository,
+    /** NuvioArcKai: AniList's imported watched prefix, a layer apart from Nuvio's own history. */
+    private val aniList: com.nuvio.tv.data.anilist.AniListRepository? = null
 ) : ViewModel() {
     private val traceSetup = com.nuvio.tv.core.performance.DetailEntryTrace.mark("viewmodel_setup")
     private val itemId: String = savedStateHandle["itemId"] ?: ""
@@ -870,6 +873,14 @@ class MetaDetailsViewModel @Inject constructor(
     }
 
     private fun observeWatchedEpisodes() {
+        if (aniList != null) viewModelScope.launch {
+            combine(
+                _uiState.map { it.meta }.distinctUntilChangedBy { it?.let { meta -> meta.id to meta.videos } },
+                aniList.state.map { it.connected }.distinctUntilChanged()
+            ) { meta, connected -> meta.takeIf { connected } }.collectLatest { meta ->
+                if (meta != null) aniList.refreshTitle(meta)
+            }
+        }
         if (itemType.lowercase() == "movie") return
         viewModelScope.launch {
             _effectiveContentId.flatMapLatest { cid ->
@@ -877,7 +888,8 @@ class MetaDetailsViewModel @Inject constructor(
                     watchedItemsPreferences.getWatchedEpisodesForContent(cid),
                     watchProgressRepository.getAllEpisodeProgress(cid),
                     _uiState.map { it.meta?.videos }.distinctUntilChanged(),
-                ) { localWatched, progressMap, videos ->
+                    aniList?.overlays ?: kotlinx.coroutines.flow.flowOf(emptyMap()),
+                ) { localWatched, progressMap, videos, aniListOverlays ->
                     val fromProgress = progressMap.filterValues { it.isCompleted() }.keys
                     val merged = (localWatched + fromProgress).toMutableSet()
                     // Remove optimistic unmarks — episodes the user just batch-unmarked
@@ -898,6 +910,9 @@ class MetaDetailsViewModel @Inject constructor(
                         )
                         if (isWatched) merged += key else merged -= key
                     }
+                    // Keep AniList's imported prefix separate from locally recorded history: it never calls
+                    // markAsCompleted, Trakt, Simkl, MDBList or Supabase.
+                    merged += aniListOverlays[cid.lowercase()]?.watched.orEmpty()
                     merged as Set<Pair<Int, Int>>
                 }
             }

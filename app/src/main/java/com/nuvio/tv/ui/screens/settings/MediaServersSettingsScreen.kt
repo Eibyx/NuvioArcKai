@@ -42,14 +42,22 @@ import com.nuvio.tv.data.mediaserver.plex.PlexProvider
 import com.nuvio.tv.data.mediaserver.silo.SiloNativeProvider
 import com.nuvio.tv.data.mediaserver.silo.SiloProvider
 import com.nuvio.tv.ui.theme.NuvioTheme
+import com.nuvio.tv.core.cloudstorage.CloudProviderKind
+import com.nuvio.tv.core.cloudstorage.CloudSetupMode
+
+/** Page key of a cloud storage account in Content discovery's navigation (NuvioArcKai). */
+internal const val CLOUD_ACCOUNT_PAGE_PREFIX = "kai-cloud-account:"
 
 @Composable
 internal fun MediaServersSettingsContent(
     initialFocusRequester: FocusRequester?,
     onOpenServer: (String) -> Unit,
-    viewModel: MediaServersViewModel = hiltViewModel()
+    viewModel: MediaServersViewModel = hiltViewModel(),
+    cloudViewModel: CloudStorageViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val cloudState by cloudViewModel.uiState.collectAsStateWithLifecycle()
+    val cloudAccounts = cloudState.accounts
     var signIn by remember { mutableStateOf<ServerSignInRequest?>(null) }
     var siloSetup by remember { mutableStateOf(false) }
     var plexSignIn by remember { mutableStateOf(false) }
@@ -77,7 +85,7 @@ internal fun MediaServersSettingsContent(
                     verticalArrangement = Arrangement.spacedBy(if (isV2Settings()) 4.dp else 10.dp)
                 ) {
                     item(key = "servers_label") { ServerSectionLabel(stringResource(R.string.servers_section_connected)) }
-                    if (connections.isEmpty()) {
+                    if (connections.isEmpty() && cloudAccounts.isEmpty()) {
                         item(key = "servers_empty") {
                             Text(
                                 text = stringResource(R.string.servers_empty),
@@ -101,6 +109,17 @@ internal fun MediaServersSettingsContent(
                             modifier = if (connection == connections.first()) focusModifier else Modifier
                         )
                     }
+                    // NuvioArcKai: Google Drive and TeraBox accounts, below the media servers.
+                    items(cloudAccounts, key = { "cloud_${it.id}" }) { account ->
+                        SettingsActionRow(
+                            title = account.name,
+                            subtitle = listOf(account.kind.displayName, account.statusText(syncing = account.id in cloudState.syncing))
+                                .joinToString(" · "),
+                            onClick = { onOpenServer(CLOUD_ACCOUNT_PAGE_PREFIX + account.id) },
+                            leadingRawIconRes = serverLogoRes(account.kind.id),
+                            modifier = if (connections.isEmpty() && account == cloudAccounts.first()) focusModifier else Modifier
+                        )
+                    }
                     item(key = "servers_add_label") { ServerSectionLabel(stringResource(R.string.servers_section_add)) }
                     items(viewModel.addableProviders, key = { "provider_${it.id}" }) { provider ->
                         SettingsActionRow(
@@ -119,7 +138,18 @@ internal fun MediaServersSettingsContent(
                             },
                             leadingIcon = Icons.Default.Dns.takeIf { serverLogoRes(provider.id) == null },
                             leadingRawIconRes = serverLogoRes(provider.id),
-                            modifier = if (connections.isEmpty() && provider == viewModel.addableProviders.first()) focusModifier else Modifier
+                            modifier = if (connections.isEmpty() && cloudAccounts.isEmpty() && provider == viewModel.addableProviders.first()) focusModifier else Modifier
+                        )
+                    }
+                    items(listOf(CloudProviderKind.TERABOX, CloudProviderKind.GOOGLE_DRIVE), key = { "cloud_add_${it.id}" }) { kind ->
+                        SettingsActionRow(
+                            title = kind.displayName,
+                            subtitle = stringResource(
+                                if (kind == CloudProviderKind.TERABOX) R.string.kai_cloud_add_terabox_description
+                                else R.string.kai_cloud_add_google_drive_description
+                            ),
+                            onClick = { cloudViewModel.startSetup(CloudSetupMode.ACCOUNTS) },
+                            leadingRawIconRes = serverLogoRes(kind.id)
                         )
                     }
                     item(key = "servers_display_label") { ServerSectionLabel(stringResource(R.string.settings_stream_display_section)) }
@@ -163,6 +193,9 @@ internal fun MediaServersSettingsContent(
             }
         }
     }
+
+    CloudSetupOverlay(cloudViewModel)
+    CloudErrorToast(cloudViewModel)
 
     if (confirmRemoveFromAccount) {
         NuvioDialog(

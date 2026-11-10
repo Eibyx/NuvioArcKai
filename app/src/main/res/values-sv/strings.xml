@@ -799,6 +799,12 @@
     <string name="skip_ending">Hoppa över avslutning</string>
     <string name="skip_recap">Hoppa över sammanfattning</string>
     <string name="skip_generic">Hoppa över</string>
+    <string name="skip_segment_opening">Hoppa över intro</string>
+    <string name="skip_segment_intro">Hoppa över intro</string>
+    <string name="skip_segment_ending">Hoppa över avslutning</string>
+    <string name="skip_segment_outro">Hoppa över avslutning</string>
+    <string name="skip_segment_credits">Hoppa över avslutning</string>
+    <string name="skip_segment_recap">Hoppa över sammanfattning</string>
     <string name="display_mode_refresh">Uppdateringsfrekvens</string>
     <string name="display_mode_resolution">Upplösning</string>
 
@@ -1236,7 +1242,7 @@
     <string name="playback_player_auto_desc">ExoPlayer för filmer och serier · MPV för anime</string>
 
     <!-- App name -->
-    <string name="app_name">Nuvio Arc</string>
+    <string name="app_name">Nuvio Arc Kai</string>
 
     <!-- WebConfigServers -->
     <string name="web_manage_addons_title">Hantera tillägg</string>

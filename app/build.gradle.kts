@@ -106,7 +106,12 @@ fun truthy(value: String?): Boolean {
 }
 
 val buildingAppBundle = gradle.startParameter.taskNames.any { it.contains("bundle", ignoreCase = true) }
-val useDebugReleaseSigning = env("CI_USE_DEBUG_SIGNING").equals("true", ignoreCase = true)
+// NuvioArcKai ships one armeabi-v7a APK and nothing else: no AAB, no universal APK, no other ABI.
+val kaiRequestedBundleTasks = gradle.startParameter.taskNames.filter { Regex("(^|:)bundle[A-Z]").containsMatchIn(it) }
+check(kaiRequestedBundleTasks.isEmpty()) {
+    "NuvioArcKai does not build app bundles (requested: ${kaiRequestedBundleTasks.joinToString()}). Build :app:assembleFullRelease for the armeabi-v7a APK."
+}
+val kaiAllowedAbis = setOf("armeabi-v7a")
 val useLocalFfmpegDecoder = truthy(
     providers.gradleProperty("useLocalFfmpegDecoder").orNull
         ?: env("USE_LOCAL_FFMPEG_DECODER")
@@ -114,12 +119,21 @@ val useLocalFfmpegDecoder = truthy(
 )
 val releaseStoreFilePath = env("NUVIO_RELEASE_STORE_FILE")
     ?: localProperties.getProperty("NUVIO_RELEASE_STORE_FILE")
-val releaseKeyAliasValue = env("NUVIO_RELEASE_KEY_ALIAS")
-    ?: localProperties.getProperty("NUVIO_RELEASE_KEY_ALIAS", "nuviotv")
-val releaseKeyPasswordValue = env("NUVIO_RELEASE_KEY_PASSWORD")
-    ?: localProperties.getProperty("NUVIO_RELEASE_KEY_PASSWORD", "815787")
-val releaseStorePasswordValue = env("NUVIO_RELEASE_STORE_PASSWORD")
-    ?: localProperties.getProperty("NUVIO_RELEASE_STORE_PASSWORD", "815787")
+// No defaults: a release without the Kai keystore must fail, never be signed with a guessed or debug key.
+val releaseKeyAliasValue = env("NUVIO_RELEASE_KEY_ALIAS")?.takeIf { it.isNotBlank() }
+    ?: localProperties.getProperty("NUVIO_RELEASE_KEY_ALIAS")?.takeIf { it.isNotBlank() }
+val releaseKeyPasswordValue = env("NUVIO_RELEASE_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
+    ?: localProperties.getProperty("NUVIO_RELEASE_KEY_PASSWORD")?.takeIf { it.isNotBlank() }
+val releaseStorePasswordValue = env("NUVIO_RELEASE_STORE_PASSWORD")?.takeIf { it.isNotBlank() }
+    ?: localProperties.getProperty("NUVIO_RELEASE_STORE_PASSWORD")?.takeIf { it.isNotBlank() }
+val kaiReleaseSigningProblems = buildList {
+    val storeFile = releaseStoreFilePath?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
+    if (storeFile == null) add("NUVIO_RELEASE_STORE_FILE is not set")
+    else if (!storeFile.isFile) add("NUVIO_RELEASE_STORE_FILE does not point to a file")
+    if (releaseKeyAliasValue == null) add("NUVIO_RELEASE_KEY_ALIAS is not set")
+    if (releaseKeyPasswordValue == null) add("NUVIO_RELEASE_KEY_PASSWORD is not set")
+    if (releaseStorePasswordValue == null) add("NUVIO_RELEASE_STORE_PASSWORD is not set")
+}
 
 android {
     namespace = "com.nuvio.tv"
@@ -127,12 +141,13 @@ android {
     ndkVersion = "29.0.14206865"
 
     defaultConfig {
-        applicationId = "com.nuvio.tv.test"
+        applicationId = "com.eibyx.nuvioarckai"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 24
         targetSdk = 36
-        versionCode = providers.gradleProperty("arcVersionCode").orNull?.toIntOrNull() ?: 1568
-        versionName = providers.gradleProperty("arcVersionName").orNull ?: "1.1.0-nt.9.2"
+        // Kai has its own version line on top of Arc's; the code only ever grows.
+        versionCode = providers.gradleProperty("arcVersionCode").orNull?.toIntOrNull() ?: 1
+        versionName = providers.gradleProperty("arcVersionName").orNull ?: "1.1.0-nt.stable-kai.1"
         // Optional -PnuvioAppIdSuffix=.name installs a local test build next to the main app.
         providers.gradleProperty("nuvioAppIdSuffix").orNull?.takeIf { it.isNotBlank() }?.let {
             applicationIdSuffix = it
@@ -151,6 +166,11 @@ android {
         buildConfigField("String", "SIMKL_APP_NAME", buildConfigString(resolveProperty(devProperties, localProperties, "SIMKL_APP_NAME", "nuvio")))
         buildConfigField("String", "MDBLIST_CLIENT_ID", buildConfigString(resolveProperty(devProperties, localProperties, "MDBLIST_CLIENT_ID")))
         buildConfigField("String", "WETRAKR_CLIENT_ID", buildConfigString(resolveProperty(devProperties, localProperties, "WETRAKR_CLIENT_ID")))
+        // NuvioArcKai AniList: own public client registered with https://anilist.co/api/v2/oauth/pin (QR + PIN sign-in).
+        // Blank hides the QR option; the TV browser sign-in with NuvioMobileKai's client 53329 is always available.
+        // ANILIST_REDIRECT_URI is only for the optional HTTPS relay (LiteOG's callback page); leave it blank otherwise.
+        buildConfigField("String", "ANILIST_CLIENT_ID", buildConfigString(resolveProperty(devProperties, localProperties, "ANILIST_CLIENT_ID")))
+        buildConfigField("String", "ANILIST_REDIRECT_URI", buildConfigString(resolveProperty(devProperties, localProperties, "ANILIST_REDIRECT_URI")))
         buildConfigField("String", "TMDB_API_KEY", "\"${localProperties.getProperty("TMDB_API_KEY", "")}\"")
         buildConfigField("String", "TVDB_API_KEY", "\"${localProperties.getProperty("TVDB_API_KEY", "")}\"")
         buildConfigField("String", "TV_LOGIN_WEB_BASE_URL", "\"${localProperties.getProperty("TV_LOGIN_WEB_BASE_URL", "https://nuvio.tv/tv-login")}\"")
@@ -190,9 +210,10 @@ android {
         buildConfigField("String", "SPONSOR_NAMES", buildConfigString(sponsorNames))
 
         // One beta stream for this fork, including GitHub prereleases.
-        buildConfigField("String", "GITHUB_OWNER", "\"ysosrs123\"")
-        buildConfigField("String", "GITHUB_REPO", "\"NuvioTV-Fork\"")
-        buildConfigField("String", "GITHUB_REPO_NEW_NAME", "\"Nuvio-Arc\"")
+        // NuvioArcKai updates only from its own releases, never from Arc's.
+        buildConfigField("String", "GITHUB_OWNER", "\"Eibyx\"")
+        buildConfigField("String", "GITHUB_REPO", "\"NuvioArcKai\"")
+        buildConfigField("String", "GITHUB_REPO_NEW_NAME", "\"NuvioArcKai\"")
         buildConfigField("boolean", "UPDATE_CHECK_ENABLED", "true")
     }
 
@@ -218,10 +239,12 @@ android {
 
     signingConfigs {
         create("release") {
-            keyAlias = releaseKeyAliasValue
-            keyPassword = releaseKeyPasswordValue
-            storeFile = releaseStoreFilePath?.let(::file) ?: file("../nuviotv.jks")
-            storePassword = releaseStorePasswordValue
+            if (kaiReleaseSigningProblems.isEmpty()) {
+                keyAlias = releaseKeyAliasValue
+                keyPassword = releaseKeyPasswordValue
+                storeFile = rootProject.file(releaseStoreFilePath!!)
+                storePassword = releaseStorePasswordValue
+            }
         }
     }
 
@@ -260,11 +283,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = if (useDebugReleaseSigning) {
-                signingConfigs.getByName("debug")
-            } else {
-                signingConfigs.getByName("release")
-            }
+            // Kai never signs a release with the debug key (CI_USE_DEBUG_SIGNING is ignored here).
+            signingConfig = signingConfigs.getByName("release")
 
             buildConfigField("boolean", "IS_DEBUG_BUILD", "false")
 
@@ -308,7 +328,7 @@ android {
         abi {
             isEnable = !buildingAppBundle
             reset()
-            include("armeabi-v7a", "arm64-v8a")
+            include(*kaiAllowedAbis.toTypedArray())
             isUniversalApk = false
         }
     }
@@ -366,6 +386,17 @@ android {
 }
 
 androidComponents {
+    // Every APK output must be a single armeabi-v7a split.
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            val abis = output.filters
+                .filter { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }
+                .map { it.identifier }
+            check(abis.isNotEmpty() && abis.all { it in kaiAllowedAbis }) {
+                "NuvioArcKai only packages ${kaiAllowedAbis.joinToString()}; variant ${variant.name} has ABI outputs $abis"
+            }
+        }
+    }
     // Only the full flavor ships the in-app updater.
     onVariants(selector().withFlavor("distribution" to "full")) { variant ->
         // AGP makes no ART profile for debuggable variants, and ART ignores .dm files for them anyway.
@@ -379,6 +410,17 @@ androidComponents {
             })
         }
         variant.sources.assets?.addGeneratedSourceDirectory(embedTask, EmbedUpdateDexMetadataTask::outputDirectory)
+    }
+}
+
+// A release APK must be signed with the Kai keystore; fail before packaging instead of signing with anything else.
+tasks.matching { Regex("^(validateSigning|package|assemble|sign)\\w*Release$").matches(it.name) }.configureEach {
+    doFirst {
+        check(kaiReleaseSigningProblems.isEmpty()) {
+            "NuvioArcKai release signing is not configured: ${kaiReleaseSigningProblems.joinToString("; ")}. " +
+                "Set NUVIO_RELEASE_STORE_FILE, NUVIO_RELEASE_KEY_ALIAS, NUVIO_RELEASE_KEY_PASSWORD and " +
+                "NUVIO_RELEASE_STORE_PASSWORD (environment or untracked local.properties)."
+        }
     }
 }
 
@@ -597,6 +639,8 @@ dependencies {
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     testImplementation("junit:junit:4.13.2")
+    // NuvioArcKai: the cloud storage and AniList tests ported from NuvioTvLiteOG use kotlin.test (test classpath only).
+    testImplementation(kotlin("test"))
     testImplementation("org.json:json:20250517")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("io.mockk:mockk:1.13.12")

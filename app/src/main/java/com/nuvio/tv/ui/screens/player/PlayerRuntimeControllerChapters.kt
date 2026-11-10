@@ -127,6 +127,7 @@ internal fun PlayerRuntimeController.jumpChapter(forward: Boolean) {
 private fun PlayerRuntimeController.updateSkipDetectionChapters(chapters: List<PlayerChapter>) {
     if (chapters.isEmpty() || chapters == skipDetectionChapters) return
     skipDetectionChapters = chapters
+    com.nuvio.tv.kai.segments.ArcSkipDiag.chapters(skipDiagEngine(), chapters)
     skipChaptersComputedForDuration = 0L
     if (skipIntroEnabled) {
         tryComputeChapterSkipIntervals()
