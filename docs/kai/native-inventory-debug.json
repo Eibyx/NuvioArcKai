@@ -1,0 +1,132 @@
+{
+  "apk": "kai app-full-armeabi-v7a-debug.apk (assembleFullDebug, debug-signed, NOT a release)",
+  "sha256": "66e6452fe40ac5c6fc58b24fac99d24f06d040b2cb17b06a481e13c1d3f02beb",
+  "abi": "armeabi-v7a",
+  "elf": "ELFCLASS32, little-endian, e_machine 40 (ARM) for all",
+  "doviRealLink": true,
+  "libraries": [
+    {
+      "name": "libaml_fel.so",
+      "size": 171424,
+      "sha256": "aa6a5cfd453b5ff02c87a0c4c5e4bc9b4b61fbe23b180301a64dd932fefdbc8a"
+    },
+    {
+      "name": "libandroidx.graphics.path.so",
+      "size": 7252,
+      "sha256": "41399eba6fc2a60f6f14642375c1824f3cf25eb8fec7397d753730a3ceda3e2b"
+    },
+    {
+      "name": "libasskt.so",
+      "size": 2752212,
+      "sha256": "5a4a3ee0e36a57ce1b6459219fbf9b300382d06a6fb02a3670ff198711baa2b0"
+    },
+    {
+      "name": "libavcodec.so",
+      "size": 11639864,
+      "sha256": "73c23e5bc9b4b1a2ce69716774c2d08757adcd1f9b3f9fcaea063eaf7715a927"
+    },
+    {
+      "name": "libavdevice.so",
+      "size": 7152,
+      "sha256": "9acf4a418b7ebac5225c2395c261d39877a023d61534764dba89c882bb878f08"
+    },
+    {
+      "name": "libavfilter.so",
+      "size": 3453344,
+      "sha256": "40b1bf450ecedee6c9f7f379784c5a8c41747305b89097610e8ee10db3755538"
+    },
+    {
+      "name": "libavformat.so",
+      "size": 3208980,
+      "sha256": "63292e5075499bab17473a557eee02327fb212f9b334a22eea2a67c0e2e2b688"
+    },
+    {
+      "name": "libavutil.so",
+      "size": 649576,
+      "sha256": "2ba9c7a68efa1d89d4574cbe84373987398590c7e5946ad4674fc140f7186bf2"
+    },
+    {
+      "name": "libc++_shared.so",
+      "size": 963028,
+      "sha256": "af383654daf4cf0829615460419a180f84edd9d8bf51aa0f81ed0db811bf8491"
+    },
+    {
+      "name": "libconscrypt_jni.so",
+      "size": 1279936,
+      "sha256": "afc1b6b0773522a808b204d93a464194b41f790eb98e4dc0b344e0f6310d04ee"
+    },
+    {
+      "name": "libdatastore_shared_counter.so",
+      "size": 4416,
+      "sha256": "716c5d8d2cac8ca0edf65da8f139c7886b726ac79d542a14edeb94994ba6d3dc"
+    },
+    {
+      "name": "libdav1dJNI.so",
+      "size": 977992,
+      "sha256": "c783bf7fb070e57a5982f460de83daf8c6aabb2b2ed9041464f1666ae8a2a717"
+    },
+    {
+      "name": "libdovi_bridge.so",
+      "size": 1289436,
+      "sha256": "9aea42e3344f7bff31cea893bb6c4b9a1b7f666c882cb7c91f9f0fda7e3fce19"
+    },
+    {
+      "name": "libffmpegJNI.so",
+      "size": 2118752,
+      "sha256": "c09fef461a3ec6dd853d9cb9e669a707cb2eb223ff30747ba1834d89bcfe8eba"
+    },
+    {
+      "name": "libmedia3_exoplayer_jni.so",
+      "size": 5344,
+      "sha256": "07e724f8e8f6216b4e6d64a4a68c89fda54cb3615d9d8cf5cdc7af921ea0f71d"
+    },
+    {
+      "name": "libmediainfo.so",
+      "size": 7511480,
+      "sha256": "9037fcf556d7cf746408570f059100ecd66dd64c7a136842f7cb459e7f7e3043"
+    },
+    {
+      "name": "libmpv.so",
+      "size": 5243976,
+      "sha256": "a74de6d7933c220a1eb9eb8ccaa46e9b0f75c5ae2476d468b175bda4d6ad6fee"
+    },
+    {
+      "name": "libnuvio_engine.so",
+      "size": 7535892,
+      "sha256": "9236223345ae53e47700433148f1fdaea178528a45e9563d0f50345d749fae10"
+    },
+    {
+      "name": "libnuviothumb.so",
+      "size": 275756,
+      "sha256": "998d60f51bb3d09398b40e57d34047304b56c275dca187caa700842370196cd5"
+    },
+    {
+      "name": "libplayer.so",
+      "size": 24384,
+      "sha256": "d779b13a38a42ec0ccbea549a1799d4a35c7691cff875db40e75df64154efeb8"
+    },
+    {
+      "name": "libquickjs.so",
+      "size": 562676,
+      "sha256": "c9eb1d9af73f331d96dac4dfb9af924e123984705340e88e74bf7205ee801eb9"
+    },
+    {
+      "name": "libswresample.so",
+      "size": 90120,
+      "sha256": "a005eab83f7953a6dabeb31e004ff9b32cb09bdf2dd231c84d6967b0cabcdd14"
+    },
+    {
+      "name": "libswscale.so",
+      "size": 777612,
+      "sha256": "c5830462c8f81cf2ea49d1347dfe5977cf7f425b427ea0e8e46aa1f7d75e0deb"
+    },
+    {
+      "name": "libxml2.so",
+      "size": 1265516,
+      "sha256": "4e913cf8a3e4cd547584d01d0ba768fe900c2772772268b524abe9887a3120dd"
+    }
+  ],
+  "lostSinceBaseline": [],
+  "addedSinceBaseline": [],
+  "note": "libass.so is in neither the baseline nor the Kai debug APK (libasskt.so is); verify_native_apk.py --kai must be run on the signed release."
+}

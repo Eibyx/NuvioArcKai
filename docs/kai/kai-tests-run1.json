@@ -1,0 +1,7688 @@
+{
+ "total": {
+  "tests": 9089,
+  "passed": 9065,
+  "failed": 12,
+  "skipped": 12
+ },
+ "classes": {
+  "androidx.media3.datasource.AesCipherDataSourceTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "androidx.media3.datasource.DefaultDataSourceRoutingTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "androidx.media3.datasource.LocalhostZeroCopyDataSourceTest": {
+   "tests": 4,
+   "passed": 3,
+   "failed": 1,
+   "skipped": 0,
+   "failedCases": [
+    "testHttpError404"
+   ]
+  },
+  "androidx.media3.decoder.ffmpeg.FfmpegCodecNameTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "androidx.media3.exoplayer.upstream.DefaultAllocatorTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.AppRootRoutesTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.V2MainMenuLayoutTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.assessment.AssessmentBufferRulesTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.assessment.AssessmentDeviceFactsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.assessment.AssessmentInputsTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.assessment.AssessmentProfileOwnershipTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.assessment.DeviceAssessmentApplierTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.assessment.DeviceAssessmentWordingTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.AuthRefreshResponsePolicyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.AuthSessionValidationPolicyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.AuthValidationPublicationSchedulingTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.DeviceSessionRegistrationTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.EffectiveUserOwnershipSchedulingTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.EffectiveUserSdkAdmissionSchedulingTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.auth.SupabaseAuthSessionTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.backup.BackupCatalogTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.backup.BackupCryptoTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.backup.BackupFormatTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.backup.BackupRestoreChecksTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.backup.BackupSectionsTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.backup.BackupSignInOfferTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.build.IssueReportsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarAddonDatesTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarDateRulesTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarEntryMergeTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarFollowedSourceReaderTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarFollowedTitlesTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarHomeTest": {
+   "tests": 25,
+   "passed": 25,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarPostersTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarRateLimiterTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarRefreshPolicyTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarRefresherTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarReminderCenterTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarRemindersTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarSectionsTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarSettingsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarSourcePlanTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarStorageTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.CalendarTitleFetcherTest": {
+   "tests": 28,
+   "passed": 28,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.TmdbCalendarTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.TraktCalendarClientTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.TvMazeCalendarClientTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.calendar.TvdbCalendarClientTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.catalog.BuiltInCatalogsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.catalog.TrackerListRowsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudMatcherTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudReleaseParserTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudSetupHandlerTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudSidecarSubtitlesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudSourceLabelTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudSpecialsTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.CloudTitleAliasesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.GoogleDriveApiTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.GoogleDriveSignInTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.KaiCloudServerRefTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.LocalCloudStreamServerTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.PrivateAddressTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.RcloneConfigImportTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.cloudstorage.TeraBoxApiTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.AllDebridDirectDebridResolverTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridFileSelectionTest": {
+   "tests": 36,
+   "passed": 36,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridFileSelectorParityTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridFileSelectorReleaseTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridMagnetBuilderTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridProvidersTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridStreamFormatterTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridStreamPresentationTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DebridStreamTemplateEngineTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DirectDebridResolverClaimTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DirectDebridStreamFilterTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.DirectDebridStreamPreparerTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.LocalDebridAvailabilityServiceTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.RealDebridDirectDebridResolverTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.StreamBadgeRulesTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.StreamFactsSpeedTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.StreamTextSizeParserTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.ThumbnailCopyAddedTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.ThumbnailCopyDebridTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.TorboxDirectDebridResolverTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.debrid.TorboxFileSelectorTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.deeplink.DeepLinkParserTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.di.CredentialRedactionTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.formatcheck.FormatCheckLogicTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.health.AddonHealthMetaOutcomeTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.ArtworkMemoryCacheTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.HomePosterLanesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.HomePosterLoadingTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.HomePosterVisitCountersTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.ImageDiskCacheSizeTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.ImageFreshnessTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.MissingPosterMemoryTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.PictureDietTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.PictureMemoryReleaseTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.PosterRecoveryCoordinatorTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.SavedCopyFirstTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.SavedCopyOnErrorFetcherTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.image.StaleRevalidationTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.logging.ErrorRedactionTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.logging.LinkLogRedactionTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.logging.UrlRedactionTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.ArcDnsTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.BackendRateLimitTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.BoundedNetworkSpeedTestTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.BoundedParallelSpeedTestTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.BoundedStreamSpeedTestTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.DiagnosticNetworkMonitorTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.DiagnosticNetworkTrackerTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.DiagnosticPayloadBudgetTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.DiagnosticPlaybackGuardTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.DiagnosticRunCoordinatorTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.ImageConnectivityTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.NetworkConnectionKindTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.NoDelaySocketFactoryTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.RealtimeSocketFactoryTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.ReceiveWindowTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.ReportTransportTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.ServerTrustTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.SharedDiagnosticIsolationTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.network.StreamContentLengthProbeTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.Bip340Test": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.NostrPartyTransportTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.NuvioPartySessionTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.PartyBasicsTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.PartyFriendsTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.PartyLinkPolicyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.PartyPlayerRuleTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.PartySessionTest": {
+   "tests": 50,
+   "passed": 50,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.party.nuvio.PartySyncTest": {
+   "tests": 33,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.performance.ArtCompileStatusTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.performance.ThermalHeadroomTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.Ac3EncoderFlushTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.Ac3TranscodeSampleRateTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AllocationRecorderTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AllocatorStopTrimTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AudioPassthroughPolicyTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AviAudioClockTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AviAudioFramerTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AviHeaderTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AviOpenDmlSampleFileTest": {
+   "tests": 1,
+   "passed": 0,
+   "failed": 0,
+   "skipped": 1,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AviPackedVideoTimesTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.AviVideoSeekTableTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.BitrateAwareLoadControlTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.BufferMemoryKeeperTest": {
+   "tests": 34,
+   "passed": 34,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.BufferSizingTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.BufferTopUpTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DecodeOrderTimestampsTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DeniedTranscodePlannerTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DolbyVisionBaseLayerColorTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DolbyVisionBaseLayerPolicyTest": {
+   "tests": 33,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DolbyVisionConversionConfigTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DolbyVisionMatroskaTransformerTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DolbyVisionStatsSessionTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DrawingMemoryTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.DvSampleFramingTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.EpisodeShufflePlaybackTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.ExternalAutoNextNavigationEventsTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.ExternalAutoNextPolicyTest": {
+   "tests": 25,
+   "passed": 25,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FfmpegForkRoutingTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FilenameEpisodeMatcherTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateModeSelectionTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateResolutionIntegrationTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateSampleDurationTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateSeamlessTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateUtilsAfrCancellationTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateUtilsAfrTest": {
+   "tests": 59,
+   "passed": 58,
+   "failed": 0,
+   "skipped": 1,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateUtilsMkvSparseTracksTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.FrameRateUtilsMp4PeekLoopTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.H264LevelLabelTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.HdrColorSignalingTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.HevcDvRpuStripperTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.HevcHdr10PlusStripperTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.LetterboxDetectorTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.LetterboxRenderPolicyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.MatroskaAfrProbeTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.MatroskaAfrProbeVideoFpsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.Mp4ChapterReaderTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.Mp4ChaptersExtractorTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.PlaceholderStreamPolicyTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.PlayerSessionTrackerTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.PrefetchedSelectionGateTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.ProtectedDvExtractorTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.ReadAheadReserveTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.RenderTimeSubtitlesTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.ScoutMixSessionTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.StartCushionTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.StreamAutoPlaySelectorTest": {
+   "tests": 38,
+   "passed": 38,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.StreamListOrderTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.StreamQualityRankTrashTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.SubtitleCharsetDetectorTest": {
+   "tests": 32,
+   "passed": 32,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.SurroundFormatResolverTest": {
+   "tests": 42,
+   "passed": 42,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.TrailerLifecycleBindingTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.TrailerPlayerPoolOwnershipTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.amlfel.AmlNativeSelectionLifecycleTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.avi.AviExtractorOpenDmlTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.avi.PackedBFrameUnpackerTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.avi.StreamFormatChunkTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.DtsStreamTypeTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.Eac3SurroundTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.HevcAlternativeTransferSeiTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaBlockLacingTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaChaptersTest": {
+   "tests": 7,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 6,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaDvBaseLayerColorTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaEarlyScanBufferTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaIndexReadLineTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaNestedSeekHeadTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaTrackRoleFlagsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaTracksAfterClustersTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaTruncatedTailTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.MatroskaZlibSampleDecompressorTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.dvmkv.TrueHdAtmosTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.AviIndexTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.BatchRangeReaderTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ConnectionBudgetTest": {
+   "tests": 24,
+   "passed": 24,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ConnectionLedgerTest": {
+   "tests": 43,
+   "passed": 43,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyChoiceTest": {
+   "tests": 41,
+   "passed": 41,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyConfirmFastTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyEarlyRowTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyFirstTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyPicturesEarlyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyPrePickTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyShiftTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.CopyStartSoonerTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.FetchFailureStreakTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ForegroundGateTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.GiveUpNotesTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.HardwareAppMemoryTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.HardwareThumbRulesTest": {
+   "tests": 28,
+   "passed": 28,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.HardwareThumbsTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.KeyframeReadLimitTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.MediaServerThumbsTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.MkvKeyframeTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.NativeLoadBackoffTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PlaybackDecodePacerTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PlaybackHeadroomTest": {
+   "tests": 32,
+   "passed": 32,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PlaybackYieldTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PrepareGridTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PrepareHandoverTest": {
+   "tests": 21,
+   "passed": 21,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PrepareRateBookTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.PrepareScreenGuardTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.RealCropTest": {
+   "tests": 1,
+   "passed": 0,
+   "failed": 0,
+   "skipped": 1,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.RealMediaIndexTest": {
+   "tests": 1,
+   "passed": 0,
+   "failed": 0,
+   "skipped": 1,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ReleaseMatchColourTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ReleaseMatchTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.RequestBudgetTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ReuseCheckLineTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.SeekGridTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.SeekThumbnailPreferencesTest": {
+   "tests": 21,
+   "passed": 21,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.SeekThumbnailSkipTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ServerThumbMathTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.StripDecodeTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.TapPolicyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbBufferPoolTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbCropTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbDecodeLanesTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbFetchLanesTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbMemoryStopTest": {
+   "tests": 23,
+   "passed": 23,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbPolicyTest": {
+   "tests": 23,
+   "passed": 23,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbRateLimitTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbSourcePolicyTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbStoreLockTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbStoreReuseTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.ThumbSwapHoldTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.player.thumbnail.UsenetCopyTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.FetchResponseHeadersTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.PluginBinaryFetchTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.PluginEpisodeRequestRulesTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.PluginManagerRepoAndRunTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.PluginMediaTypeTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.PluginProviderPriorityTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.PluginRunOutcomeTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.SingleFlightRunTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.DefaultExtensionEnabledTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.HomeViewModelCompatStubTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.MissingClassNameTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.PluginTitleMatchTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.ReplaceExtensionFileTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.RepoRefreshPruneTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.RunProvidersTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.plugin.cloudstream.SingleLinkRequestTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.poster.CustomPosterEncodedShapeTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.poster.CustomPosterScreenTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.poster.CustomPosterUrlResolverTest": {
+   "tests": 39,
+   "passed": 39,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.poster.PosterFallbackTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.poster.WatchProgressCustomPosterArtTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.profile.ProfileManagerRemovedProfileDataTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.profile.ProfileReselectSpeculationTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.profile.ProfileSnapshotLifecycleTest": {
+   "tests": 23,
+   "passed": 23,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.profile.ProtectedCredentialFailureTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.qr.QrCodeGeneratorTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.recommendations.ProgramBuilderTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.recommendations.TvRecommendationManagerTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.report.ProblemRecordingTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.report.RecorderEventsTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.report.RecorderKeptMinutesTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.report.RecorderRingsTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.report.ReportFactsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.runtime.GuardedLifecycleCallbacksTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutAnswersTest": {
+   "tests": 33,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutArtworkTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutCatalogProviderTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutEngineTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutFolderSupportTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutMixCatalogTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutMixSuggestionsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutMoodAiTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutMoodArtTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutPicksAndTasteTest": {
+   "tests": 24,
+   "passed": 24,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutPicksLogicTest": {
+   "tests": 29,
+   "passed": 29,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutProfileFilesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ScoutSlicesTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ask.AskEngineTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ask.AskPhoneServerTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ask.AskPicksAiTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ask.AskStorageTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ask.AskSwitchTest": {
+   "tests": 2,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 1,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.scout.ask.AskTitleMatchTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.server.AddonConfigServerTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.server.DebridFormatterConfigServerTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.server.StreamBadgeConfigServerTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.stream.PlayerListReuseTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.stream.PrefetchSelectionSupplierTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.stream.SourcePrefetchSignalTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.stream.SpeculativeStreamPolicyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.stream.StreamListHandOverTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.stream.StreamPrefetchCapTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.streams.PlaybackAvailabilityTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.streams.YouTubeStreamResolverTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.HomeCatalogSettingsSyncServiceTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.HomeCatalogSyncSupportTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.LibrarySyncServiceTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.MediaServerSyncServiceTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.PluginSyncProfileTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.PluginSyncSchedulerTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.PresentationPreferencePreservationTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProfilePullFreshnessTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProfilePullUserOwnershipSchedulingTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProfileSettingsCredentialPolicyTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProfileSettingsPendingPushTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProfileSettingsPluginSyncTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProfileSettingsSubtitleLanguageSyncTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.ProviderCredentialModelsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.SurfacePullFreshnessTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.WatchStateMutationStoreTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.WatchStateSyncServiceTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.androidtv.AndroidTvChannelManagerTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.androidtv.AndroidTvChannelSyncServiceTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.androidtv.LauncherChannelItemsTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.sync.library.LibrarySyncPagingTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tmdb.HomeHeroMetadataTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tmdb.TmdbCollectionSourceResolverTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tmdb.TmdbMetadataServiceTest": {
+   "tests": 26,
+   "passed": 26,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.torrent.TorrentEngineConfigTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.torrent.TorrentMagnetTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingLibraryMembershipTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingLibrarySourceControllerTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingMediaTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingNextUpSeedPolicyTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingProgressProjectionTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingProgressRefreshCoordinatorTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingProviderRegistryTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingScrobbleCoordinatorTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingSourceMemoryTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.tracking.TrackingSourcesTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.trakt.TraktImageUtilsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.trakt.TraktPublicListSourceResolverTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.util.EpisodeReleaseDateParserTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.util.EpisodeReleaseDateShapeTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.util.ProcessLocaleTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.util.ReleaseInfoUtilsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.core.util.RuntimeParserTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListAuthStoreTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListIdResolverTvTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListMushokuTenseiSendTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListPairingCryptoTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListPinGateTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListSeasonMappingTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListSendQueueTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListSendQueueTvTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListTransportTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListTvProjectionTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListWatchedImportTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.floppy.FloppyAuthRepositoryTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.floppy.FloppyScrobbleBodyTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.floppy.FloppyTrackingProviderTest": {
+   "tests": 25,
+   "passed": 25,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.BufferPresetDefaultsTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.CollectionsDataStoreSourceMigrationTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.ContinueWatchingEnrichmentOwnershipTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.ContinueWatchingSnapshotUpgradeTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.ContinueWatchingSnapshotWriteTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.DeviceLocalPlayerPreferencesTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.DeviceUiMigrationTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.DiscoverLocationMigrationTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.EpisodeShuffleStoreTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.ExperienceModeDefaultTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.LayoutEpisodeSynopsisDefaultTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.LayoutProfileDefaultsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.NightModeKeyTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.NightModePreferenceTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlaybackReportsSwitchTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerControlButtonStyleTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerControlLayoutStoreTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerControlLayoutTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerHdrSubtitleStyleMigrationTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerLibassPreferencesTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerLoadingSourcePreferencesTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerRuntimeSettingsSnapshotTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerSettingsAudioRejectionsTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerSettingsDownmixGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerSettingsSurroundCarryOverTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerSettingsTimeoutMigrationTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PlayerSettingsTimeoutPredicateTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.PreferenceStoreCorruptionTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.RemoteButtonMapTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.RemoteReportJobTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.ScoutMixStoreTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SignOutRetainedStoresTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SignOutShadowCopyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SourceLinePreferencesTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.StoredRecordChecksTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SubtitleAppearancePreferencesTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SubtitleLanguagePreferencesTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SubtitlePlayerChoiceTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.SubtitleStyleHdrOverrideTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.ThemeProfileDefaultsTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.TraktAuthDataStoreTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.TunnelStallExpiryTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.V2AppearancePreferenceStoreTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchProgressBucketsTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchProgressOwnershipTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchProgressPreferencesStorageTest": {
+   "tests": 37,
+   "passed": 37,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchedItemsDecodeCostTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchedItemsDecoderTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchedItemsOwnershipTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchedItemsPreferencesSyncTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchedItemsPullPreservationTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.local.WatchedSeriesStateHolderProfileTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mapper.MetaMapperTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mapper.TrailerIdMappingTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListApiClientTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListAuthRepositoryTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListAuthStoreTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListEpisodeMappingServiceTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListHistoryServiceTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListHttpClientTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListLibraryDecoderTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListLibraryServiceTest": {
+   "tests": 34,
+   "passed": 34,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListLibrarySorterTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListLibraryWriterTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListMutationTargetTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListProgressProjectionTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListRatingsClientTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListRatingsLoaderTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListScrobbleServiceTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListSyncDecoderTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListSyncEngineTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListSyncRemoteTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListSyncRepositoryStorageTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListSyncRepositoryTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListTimestampDifferentialTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListTimestampParsingTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListTrackingLibraryProviderTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.MdbListTrackingProgressProviderTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mdblist.OkHttpMdbListEngineTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerAlternateAddressTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerArtworkTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerCatalogTest": {
+   "tests": 32,
+   "passed": 32,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerDisplayNameTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerEpisodeStatesTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerGenreSummariesTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerItemRefTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerLibraryBrowseTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerLibraryFilterTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerMatcherTest": {
+   "tests": 30,
+   "passed": 30,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerOriginsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerPlaybackTest": {
+   "tests": 39,
+   "passed": 39,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerPosterPatternTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerRenewalTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerRepositoryTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerResumeAfterAccountPullTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerSkipIntervalsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerSourceLogTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerStreamsTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerUserStateProjectionTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.ServerWatchedTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserCertificateTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserConnectionTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserLibraryBrowseTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserLibraryFilterTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserMapperTest": {
+   "tests": 23,
+   "passed": 23,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserPlaybackTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserRequestTest": {
+   "tests": 33,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.MediaBrowserTrickplayTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.mediabrowser.QuickConnectTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.plex.PlexArtworkTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.plex.PlexLegacyGuidTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.plex.PlexLibraryBrowseTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.plex.PlexLibraryFilterTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.plex.PlexProviderTest": {
+   "tests": 35,
+   "passed": 35,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloArtworkTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloLibraryBrowseTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloLibraryFilterTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloNativeBrowseTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloNativePlaybackTest": {
+   "tests": 28,
+   "passed": 28,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloNativeProviderTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloProviderTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.mediaserver.silo.SiloWebsiteTest": {
+   "tests": 23,
+   "passed": 23,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.remote.ServerDiscoveryPolicyTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.remote.dto.mdblist.MDBListMediaResponseDtoTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.remote.supabase.AvatarCatalogRefreshTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.remote.supabase.SupabaseProfileSetupCopyResultTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.AddonManifestPlaceholderTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.AnimeSkipIntervalsTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.AppReportTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.ArcExitReportsTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.AuthDiagnosticReportRepositoryTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.CatalogDiskStoreTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.CatalogRepositoryBuiltInTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.CatalogRepositoryMalformedEntryTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.CatalogRepositorySearchCacheTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.CatalogRepositoryServerPosterPatternTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.CatalogRepositoryTypeTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.GitHubContributorsRepositoryTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.ImdbEpisodeRatingsRepositoryTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.KaiArmSkipFallbackTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.LibraryGenreFillTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.LibraryRepositoryTrackingTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.LibraryTransferTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MDBListRepositoryTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MemberAccessRepositoryTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryAddonCacheTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryCandidateTypeTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryNotFoundClassificationTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryPlayerHoldTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryPreferredAddonTypeTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryRateLimitTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositorySharedCacheTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRepositoryStartupMissTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.MetaRequestGuardTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.ParentalGuideRepositoryTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.RecorderRecordingReportTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.RecorderReportTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.RemoteProgressWriteDeduplicatorTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.ReportOutboxTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.ReportTextTest": {
+   "tests": 10,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 1,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.ReportViewerChoicesTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.SentReportsListTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.SkipIntroRepositoryTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.SponsorsRepositoryTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.StreamRepositoryPluginIsolationTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.StreamSearchSessionCacheTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.SupportersRepositoryTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TrackingPlaybackScenariosTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TrackingProgressOverheadTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktAuthServiceTest": {
+   "tests": 2,
+   "passed": 1,
+   "failed": 1,
+   "skipped": 0,
+   "failedCases": [
+    "refresh token 400 clears credentials and prevents another refresh"
+   ]
+  },
+  "com.nuvio.tv.data.repository.TraktCommentsServiceTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktEpisodeMappingServiceTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktLibraryServiceWriteTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktProgressPolicyTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktProgressServiceFailureTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktProgressServiceRefreshTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktProgressServiceSavedMoviesTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktSavedWatchedMoviesTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktScrobbleServiceTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktTrackingListManagerTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.TraktTrackingScrobblerTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.WatchProgressHydrationSchedulingTest": {
+   "tests": 33,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.WatchProgressMetadataRetryTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.WatchProgressRepositoryProfileIsolationTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.WatchProgressServerHistoryTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.OkHttpSimklEngineTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklAnimeWatchedResolutionTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklApiClientTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklAuthRepositoryTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklContinueWatchingDiagnosticsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklLibraryRemovalPolicyTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklMutationReconciliationTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklMutationServiceTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklPlaybackReconciliationTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklProjectionsTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklRefreshPolicyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklScrobbleReconciliationTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklSettingsPolicyTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklSnapshotProjectionTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklSyncEngineTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklSyncRepositoryStorageTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.simkl.SimklTimestampDifferentialTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.ImdbStreamSelectorTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.ImdbTrailerApiTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.ImdbTrailerDataTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.InAppYouTubeExtractorAudioTrackTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.InAppYouTubeExtractorDecoderSupportTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.InAppYouTubeExtractorSourcePreferenceTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerLinkExpiryTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerPreloadGateTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerPreviewLookupTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerResourceGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerServiceCancellationTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerServiceCandidateRankingTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerServiceImdbTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerServiceRateLimitTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerServiceUseTrailersGateTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerServiceYouTubeSessionCacheTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerSourceCacheTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.TrailerVideoFormatsTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.YouTubeRateLimitGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.YouTubeUnplayableReasonTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.trailer.YoutubeChunkReaderTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrAuthRepositoryTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrCustomListsTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrDecodersTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrHttpClientTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrLibraryTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrProgressProjectionTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrSyncEngineTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrSyncRepositoryTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.wetrakr.WeTrakrWritesTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.AppIconAccessTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.CardDepthStyleTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.CatalogDescriptorExtensionsTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.CatalogReferenceTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.CatalogRowPaginationTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.EpisodeShuffleTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ImdbRatingVisibilityTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.LandscapePosterScopeTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.LibrarySyncReducerTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ProfileBackgroundTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.RandomEpisodePickerTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ScoutMixTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ScoutPicksTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ScoutRatingTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ScraperInfoTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.StreamYouTubeTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.ThemeAccessTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.TrackingAttributionTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.domain.model.WatchProgressTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.kai.arm.ArmImdbEpisodeTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.kai.segments.ArcSkipDiagTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.kai.segments.MultilangChapterSkipTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.kai.segments.SegmentVocabularyTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.kai.segments.SkipLabelTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.kai.segments.SkipSeekTargetTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.launcher.AppIconEntriesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.launcher.IconPackTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.brand.AheadOfTimeTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.brand.ArcIntroSoundGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.brand.ArcPaletteTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.brand.ArcPixelsTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.brand.ArcQualityStepsTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.brand.ArcStartHandoffTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.AvatarPlaceholderTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.CardTitleOverlayTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.CollectionFolderCardMediaTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.ContinueWatchingImageModelTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.ContinueWatchingPillsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.ErrorStateIdLineTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.FeatheredTrailerGeometryTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.FocusMarqueeTextTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.FocusScrollingTextTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.LoadingIndicatorClockTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.MemberBrandWordmarkTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.PinPadTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.PlaybackAvailabilityViewModelTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.StartupLoadingPolicyTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.WatchedPosterLookTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.components.posteroptions.PosterOptionsControllerShowTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.navigation.DetailArtworkRouteTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.navigation.DetailPageVisibilityTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.navigation.NavSessionViewModelStoreHolderTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.navigation.PostPlayRecommendationNavigationPolicyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.navigation.SourceSelectionRestorePolicyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.scout.ScoutMenuIconTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.addon.AddonManagementAccessTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.addon.CatalogOrderViewModelTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.calendar.CalendarFormatsTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.calendar.CalendarUiModelTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.calendar.CalendarViewModelTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.calendar.CalendarWeekModelTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.collection.FolderMdbRatingsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.collection.GenreFoldersTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.CompanyRowRevealTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailBackdropSelectionTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailEdgeBackPressTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailEpisodeShuffleTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailOptionalUiStateTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailPresentationGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailSeasonSelectionTest": {
+   "tests": 25,
+   "passed": 25,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.DetailTrailerGlassTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.EpisodeOptionsOverlayTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.EpisodeOverlayNavigationTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.EpisodeSynopsisUnderRowTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.EpisodeWatchedProjectionTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.HeroDownMoveTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.HeroSourceLineTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.LibraryToggleTimeoutTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.NextToWatchEmptyDataGuardTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.NextToWatchProgressTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.TrailerBackPressTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.detail.V2EpisodeCardSizeTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.AdjacentPrefetchJobsTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.CalendarComingUpCardTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ClassicHomeFocusRestoreTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ComingUpHideTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ComingUpTakesUpcomingTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingAiringRulesTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingCachePolicyTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingExcludedSeasonsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingMarkWatchedTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingMetaTypesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingNextUpReconciliationTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingRefreshPolicyTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ContinueWatchingRowKeysTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.CwEpisodesLeftTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.FocusedPosterGrowsTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.GridHomeFocusRestoreTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HeroArtworkTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HeroBackdropRetryTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HeroBackdropStateTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HeroPickTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HeroScenePresentationTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HeroSeriesFactsTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeAddonLookupIdTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeCatalogIncrementalTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeContinueWatchingOwnershipTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeEmptyRetryTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeEnrichmentRepositoryBoundaryTest": {
+   "tests": 4,
+   "passed": 3,
+   "failed": 1,
+   "skipped": 0,
+   "failedCases": [
+    "failed full metadata prefetch is not marked complete and can retry"
+   ]
+  },
+  "com.nuvio.tv.ui.screens.home.HomeEnrichmentRetryTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeEpisodeShuffleTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeListedTitlesTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomePosterArtworkTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomePrefetchLifecycleTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeRowNavigationTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeTrailerCancellationTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeTrailerLookupTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeWatchedTitlesPipelineTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.HomeWatchedTitlesTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ModernHeroSelectionTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ModernHeroTextHeightTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ModernHomeIdentityRelocationTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ModernHomeInitialFocusTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ModernHomePlaceholderShimmerTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ModernRowsViewportTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.NextUpEpisodeEligibilityTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.PageHeroArtworkTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.PreparedHeroSceneTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ServerArtworkWindowTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ServerRowTitleTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.ShownHeroMemoryTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.home.SimklContinueWatchingDiagnosticsTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.library.LibraryGenreFilterTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.library.LibraryListManagementTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.library.LibrarySortingTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AddonSubtitleRestoreTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AfrPreflightGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AfrPreflightPolicyTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AmazonAc3EosWorkaroundTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AppBackgroundStopTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioCapabilityReportTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioChainProbeHdmiPortTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioChainProbeHdmiReportTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioOutputRouteRankTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioOutputRuntimeFailureTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioRejectionLedgerTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioRejectionRetryBeforeStashTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioRoutingSnapshotTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioStartLogTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioTrackBufferSizeTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioTrackFailureClassificationTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioTrackRejectionLogTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AudioTrackRowTextTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupDataSourceTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupDeliveredTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupLazyMemoryTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupLimitsTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupPieceBytesTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupPieceSizeTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupPieceTtfbTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupPolicyTest": {
+   "tests": 76,
+   "passed": 76,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupRateLimitTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupRefillTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupServerTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoSpeedupStartPieceTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.AutoplaySessionCountTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.BluetoothAudioRoutePolicyTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.BusyOutputReturnTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ChapterSkipIntervalsTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.CompactStatsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.CompressedOutputCheckTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ContentLengthProbeIsolationTest": {
+   "tests": 2,
+   "passed": 0,
+   "failed": 2,
+   "skipped": 0,
+   "failedCases": [
+    "TLS fallback uses isolated scheduling and leaves playback events untouched",
+    "diagnostic requests bypass playback interceptors and event listeners"
+   ]
+  },
+  "com.nuvio.tv.ui.screens.player.CurrentStreamIndexTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.DialogueBoostTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.DtsStreamTypeLabelsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ExoAudioFocusPolicyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ExtraDownloadRefusalTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.FailedAudioTrackInputTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.GainAudioProcessorTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.HandBackReloadTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.HardwareVideoDecoderSelectorTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.HdrOverlayDimTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.HostSpeedsTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.Http1OnlyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.IecFailureReturnTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.LibassOverlayGeometryTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.LibassRendererWrapTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.LivePlaybackUiPolicyTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.LosslessAudioTrackDefaultTest": {
+   "tests": 29,
+   "passed": 29,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.MergeSkipIntervalsTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.MovieSkipIntegrationTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.MpvPlaybackErrorPolicyTest": {
+   "tests": 30,
+   "passed": 30,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.MpvPositionFromMediaRequestTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.MpvSoundFiltersTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.MpvTrackRefreshGateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.NaturalPlaybackCompletionRulesTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.NewPlaybackGateTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.NextEpisodeSourceTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelperTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelBlockTrialTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelDiagnosticCallsTest": {
+   "tests": 7,
+   "passed": 4,
+   "failed": 3,
+   "skipped": 0,
+   "failedCases": [
+    "private requests bypass playback interceptors events and scheduling",
+    "closing blocked resolver also delivers queued cancellation without fallback",
+    "TLS fallback stays inside diagnostic HTTP resources"
+   ]
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelDiagnosticOwnershipTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeBootstrapProgressTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeByteBufferReadTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeChunkLeaseTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeDataSourceTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeLazyMemoryTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeLinkLookupTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangePieceTimingTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeProbeFailureIntegrationTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeProbeOwnershipTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeProbeResponseIntegrationTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeProductionWorkloadTest": {
+   "tests": 11,
+   "passed": 10,
+   "failed": 1,
+   "skipped": 0,
+   "failedCases": [
+    "pieces refused together wait as one then the nearest piece tries alone before the rest"
+   ]
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeRateGateTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeReopenAtStartTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeReopenOwnershipTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ParallelRangeSeekDropTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PassthroughOutputReturnTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PassthroughTrackPromotionTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PassthroughWaterLevelPacerTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PauseDetailsRequestTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PauseIntentTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PauseOnTimelineTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PausedOutputCheckTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PcmDynamicsTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackConnectProbeTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackDroppedFrameSamplerTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackDroppedFramesRowTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackLanesTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackMatchTextTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackNetworkFailureTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackNetworkingSslVerificationTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackPositionRowTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackPrewarmCallFactoryTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackPrewarmCoordinatorTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackPrewarmIdentityTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackPrewarmReaderTest": {
+   "tests": 21,
+   "passed": 21,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackProfileRouteTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackRecoveryGateTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackRefusalLogTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackRuntimeCountersTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackSkippedFrameTallyTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackSpeedAwareAudioSinkHbrTunnelGuardTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackSpeedAwareAudioSinkTrueHdAnchorTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackStatsDvTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackStatsOwnerPresentationTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackStatsPollingTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackThermalSamplerTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackTimelineGeometryTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackTimelineStateTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackTransferDataSourceTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackTransferRateSamplerTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackTransferSessionTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlaybackVideoPresentationTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerAudioFallbackPolicyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBackPressTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBadgeDtsTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBadgeMatchOrderTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBadgePackTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBadgeTierTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBadgeWhatPlaysTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerBuiltInBadgesTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerChaptersTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerClockShadowTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlDeckGeometryTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlIntegrationTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlMoreActionsTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlOwnerFeedbackTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlPopupTest": {
+   "tests": 21,
+   "passed": 21,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlPreviewSectionsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerControlReportsUnavailableTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerFirstFrameCodecRecoveryPolicyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerFrameRateHeuristicsTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerLateVideoPolicyTest": {
+   "tests": 11,
+   "passed": 11,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerMediaInfoHdrTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerMediaSourceFactoryTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerNativeVideoSelectionTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerNextEpisodeRulesTest": {
+   "tests": 29,
+   "passed": 29,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerPlaybackAnalyticsDiagnosticsTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerScrobblePolicyTest": {
+   "tests": 25,
+   "passed": 25,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerScrubRatesTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerSecondaryMetadataTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerStartPositionTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerStartupPlaybackPolicyTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerSubtitleExtractorTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerSubtitleStylingTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerSubtitleUtilsMimeTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PlayerTunnelAvSyncPolicyTest": {
+   "tests": 19,
+   "passed": 19,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PostPlayModeTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PostPlayRecommendationSchedulingTest": {
+   "tests": 31,
+   "passed": 31,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PostPlayRecommendationStateTest": {
+   "tests": 21,
+   "passed": 21,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PostPlayResetRulesTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PostPlayWatchedHistorySchedulingTest": {
+   "tests": 27,
+   "passed": 27,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.PrefetchWindowPairTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.RecordingMarkKeyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.RedirectReportingDataSourceTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.RemotePressTrackerTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ReportTitleDetailTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.RequestMeterTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ReusedLinkRefreshTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.RewrappableExtractorTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SameConfigRetrySkipTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ScrubHoldClockTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SeekLandingTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SeekSettleTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SeekStripLayoutTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SeekThumbnailHintCoveredTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SeekThumbnailsLetGoTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ServerHlsVideoPreferenceTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ServerResumeStartTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ServerSourceFailoverTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SidecarCueOrderingTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SidecarStyleSignatureTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SkipIntroVisibilityRulesTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SlowStartServerTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SoftwareAv1LadderTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SoftwareAv1RendererTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SourceFailoverSelectionTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SpeakerlessBoxRouteTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SpeedTestDownloadsMatchPlaybackTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SpeedupRoomTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StaggeredOverlayTimelineTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StartupWatchdogDecisionTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StatsRowsAtExitTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StillWatchingGatingTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StoreServerPlaybackTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StreamAudioDelayTest": {
+   "tests": 21,
+   "passed": 21,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StreamBaselineIsolationTest": {
+   "tests": 2,
+   "passed": 0,
+   "failed": 2,
+   "skipped": 0,
+   "failedCases": [
+    "TLS fallback uses isolated scheduling and leaves playback events untouched",
+    "diagnostic requests bypass playback interceptors and event listeners"
+   ]
+  },
+  "com.nuvio.tv.ui.screens.player.StreamFilenameFromUrlTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StreamProviderLabelTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StreamRedirectTargetTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StreamRowTextTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.StuckBufferingWatchdogClassificationTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleAlignmentTagTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleCredentialScopeTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleCuePositionTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleEdgePresentationTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleFontFilesTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleLiftRulesTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleMojibakeSanitizerTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleNudgeTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleOutlineShadowTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitlePreferredLanguagesTest": {
+   "tests": 12,
+   "passed": 12,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitlePresentationTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleRaceConditionUpgradeTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleRoutingTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleSdhFilterTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SubtitleTrackFormatTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SurroundRecheckGuardTest": {
+   "tests": 26,
+   "passed": 26,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.SurroundResolveInPlaceTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ThumbGiveUpContextTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.ThumbnailCopyCandidatesTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TorBoxRequestCapTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TrackPreferenceForPersistenceTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TrackSelectionInvestigationTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TunnelDeadClockMemoTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TunnelStallLabelsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TunneledAudioSwitchTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TunneledSurfaceResizeModeTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.TvArcAudioOutputTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.UnsupportedFormatMpvFallbackPolicyTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.UsbAudioRouteTunnelingTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.Vc1VideoFormatHeuristicsTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.VideoExtensionRendererModeTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.VodCacheAutoSizeTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncActivityPlateauTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncAssDialogueFilterTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncNoFitTrackerTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncReferenceConsistencyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncSubtitleCueParserTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncSubtitleHttpTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncSubtitleTextRetimerTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.AutoSyncTimelineRetimeTest": {
+   "tests": 33,
+   "passed": 33,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.EmbeddedSubtitleTimelineLoaderTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.EmbeddedSubtitleTrackDetectionTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.autosync.RetimedAssSubtitleParserTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.DtsHdCarrierTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.DtsXIecBurstPeriodTest": {
+   "tests": 45,
+   "passed": 45,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.HbrOpenOrderTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.Iec61937PackerTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.Iec61937ProbePolicyTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecAudioTimestampClockTest": {
+   "tests": 43,
+   "passed": 43,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecDtsCoreTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecFlushSettleGateTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecKeepAliveLevelsTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecKeepAliveTest": {
+   "tests": 18,
+   "passed": 18,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecKnownUnusableTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecOutputLatencyTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecOutputRoutePolicyTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecPassthroughAudioSinkTest": {
+   "tests": 72,
+   "passed": 72,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecPlaybackHeadTrackerTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecReopenAfterOutputLossTest": {
+   "tests": 14,
+   "passed": 14,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecReplayFallbackTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.IecSteadyHeadClockTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.SourceCopyPoolTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.player.iec.TrueHdMatPackerTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.plugin.PluginTrustWarningTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.plugin.ProviderChooserFlowTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.plugin.ProviderChooserStateTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.scout.ScoutMixViewModelTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.scout.ask.AskFocusTest": {
+   "tests": 10,
+   "passed": 10,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchCatalogSpeedTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchPresentationRulesTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchViewModelConcurrencyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchViewModelPaginationTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchViewModelSpeedTest": {
+   "tests": 28,
+   "passed": 28,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchViewModelSuggestionsTest": {
+   "tests": 22,
+   "passed": 22,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.search.SearchVoiceWordsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.AssessmentFreshnessUiTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.AssessmentMutationUiTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.BufferSettingsNumbersTest": {
+   "tests": 16,
+   "passed": 16,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.ConnectionsChoiceTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.ContentDiscoveryFocusRowTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.DebridSettingsPremiumizeKeyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.DeviceAssessmentCancellationTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.DeviceAssessmentRowTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.DiagnosticUiRunTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.ForgetTunnelStallsTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.GeneralDiagnosticStateTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.LayoutSettingsHomeContentSyncTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.LearnedRejectionFormatLabelsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.MDBListSettingsViewModelTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.MediaServersCodeCertificateTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.MemoryBudgetTest": {
+   "tests": 20,
+   "passed": 20,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.PlayerControlLayoutDraftTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.PlayerControlVisualEditorStateTest": {
+   "tests": 17,
+   "passed": 17,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.PlayerLayoutConfirmGestureTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.SettingsCatalogTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.SettingsIconsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.SettingsPaneSettleTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.SettingsSearchTest": {
+   "tests": 17,
+   "passed": 16,
+   "failed": 1,
+   "skipped": 0,
+   "failedCases": [
+    "every settings row with a fixed name can be found"
+   ]
+  },
+  "com.nuvio.tv.ui.screens.settings.SettingsStructureTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.SimklSettingsConnectionPolicyTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.StreamDiagnosticStateTest": {
+   "tests": 15,
+   "passed": 15,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.ThemeSettingsViewModelTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.settings.TrackingSettingsViewModelTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.stream.DirectAutoPlayWatchdogPolicyTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.stream.PlayerPreferenceWaitTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.stream.StreamProviderGroupingTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.stream.StreamResumeProgressTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.screens.stream.WithComputedBadgesTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.support.SupportNuvioUiStateTest": {
+   "tests": 7,
+   "passed": 7,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.theme.CustomThemePaletteTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.theme.FocusRingStyleTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.util.DrawerFocusRequesterStateTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.util.HeroMetadataFormatterTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.util.RtlKeyUtilsTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.util.TextDirectionUtilsTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.appearance.ArtworkAccentTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.appearance.V2PaletteTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.appearance.V2StaticBackdropTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.appearance.V2SupporterAccentTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.components.ClearGlassThemeTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.components.GlassMaterialTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.components.MainMenuBackdropTest": {
+   "tests": 13,
+   "passed": 13,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.diagnostics.UiDiagnosticsTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.profile.EntryIdentPolicyTest": {
+   "tests": 24,
+   "passed": 24,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.profile.ProfilePosterSnapshotTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.quality.AutomaticQualityGovernorTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.quality.VisualQualityTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.scale.PlayerUiVisibilityTest": {
+   "tests": 1,
+   "passed": 1,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.scale.PosterSizingTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.ui.v2.scale.UiScaleResolverTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.ApkDownloaderTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.ApkInstallerValidationTest": {
+   "tests": 6,
+   "passed": 6,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.DownloadedUpdateVersionTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.ForkUpdatePreferencesTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.ForkUpdateRepositoryTest": {
+   "tests": 9,
+   "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.KaiIdentityTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.ReleaseSelectorTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.UpdateBannerPolicyTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.UpdateDexMetadataTest": {
+   "tests": 4,
+   "passed": 4,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.updater.VersionUtilsTest": {
+   "tests": 8,
+   "passed": 8,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  }
+ }
+}
