@@ -57,6 +57,7 @@ Tratados por `else`/conjuntos sin cambio (comprobado): `core/calendar/CalendarFo
 | Archivo | Motivo |
 | --- | --- |
 | `app/build.gradle.kts` | Supabase público de Nuvio por defecto (`https://api.nuvio.tv`, fallback `https://api-two.nuvioapp.space`, clave `anon` del APK oficial), los mismos valores que NuvioMobileKai; `local.properties`/`local.dev.properties` siguen teniendo prioridad. |
+| `app/build.gradle.kts` (pruebas) | Montón del JVM de pruebas a 2 GB: con 512 MB la suite de ~9.100 pruebas daba `OutOfMemoryError` en cientos de pruebas ajenas en el runner de GitHub. |
 | `core/tmdb/TmdbService.kt`, `core/tmdb/TmdbMetadataService.kt` | `TMDB_API_KEY` pasa a ser un getter de `TmdbApiKey.current()` (clave de la cuenta, si no la de compilación). |
 | `core/tmdb/TmdbCollectionSourceResolver.kt`, `core/scout/*` (ScoutEngine, ScoutTaste, ScoutPicksFinder, ScoutPicksBuilder, ScoutMixSuggestions, ask/AskService), `ui/screens/scout/ScoutPicksScreens.kt`, `data/mdblist/MdbListEpisodeMappingService.kt` | `BuildConfig.TMDB_API_KEY` → `TmdbApiKey.current()`. |
 | `core/sync/ProviderCredentialModels.kt` | Proveedor `tmdb` y `accountTmdbApiKey()`; `localProviderCredentials` no lo incluye, así que la TV nunca lo sube ni lo sobrescribe. |

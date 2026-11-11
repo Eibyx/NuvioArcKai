@@ -389,6 +389,9 @@ android {
 
     testOptions {
         unitTests.isReturnDefaultValues = true
+        // NuvioArcKai: the ~9,100 unit tests overflow Gradle's default 512 MB test heap on CI runners
+        // (OutOfMemoryError: Java heap space in hundreds of unrelated tests). Heap only; no test is skipped.
+        unitTests.all { test -> test.maxHeapSize = "2g" }
     }
 }
 
