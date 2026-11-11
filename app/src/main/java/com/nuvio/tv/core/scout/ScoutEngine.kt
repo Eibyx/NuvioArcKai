@@ -266,8 +266,8 @@ class ScoutEngine @Inject constructor(
         val media = if (seed.tv) "tv" else "movie"
         val id = runCatching { tmdbService.ensureTmdbId(seed.contentId, media)?.toIntOrNull() }.getOrNull() ?: return null
         val response = runCatching {
-            if (seed.tv) tmdbApi.getTvRecommendations(id, BuildConfig.TMDB_API_KEY, language)
-            else tmdbApi.getMovieRecommendations(id, BuildConfig.TMDB_API_KEY, language)
+            if (seed.tv) tmdbApi.getTvRecommendations(id, com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language)
+            else tmdbApi.getMovieRecommendations(id, com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language)
         }.getOrNull()?.body() ?: return id to emptyList()
         return id to response.results.orEmpty().mapNotNull { it.toPick(seed.tv) }
     }
@@ -283,11 +283,11 @@ class ScoutEngine @Inject constructor(
     ): List<ScoutPick> {
         val body = runCatching {
             if (tv) tmdbApi.discoverTv(
-                apiKey = BuildConfig.TMDB_API_KEY, language = language, sortBy = sortBy, voteCountGte = votes,
+                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language = language, sortBy = sortBy, voteCountGte = votes,
                 voteCountLte = votesMax, voteAverageGte = average, withGenres = genres?.ifBlank { null },
                 withoutGenres = "10763,10764,10766,10767"
             ) else tmdbApi.discoverMovies(
-                apiKey = BuildConfig.TMDB_API_KEY, language = language, sortBy = sortBy, voteCountGte = votes,
+                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language = language, sortBy = sortBy, voteCountGte = votes,
                 voteCountLte = votesMax, voteAverageGte = average, withGenres = genres?.ifBlank { null }
             )
         }.getOrNull()?.body()

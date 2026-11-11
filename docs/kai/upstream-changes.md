@@ -51,3 +51,15 @@ recoge cada archivo **original** de Arc que se tocó y por qué, para poder segu
 Tratados por `else`/conjuntos sin cambio (comprobado): `core/calendar/CalendarFollowedSourceReader.kt` (el calendario no lee AniList),
 `data/repository/LibraryTransferService.kt` (ruta genérica: la transferencia a AniList usa Planeado mediante `applyMembershipChanges`),
 `ui/screens/settings/MDBListSettingsScreen.kt` (solo `WatchProgressSource`, que no incluye AniList), y los de `data/wetrakr/*`.
+
+## Fase 3: release sin claves de servicios (11-nov-2026)
+
+| Archivo | Motivo |
+| --- | --- |
+| `app/build.gradle.kts` | Supabase público de Nuvio por defecto (`https://api.nuvio.tv`, fallback `https://api-two.nuvioapp.space`, clave `anon` del APK oficial), los mismos valores que NuvioMobileKai; `local.properties`/`local.dev.properties` siguen teniendo prioridad. |
+| `core/tmdb/TmdbService.kt`, `core/tmdb/TmdbMetadataService.kt` | `TMDB_API_KEY` pasa a ser un getter de `TmdbApiKey.current()` (clave de la cuenta, si no la de compilación). |
+| `core/tmdb/TmdbCollectionSourceResolver.kt`, `core/scout/*` (ScoutEngine, ScoutTaste, ScoutPicksFinder, ScoutPicksBuilder, ScoutMixSuggestions, ask/AskService), `ui/screens/scout/ScoutPicksScreens.kt`, `data/mdblist/MdbListEpisodeMappingService.kt` | `BuildConfig.TMDB_API_KEY` → `TmdbApiKey.current()`. |
+| `core/sync/ProviderCredentialModels.kt` | Proveedor `tmdb` y `accountTmdbApiKey()`; `localProviderCredentials` no lo incluye, así que la TV nunca lo sube ni lo sobrescribe. |
+| `core/sync/ProviderCredentialSyncService.kt` | Tras `sync_pull_provider_credentials`, guarda la clave de TMDB de la cuenta (solo lectura, sin registrar el valor). |
+
+Nuevos: `core/tmdb/TmdbApiKey.kt`, `core/sync/AccountTmdbKeyStore.kt` (cifrado por perfil con Android Keystore; se borra con el perfil o al cerrar sesión).

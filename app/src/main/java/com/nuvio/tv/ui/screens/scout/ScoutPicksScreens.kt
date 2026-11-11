@@ -104,7 +104,7 @@ class ScoutQuickStartViewModel @Inject constructor(
     fun load() {
         aiStore.update { it.copy(quickStartOffered = true) }
         viewModelScope.launch {
-            val key = BuildConfig.TMDB_API_KEY
+            val key = com.nuvio.tv.core.tmdb.TmdbApiKey.current()
             val films = runCatching { tmdbApi.discoverMovies(apiKey = key, sortBy = "popularity.desc", voteCountGte = QUICK_MIN_VOTES) }
                 .getOrNull()?.body()?.results.orEmpty().mapNotNull { it.toPick(false) }
             val series = runCatching { tmdbApi.discoverTv(apiKey = key, sortBy = "popularity.desc", voteCountGte = QUICK_MIN_VOTES, withoutGenres = "10763,10764,10766,10767") }

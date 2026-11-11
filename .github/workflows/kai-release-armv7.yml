@@ -110,7 +110,8 @@ jobs:
       KEY_ALIAS: ${{ secrets.KAI_RELEASE_KEY_ALIAS || secrets.NUVIO_RELEASE_KEY_ALIAS }}
       KEY_PASSWORD: ${{ secrets.KAI_RELEASE_KEY_PASSWORD || secrets.NUVIO_RELEASE_KEY_PASSWORD }}
       STORE_PASSWORD: ${{ secrets.KAI_RELEASE_STORE_PASSWORD || secrets.NUVIO_RELEASE_STORE_PASSWORD }}
-      ANILIST_CLIENT_ID_SECRET: ${{ secrets.ANILIST_CLIENT_ID }}
+      # The AniList Client ID is public: a repository secret or, as in this repository, a repository variable.
+      ANILIST_CLIENT_ID_VALUE: ${{ secrets.ANILIST_CLIENT_ID || vars.ANILIST_CLIENT_ID }}
     outputs:
       apk_sha256: ${{ steps.verify.outputs.apk_sha256 }}
       cert_sha256: ${{ steps.verify.outputs.cert_sha256 }}
@@ -121,23 +122,38 @@ jobs:
           distribution: temurin
           java-version: 17
       - uses: gradle/actions/setup-gradle@v6
+      - name: Repository variable names (names only)
+        env:
+          VARIABLE_NAMES_JSON: ${{ toJSON(vars) }}
+        run: |
+          # Prints only the names of the repository/organization variables, never their values.
+          printf '%s' "${VARIABLE_NAMES_JSON}" | python3 -c 'import json,sys; print("Variables:", ", ".join(sorted(json.load(sys.stdin))) or "none")'
       - name: Restore signing and public service configuration
         run: |
+          # The four signing secrets are required: without them there is no release.
           missing=()
-          for name in LOCAL_PROPERTIES_BASE64 KEYSTORE_BASE64 KEY_ALIAS KEY_PASSWORD STORE_PASSWORD; do
+          for name in KEYSTORE_BASE64 KEY_ALIAS KEY_PASSWORD STORE_PASSWORD; do
             [[ -n "${!name}" ]] || missing+=("${name}")
           done
           if (( ${#missing[@]} )); then echo "Missing secrets: ${missing[*]}" >&2; exit 1; fi
           keystore="${RUNNER_TEMP}/kai-release.jks"
           printf '%s' "${KEYSTORE_BASE64}" | base64 --decode > "${keystore}"
-          printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties
+          # Service keys are optional: without LOCAL_PROPERTIES_BASE64 the build uses an empty local.properties
+          # (Nuvio's public Supabase project comes from app/build.gradle.kts; the other integrations stay off).
+          if [[ -n "${LOCAL_PROPERTIES_BASE64}" ]]; then
+            printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties
+          else
+            echo "::warning::LOCAL_PROPERTIES_BASE64 is not set: building with an empty local.properties (Trakt, Simkl, MDBList sign-in, WeTrakr, TheTVDB and IntroDB stay off)."
+            : > local.properties
+          fi
           sed -i -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_[A-Z_]+)[[:space:]]*=/d' local.properties
-          if [[ -n "${ANILIST_CLIENT_ID_SECRET}" ]]; then
+          if [[ -n "${ANILIST_CLIENT_ID_VALUE}" ]]; then
             sed -i -E '/^[[:space:]]*ANILIST_CLIENT_ID[[:space:]]*=/d' local.properties
-            printf '\nANILIST_CLIENT_ID=%s\n' "${ANILIST_CLIENT_ID_SECRET}" >> local.properties
+            printf '\nANILIST_CLIENT_ID=%s\n' "${ANILIST_CLIENT_ID_VALUE}" >> local.properties
           fi
           for property in TRAKT_CLIENT_ID TRAKT_CLIENT_SECRET; do
-            grep -Eq "^[[:space:]]*${property}[[:space:]]*=[[:space:]]*.+$" local.properties || { echo "Missing ${property} in local.properties" >&2; exit 1; }
+            grep -Eq "^[[:space:]]*${property}[[:space:]]*=[[:space:]]*.+$" local.properties \
+              || echo "::warning::${property} is not set: Trakt stays off in this build."
           done
           if ! grep -Eq '^[[:space:]]*ANILIST_CLIENT_ID[[:space:]]*=[[:space:]]*[0-9]+[[:space:]]*$' local.properties; then
             echo "::warning::ANILIST_CLIENT_ID is missing or not numeric: the AniList QR sign-in will be hidden."
@@ -150,7 +166,7 @@ jobs:
           } >> "${GITHUB_ENV}"
       - name: Updater tests and release build
         run: |
-          ./gradlew :app:testFullReleaseUnitTest --tests 'com.nuvio.tv.updater.*' \
+          ./gradlew :app:testFullReleaseUnitTest --tests 'com.nuvio.tv.updater.*' --tests 'com.nuvio.tv.kai.config.*' \
             :app:assembleFullRelease -ParcVersionName='${{ inputs.version_name }}' -ParcVersionCode='${{ inputs.version_code }}' --stacktrace
       - name: Verify the APK
         id: verify
@@ -172,6 +188,8 @@ jobs:
           grep -q "sdkVersion:'24'" badging.txt
           grep -q "targetSdkVersion:'36'" badging.txt
           [[ "$(grep '^native-code:' badging.txt)" == "native-code: 'armeabi-v7a'" ]]
+          # The release carries Nuvio's public Supabase project (TV sign-in) in its BuildConfig.
+          unzip -p "${apk}" 'classes*.dex' | grep -aq 'https://api.nuvio.tv' || { echo "Nuvio Supabase URL missing from the APK" >&2; exit 1; }
           baseline=()
           [[ -f docs/kai/baseline-native.json ]] && baseline=(--baseline docs/kai/baseline-native.json)
           python3 scripts/verify_native_apk.py "${apk}" --kai "${baseline[@]}" --output native-inventory.json > /dev/null
@@ -210,6 +228,12 @@ jobs:
           Nuvio Arc Kai ${tag} — compilación armeabi-v7a (Android 7+), se instala junto a Nuvio Arc.
 
           Novedades: TeraBox y Google Drive en Servidores multimedia, AniList en Seguimiento y botones de salto de opening/intro/ending también con ExoPlayer. Ver docs/kai/informe-final.md para lo verificado y lo NO VERIFICADO.
+
+          Funciona: cuenta Nuvio (inicio de sesión de TV), TMDB con la clave guardada en la cuenta Nuvio, AniList, TeraBox, Google Drive, Plex, Jellyfin, Emby, Silo, Floppy, debrid, valoraciones de MDBList y saltos de opening/intro/ending en ExoPlayer y MPV.
+
+          Desactivado en esta compilación: Trakt, Simkl, WeTrakr, inicio de sesión de MDBList como servicio de seguimiento, calendario de TheTVDB, IntroDB y los servicios privados de Arc (tráilers, guía parental, valoraciones de IMDb y avatares).
+
+          Pre-release: pendiente de la prueba en la TV.
 
           - SHA-256 del APK: ${{ needs.build.outputs.apk_sha256 }}
           - SHA-256 del certificado de firma: ${{ needs.build.outputs.cert_sha256 }}

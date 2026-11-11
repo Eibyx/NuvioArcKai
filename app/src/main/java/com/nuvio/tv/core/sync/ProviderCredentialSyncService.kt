@@ -53,7 +53,9 @@ class ProviderCredentialSyncService @Inject constructor(
     private val debridSettingsDataStore: DebridSettingsDataStore,
     private val mdbListSettingsDataStore: MDBListSettingsDataStore,
     private val animeSkipSettingsDataStore: AnimeSkipSettingsDataStore,
-    private val syncClientIdentity: SyncClientIdentity
+    private val syncClientIdentity: SyncClientIdentity,
+    /** NuvioArcKai: the account's TMDB key, read-only. */
+    private val accountTmdbKeys: AccountTmdbKeyStore? = null
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val syncMutex = Mutex()
@@ -100,6 +102,9 @@ class ProviderCredentialSyncService @Inject constructor(
                 }
 
                 val rows = pullRows(profileId)
+                requireCurrentScope(credentialScope)
+                // NuvioArcKai: read-only, the value is never logged.
+                accountTmdbKeys?.applyFromAccount(profileId, accountTmdbApiKey(rows))
                 if (shouldSeedProviderCredentials(localSnapshot, rows)) {
                     seedSnapshot(localSnapshot)
                 }

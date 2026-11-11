@@ -14,7 +14,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "TmdbService"
-private val TMDB_API_KEY = BuildConfig.TMDB_API_KEY
+// NuvioArcKai: the account key first, then the build key (read on every call).
+private val TMDB_API_KEY: String get() = TmdbApiKey.current()
 
 /**
  * Service to handle TMDB ID conversions and lookups.

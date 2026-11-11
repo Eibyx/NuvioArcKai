@@ -169,13 +169,13 @@ class ScoutPicksBuilder @Inject constructor(
     private suspend fun keywordPicks(keyword: Int): List<ScoutPick> {
         val films = runCatching {
             tmdbApi.discoverMovies(
-                apiKey = BuildConfig.TMDB_API_KEY, sortBy = "vote_average.desc", voteCountGte = KEYWORD_MIN_VOTES,
+                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), sortBy = "vote_average.desc", voteCountGte = KEYWORD_MIN_VOTES,
                 withKeywords = keyword.toString()
             )
         }.getOrNull()?.body()?.results.orEmpty().mapNotNull { it.toPick(false) }
         val series = runCatching {
             tmdbApi.discoverTv(
-                apiKey = BuildConfig.TMDB_API_KEY, sortBy = "vote_average.desc", voteCountGte = KEYWORD_MIN_VOTES,
+                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), sortBy = "vote_average.desc", voteCountGte = KEYWORD_MIN_VOTES,
                 withKeywords = keyword.toString()
             )
         }.getOrNull()?.body()?.results.orEmpty().mapNotNull { it.toPick(true) }
@@ -183,7 +183,7 @@ class ScoutPicksBuilder @Inject constructor(
     }
 
     private suspend fun personPicks(person: Int): List<ScoutPick> {
-        val crew = runCatching { tmdbApi.getPersonCombinedCredits(person, BuildConfig.TMDB_API_KEY) }
+        val crew = runCatching { tmdbApi.getPersonCombinedCredits(person, com.nuvio.tv.core.tmdb.TmdbApiKey.current()) }
             .getOrNull()?.body()?.crew.orEmpty()
         return crew.filter { it.job in setOf("Director", "Writer", "Screenplay", "Creator") && (it.voteCount ?: 0) >= PERSON_MIN_VOTES }
             .sortedByDescending { it.voteAverage ?: 0.0 }
@@ -211,7 +211,7 @@ class ScoutPicksBuilder @Inject constructor(
         val day = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US)
         val to = day.format(java.util.Date(now))
         val from = day.format(java.util.Date(now - FRESH_WINDOW_MS))
-        val key = BuildConfig.TMDB_API_KEY
+        val key = com.nuvio.tv.core.tmdb.TmdbApiKey.current()
         val gate = Semaphore(MAX_REQUESTS)
         return coroutineScope {
             (1..FRESH_PAGES).flatMap { page ->
@@ -229,7 +229,7 @@ class ScoutPicksBuilder @Inject constructor(
             (1..FRESH_PAGES).map { page ->
                 async {
                     gate.withPermit {
-                        runCatching { tmdbApi.getTrendingWeek(BuildConfig.TMDB_API_KEY, language, page) }.getOrNull()?.body()?.results.orEmpty()
+                        runCatching { tmdbApi.getTrendingWeek(com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language, page) }.getOrNull()?.body()?.results.orEmpty()
                             .filter { it.mediaType == "movie" || it.mediaType == "tv" }
                             .mapNotNull { it.toPick(false) }
                     }

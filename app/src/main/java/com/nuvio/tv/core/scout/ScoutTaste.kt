@@ -323,7 +323,7 @@ internal fun ScoutTasteTitle?.needsLookUp(now: Long): Boolean =
 
 /** One request for one title, with its keywords and credits. */
 suspend fun scoutLookUpFacts(tmdbApi: TmdbApi, id: Int, tv: Boolean, contentId: String, now: Long, language: String? = null): ScoutTasteTitle? {
-    val key = BuildConfig.TMDB_API_KEY
+    val key = com.nuvio.tv.core.tmdb.TmdbApiKey.current()
     val details = (if (tv) tmdbApi.getTvFacts(id, key, language) else tmdbApi.getMovieFacts(id, key, language)).body() ?: return null
     val date = if (tv) details.firstAirDate else details.releaseDate
     fun photo(path: String?) = path?.takeIf { it.isNotBlank() }?.let { "https://image.tmdb.org/t/p/w185$it" }

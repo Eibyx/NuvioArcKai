@@ -14,6 +14,8 @@ private const val CLIENT_ID_FIELD = "client_id"
 internal object ProviderCredentialIds {
     const val MDBLIST = "mdblist"
     const val ANIMESKIP = "animeskip"
+    /** NuvioArcKai: uploaded by NuvioMobileKai; the TV only reads it (never pushed or seeded from here). */
+    const val TMDB = "tmdb"
 
     fun debrid(providerId: String): String = "debrid:$providerId"
 }
@@ -81,3 +83,14 @@ internal fun localProviderCredentials(
         add(ProviderCredentialValue(ProviderCredentialIds.ANIMESKIP, CLIENT_ID_FIELD, animeSkipClientId))
     }
 )
+
+/**
+ * NuvioArcKai: the TMDB key the account holds, from the pulled rows; null when there is none or it is not a string.
+ * Read-only: [localProviderCredentials] never includes "tmdb", so push and seed never send or overwrite it.
+ */
+internal fun accountTmdbApiKey(rows: List<SupabaseProviderCredential>): String? {
+    val row = rows.firstOrNull { it.provider.equals(ProviderCredentialIds.TMDB, ignoreCase = true) } ?: return null
+    val element = row.credentialJson[API_KEY_FIELD] as? JsonPrimitive ?: return null
+    if (!element.isString) return null
+    return element.contentOrNull?.trim()?.takeIf { it.isNotEmpty() }
+}

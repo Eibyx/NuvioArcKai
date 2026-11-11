@@ -102,7 +102,7 @@ class MdbListEpisodeMappingService @Inject constructor(
         val addon = addonEpisodes.episodes(contentId, "series")
         if (addon.isEmpty()) return null
         val tmdbId = tmdbShowId?.takeIf { it in 1..Int.MAX_VALUE }?.toInt() ?: lookupTmdbShowId(contentId) ?: return null
-        val seasons = tmdbApi.getTvDetails(tmdbId, BuildConfig.TMDB_API_KEY, TMDB_LANGUAGE).body()
+        val seasons = tmdbApi.getTvDetails(tmdbId, com.nuvio.tv.core.tmdb.TmdbApiKey.current(), TMDB_LANGUAGE).body()
             ?.seasons.orEmpty()
             .mapNotNull { season ->
                 val number = season.seasonNumber?.takeIf { it > 0 } ?: return@mapNotNull null
@@ -120,7 +120,7 @@ class MdbListEpisodeMappingService @Inject constructor(
             seasons.keys.sorted().map { season ->
                 async {
                     semaphore.withPermit {
-                        tmdbApi.getTvSeasonDetails(tmdbId, season, BuildConfig.TMDB_API_KEY, TMDB_LANGUAGE).body()
+                        tmdbApi.getTvSeasonDetails(tmdbId, season, com.nuvio.tv.core.tmdb.TmdbApiKey.current(), TMDB_LANGUAGE).body()
                             ?.episodes.orEmpty()
                             .mapNotNull { episode ->
                                 val number = episode.episodeNumber?.takeIf { it > 0 } ?: return@mapNotNull null
@@ -141,7 +141,7 @@ class MdbListEpisodeMappingService @Inject constructor(
         ids.tmdb?.takeIf { it in 1..Int.MAX_VALUE }?.let { return it.toInt() }
         ids.imdb?.let { return tmdbService.imdbToTmdb(it, "series") }
         ids.tvdb?.let { tvdb ->
-            return tmdbApi.findByExternalId(tvdb, BuildConfig.TMDB_API_KEY, "tvdb_id").body()
+            return tmdbApi.findByExternalId(tvdb, com.nuvio.tv.core.tmdb.TmdbApiKey.current(), "tvdb_id").body()
                 ?.tvResults?.firstOrNull()?.id
         }
         return null

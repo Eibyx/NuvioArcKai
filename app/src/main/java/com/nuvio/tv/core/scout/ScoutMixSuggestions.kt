@@ -43,7 +43,7 @@ class ScoutMixSuggestions @Inject constructor(
         val lists = coroutineScope {
             seeds.map { id ->
                 async {
-                    runCatching { tmdbApi.getTvRecommendations(id, BuildConfig.TMDB_API_KEY, language) }.getOrNull()
+                    runCatching { tmdbApi.getTvRecommendations(id, com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language) }.getOrNull()
                         ?.body()?.results.orEmpty().mapNotNull { it.toPick(seedTv = true) }
                 }
             }.awaitAll()
