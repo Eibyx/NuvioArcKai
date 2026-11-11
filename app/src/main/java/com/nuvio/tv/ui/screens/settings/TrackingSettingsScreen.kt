@@ -146,6 +146,7 @@ internal fun TrackingSettingsContent(
             TrackingProviderId.MDBLIST -> mdbListState.isConnected
             TrackingProviderId.FLOPPY -> floppyState.isConnected
             TrackingProviderId.WETRAKR -> weTrakrState.isConnected
+            TrackingProviderId.ANILIST -> aniListState.connected
             null -> false
         }
         if (activeProvider == dismissOnConnected && connected) {
@@ -182,7 +183,12 @@ internal fun TrackingSettingsContent(
             TrackingProviderId.MDBLIST -> TrackingFocusTarget.MDBLIST
             TrackingProviderId.FLOPPY -> TrackingFocusTarget.FLOPPY
             TrackingProviderId.WETRAKR -> TrackingFocusTarget.WETRAKR
+            TrackingProviderId.ANILIST -> TrackingFocusTarget.ANILIST
         }
+        if (provider == TrackingProviderId.ANILIST) {
+            // AniList keeps its own dialog (QR + PIN or the TV browser), not the shared provider dialogs.
+            showAniList = true
+        } else {
         activeProvider = provider
         disconnectProvider = null
         when (provider) {
@@ -228,6 +234,8 @@ internal fun TrackingSettingsContent(
                     weTrakrViewModel.onConnect()
                 }
             }
+            TrackingProviderId.ANILIST -> Unit
+        }
         }
     }
 
@@ -255,7 +263,7 @@ internal fun TrackingSettingsContent(
         onWeTrakrClick = { openProvider(TrackingProviderId.WETRAKR) },
         aniListState = aniListState,
         aniListFocusRequester = aniListFocusRequester,
-        onAniListClick = { showAniList = true; restoreFocusTarget = TrackingFocusTarget.ANILIST },
+        onAniListClick = { openProvider(TrackingProviderId.ANILIST) },
         onWeTrakrDaysClick = { showWeTrakrDaysDialog = true },
         onWeTrakrUploadClick = weTrakrViewModel::onUploadOpened,
         onLibrarySourceClick = {
@@ -293,7 +301,7 @@ internal fun TrackingSettingsContent(
         state = aniListState,
         onConnect = aniListViewModel::connect,
         onConnectWithPhone = aniListViewModel::connectWithPhone,
-        onDisconnect = aniListViewModel::disconnect,
+        onDisconnect = { showAniList = false; disconnectProvider = TrackingProviderId.ANILIST },
         onSync = aniListViewModel::sync,
         onDismiss = { showAniList = false; aniListViewModel.cancel() }
     )
@@ -397,6 +405,8 @@ internal fun TrackingSettingsContent(
                 }
             )
         }
+        // AniList uses its own dialog (showAniList); it is never the active shared provider.
+        TrackingProviderId.ANILIST -> Unit
         null -> Unit
     }
 
@@ -413,6 +423,7 @@ internal fun TrackingSettingsContent(
                     TrackingProviderId.MDBLIST -> R.string.mdblist_disconnect_title
                     TrackingProviderId.FLOPPY -> R.string.floppy_disconnect_title
                     TrackingProviderId.WETRAKR -> R.string.wetrakr_disconnect_title
+                    TrackingProviderId.ANILIST -> R.string.kai_anilist_disconnect_title
                 }
             ),
             subtitle = stringResource(
@@ -422,6 +433,7 @@ internal fun TrackingSettingsContent(
                     TrackingProviderId.MDBLIST -> R.string.mdblist_disconnect_subtitle
                     TrackingProviderId.FLOPPY -> R.string.floppy_disconnect_subtitle
                     TrackingProviderId.WETRAKR -> R.string.wetrakr_disconnect_subtitle
+                    TrackingProviderId.ANILIST -> R.string.kai_anilist_disconnect_subtitle
                 }
             ),
             width = 520.dp,
@@ -445,6 +457,7 @@ internal fun TrackingSettingsContent(
                             TrackingProviderId.MDBLIST -> mdbListViewModel.onDisconnect()
                             TrackingProviderId.FLOPPY -> floppyViewModel.onDisconnect()
                             TrackingProviderId.WETRAKR -> weTrakrViewModel.onDisconnect()
+                            TrackingProviderId.ANILIST -> aniListViewModel.disconnect()
                         }
                     },
                     primary = true
@@ -1064,6 +1077,7 @@ private fun librarySourceLabel(mode: LibrarySourceMode): String = when (mode) {
     LibrarySourceMode.SIMKL -> stringResource(R.string.simkl_name)
     LibrarySourceMode.MDBLIST -> stringResource(R.string.mdblist_name)
     LibrarySourceMode.WETRAKR -> stringResource(R.string.wetrakr_name)
+    LibrarySourceMode.ANILIST -> stringResource(R.string.anilist_name)
     LibrarySourceMode.LOCAL -> stringResource(R.string.trakt_library_source_nuvio)
 }
 

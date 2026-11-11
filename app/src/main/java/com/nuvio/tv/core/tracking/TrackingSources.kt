@@ -19,6 +19,7 @@ val LibrarySourceMode.providerId: TrackingProviderId?
         LibrarySourceMode.SIMKL -> TrackingProviderId.SIMKL
         LibrarySourceMode.MDBLIST -> TrackingProviderId.MDBLIST
         LibrarySourceMode.WETRAKR -> TrackingProviderId.WETRAKR
+        LibrarySourceMode.ANILIST -> TrackingProviderId.ANILIST
     }
 
 fun effectiveWatchProgressSource(
@@ -74,4 +75,6 @@ fun availableLibrarySourceModes(
     if (TrackingProviderId.SIMKL in connectedProviderIds) add(LibrarySourceMode.SIMKL)
     if (TrackingProviderId.MDBLIST in connectedProviderIds) add(LibrarySourceMode.MDBLIST)
     if (TrackingProviderId.WETRAKR in connectedProviderIds) add(LibrarySourceMode.WETRAKR)
+    // NuvioArcKai: AniList is a library source, never a watch progress source (it keeps no positions).
+    if (TrackingProviderId.ANILIST in connectedProviderIds) add(LibrarySourceMode.ANILIST)
 }

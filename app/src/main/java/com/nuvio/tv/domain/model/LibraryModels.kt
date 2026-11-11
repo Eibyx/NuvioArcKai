@@ -61,7 +61,9 @@ enum class LibrarySourceMode {
     TRAKT,
     SIMKL,
     MDBLIST,
-    WETRAKR
+    WETRAKR,
+    /** NuvioArcKai */
+    ANILIST
 }
 
 enum class LibraryListPrivacy(val apiValue: String) {

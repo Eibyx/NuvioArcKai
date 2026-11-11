@@ -176,6 +176,7 @@ private fun TrackingProviderId.nameRes(): Int = when (this) {
     TrackingProviderId.MDBLIST -> R.string.mdblist_name
     TrackingProviderId.FLOPPY -> R.string.floppy_name
     TrackingProviderId.WETRAKR -> R.string.wetrakr_name
+    TrackingProviderId.ANILIST -> R.string.anilist_name
 }
 
 @Module

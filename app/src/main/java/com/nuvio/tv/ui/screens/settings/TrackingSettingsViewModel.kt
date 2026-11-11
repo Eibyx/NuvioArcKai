@@ -49,7 +49,8 @@ class TrackingSettingsViewModel @Inject constructor(
     simklAuthRepository: SimklAuthRepository,
     mdbListAuth: MdbListAuthStore,
     weTrakrAuth: com.nuvio.tv.data.wetrakr.WeTrakrAuthStore,
-    profiles: ProfileManager
+    profiles: ProfileManager,
+    aniList: com.nuvio.tv.data.anilist.AniListRepository? = null
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(TrackingSettingsUiState())
     val uiState: StateFlow<TrackingSettingsUiState> = _uiState.asStateFlow()
@@ -62,6 +63,11 @@ class TrackingSettingsViewModel @Inject constructor(
                     if (simkl.isAuthenticated) add(TrackingProviderId.SIMKL)
                     if (mdblist.isAuthenticated) add(TrackingProviderId.MDBLIST)
                     if (wetrakr.isAuthenticated && wetrakr.scope.profileId == profileId) add(TrackingProviderId.WETRAKR)
+                }
+            }.let { base ->
+                // NuvioArcKai: AniList joins the connected set (library source only).
+                if (aniList == null) base else combine(base, aniList.state) { set, aniListState ->
+                    if (set == null || !aniListState.connected) set else set + TrackingProviderId.ANILIST
                 }
             }
             combine(

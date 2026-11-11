@@ -61,6 +61,7 @@ internal fun AniListAccountDialog(state: AniListTvState, onConnect: () -> Unit, 
                                     fontSize = 30.sp, fontWeight = FontWeight.Bold, color = NuvioTheme.colors.TextPrimary)
                             }
                             Text(state.pinPageUrl, color = NuvioTheme.colors.TextTertiary)
+                            Text(stringResource(R.string.kai_anilist_pin_trusted_network), color = NuvioTheme.colors.TextSecondary)
                         } else {
                             Text(stringResource(R.string.anilist_phone_instructions))
                         }

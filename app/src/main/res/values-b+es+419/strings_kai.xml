@@ -10,4 +10,10 @@
     <string name="kai_anilist_pin_instructions">Escanea el QR con un celular en la misma red. Abre AniList desde esa página, autoriza, copia el token que muestra AniList y pégalo allí junto a este código.</string>
     <string name="kai_anilist_pin_code">Código: %1$s</string>
     <string name="kai_anilist_pin_unavailable">El inicio de sesión con el celular necesita el Client ID de AniList propio de esta compilación. Puedes conectar en esta TV.</string>
+    <string name="kai_anilist_pin_trusted_network">Usa una red de confianza: el token viaja sin cifrar dentro de tu red local.</string>
+    <string name="kai_anilist_disconnect_title">¿Desconectar AniList?</string>
+    <string name="kai_anilist_disconnect_subtitle">Borra el inicio de sesión de AniList, la copia de la lista, los enlaces y los envíos pendientes de este perfil. Tu cuenta de AniList no cambia.</string>
+    <string name="kai_anilist_unresolved_entry">AniList: esta entrada no tiene un ID que tus add-ons puedan abrir.</string>
+    <string name="kai_library_empty_anilist_not_auth_title">Conecta AniList</string>
+    <string name="kai_library_empty_anilist_not_auth_subtitle">Conecta AniList en Ajustes → Seguimiento para ver aquí tu lista.</string>
 </resources>

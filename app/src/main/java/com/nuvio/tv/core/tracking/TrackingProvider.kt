@@ -9,7 +9,9 @@ enum class TrackingProviderId(val storageId: String) {
     SIMKL("simkl"),
     MDBLIST("mdblist"),
     FLOPPY("floppy"),
-    WETRAKR("wetrakr");
+    WETRAKR("wetrakr"),
+    /** NuvioArcKai: AniList (list status library; episode progress goes through its own send queue). */
+    ANILIST("anilist");
 
     companion object {
         fun fromStorage(value: String?): TrackingProviderId? {

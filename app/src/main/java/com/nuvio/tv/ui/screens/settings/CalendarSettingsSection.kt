@@ -377,4 +377,5 @@ private fun calendarServiceName(provider: TrackingProviderId): String = when (pr
     TrackingProviderId.MDBLIST -> "MDBList"
     TrackingProviderId.FLOPPY -> "Floppy"
     TrackingProviderId.WETRAKR -> "WeTrakr"
+    TrackingProviderId.ANILIST -> "AniList"
 }

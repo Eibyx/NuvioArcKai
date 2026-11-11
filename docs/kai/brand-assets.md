@@ -19,8 +19,7 @@ Se pintan con `rememberRawSvgPainter` (Coil), que no tiñe, con `ContentScale.Fi
   fuentes dicen «Google Drive» completo; no se usa la etiqueta corta «Drive» de LiteOG.
 - **TeraBox.** No hay kit de prensa público. El logotipo es el icono que sirve el sitio oficial de Flextech
   (`www.terabox.com`) desde su CDN, y corresponde al logotipo de 2024 (caja que integra la «T»). Se usa solo para
-  identificar la integración y con aviso de marca. **Pendiente: el usuario debe aceptar esta fuente** (ver
-  «Decisiones y datos que debe aportar el usuario»). Si no la acepta, se sustituye este único archivo.
+  identificar la integración y con aviso de marca. **Fuente aceptada por el usuario el 10-nov-2026.**
 - **AniList.** Icono oficial de la app web (placa oscura `#1F2631` con la «A» blanca y la «L» `#02A9FF`), del
   manifiesto de `anilist.co`. Se descartó el SVG de `AniList/ApiV2-GraphQL-Docs` (`docs/public/anilist.svg`) y
   `https://anilist.co/img/icons/icon.svg` porque no llevan placa y la «A» blanca desaparece en fondos claros

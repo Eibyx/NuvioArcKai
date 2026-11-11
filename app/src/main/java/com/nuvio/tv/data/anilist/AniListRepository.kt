@@ -52,6 +52,12 @@ class AniListRepository @Inject internal constructor(
     private var queue: AniListSendQueue? = null
     private var accountJob: Job? = null
     private var snapshot: AniListSyncSnapshot? = null
+        set(value) {
+            field = value
+            mutableSnapshot.value = value
+        }
+    /** NuvioArcKai: the list snapshot for the AniList library (null while signed out). */
+    private val mutableSnapshot = MutableStateFlow<AniListSyncSnapshot?>(null)
     private var pairing: AniListPhonePairing? = null
     private var pinPairing: AniListPinPairing? = null
     private var pairingExpiry: Job? = null
@@ -62,6 +68,7 @@ class AniListRepository @Inject internal constructor(
     private fun playbackActive() = com.nuvio.tv.core.recommendations.TvRecommendationManager.isPlaybackActive.value
     private val mutableState = MutableStateFlow(AniListTvState())
     val state: StateFlow<AniListTvState> = mutableState.asStateFlow()
+    val listSnapshot: StateFlow<AniListSyncSnapshot?> = mutableSnapshot.asStateFlow()
     private val mutableOverlays = MutableStateFlow<Map<String, AniListEpisodeOverlay>>(emptyMap())
     val overlays: StateFlow<Map<String, AniListEpisodeOverlay>> = mutableOverlays.asStateFlow()
 
@@ -303,6 +310,51 @@ class AniListRepository @Inject internal constructor(
             } catch (e: Exception) { publishLocked(); throw e }
         }
         retryPending(force = true)
+    }
+
+    /**
+     * NuvioArcKai library: puts [mediaId] in [status] (one list status per entry). A REPEATING entry is never
+     * written: Nuvio leaves rewatches to AniList.
+     */
+    internal suspend fun setListStatus(mediaId: Long, status: String) = withContext(Dispatchers.IO) {
+        initialized.await()
+        gate.withLock {
+            check(auth.state.value.isAuthenticated) { "AniList is not connected" }
+            val account = auth.scope()
+            val current = snapshot?.entries?.firstOrNull { it.mediaId == mediaId }
+            check(current?.status != AniListListStatus.REPEATING) { "AniList rewatches are not changed from Nuvio" }
+            if (current?.status == status) return@withLock
+            val saved = api.saveEntry(account, mediaId, status = status)
+            auth.checkScope(account)
+            snapshot?.let { old ->
+                snapshot = old.copy(entries = old.entries.filterNot { it.mediaId == mediaId } + saved.copy(media = saved.media ?: current?.media))
+                disk.saveSnapshot(account.profileId, snapshot!!)
+            }
+        }
+    }
+
+    /** NuvioArcKai library: removes the list entry [entryId] (the caller confirmed losing progress or score). */
+    internal suspend fun deleteListEntry(entryId: Long) = withContext(Dispatchers.IO) {
+        initialized.await()
+        gate.withLock {
+            check(auth.state.value.isAuthenticated) { "AniList is not connected" }
+            val account = auth.scope()
+            val current = snapshot?.entries?.firstOrNull { it.id == entryId }
+            check(current?.status != AniListListStatus.REPEATING) { "AniList rewatches are not changed from Nuvio" }
+            api.deleteEntry(account, entryId)
+            auth.checkScope(account)
+            snapshot?.let { old ->
+                snapshot = old.copy(entries = old.entries.filterNot { it.id == entryId })
+                disk.saveSnapshot(account.profileId, snapshot!!)
+            }
+        }
+    }
+
+    /** The AniList entry of a title not yet in the list: anime ids directly, IMDb through ARM's verified table. */
+    internal suspend fun resolveMediaId(contentId: String, contentType: String, title: String?): Long? = withContext(Dispatchers.IO) {
+        initialized.await()
+        val ref = buildTrackingMediaReference(contentType, contentId, null, title, seasonNumber = 1, episodeNumber = 1)
+        resolver.link(ref, snapshot)?.parts?.firstOrNull()?.mediaId
     }
 
     /** Title opening only reads AniList. No history, progress or other provider is written. */

@@ -1100,8 +1100,7 @@ class WatchProgressRepositoryImpl @Inject constructor(
         triggerWatchedItemsSync(listOf(watchedItem), profileId = profileId)
         // AniList receives the real completed event even when other history broadcasts are disabled (the player
         // passes false). Its queue is persisted before any network call and never writes to other services.
-        runCatching { aniList?.episodeWatched(profileId, completed) }
-            .onFailure { Log.w(TAG, "Unable to persist AniList completion", it) }
+        notifyAniList(profileId, completed)
     }
 
     override suspend fun markAsCompletedBatch(progressList: List<WatchProgress>) {
@@ -1146,8 +1145,18 @@ class WatchProgressRepositoryImpl @Inject constructor(
         triggerRemoteSync(profileId = profileId)
         triggerWatchedItemsSync(watchedItems, profileId = profileId)
         completedList.forEach { completed ->
-            runCatching { aniList?.episodeWatched(profileId, completed) }
-                .onFailure { Log.w(TAG, "Unable to persist AniList completion", it) }
+            notifyAniList(profileId, completed)
+        }
+    }
+
+    /** NuvioArcKai: queue the completion for AniList; cancellation propagates, any other failure is only logged. */
+    private suspend fun notifyAniList(profileId: Int, completed: WatchProgress) {
+        try {
+            aniList?.episodeWatched(profileId, completed)
+        } catch (error: kotlinx.coroutines.CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w(TAG, "Unable to persist AniList completion", error)
         }
     }
 

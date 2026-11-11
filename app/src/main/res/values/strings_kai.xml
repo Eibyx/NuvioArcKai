@@ -14,4 +14,10 @@
     <string name="kai_anilist_pin_instructions">Scan the QR with a phone on the same network. Open AniList from that page, authorize, copy the token AniList shows and paste it there with this code.</string>
     <string name="kai_anilist_pin_code">Code: %1$s</string>
     <string name="kai_anilist_pin_unavailable">Phone sign-in needs this build\'s own AniList client ID. You can still connect on this TV.</string>
+    <string name="kai_anilist_pin_trusted_network">Use a network you trust: the token travels unencrypted inside your local network.</string>
+    <string name="kai_anilist_disconnect_title">Disconnect AniList?</string>
+    <string name="kai_anilist_disconnect_subtitle">Removes the AniList sign-in, list snapshot, links and pending sends of this profile. Your AniList account is not changed.</string>
+    <string name="kai_anilist_unresolved_entry">AniList: this entry has no ID your add-ons can open.</string>
+    <string name="kai_library_empty_anilist_not_auth_title">Connect AniList</string>
+    <string name="kai_library_empty_anilist_not_auth_subtitle">Connect AniList in Settings → Tracking to see your list here.</string>
 </resources>

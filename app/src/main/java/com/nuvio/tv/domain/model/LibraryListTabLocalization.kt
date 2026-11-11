@@ -15,6 +15,7 @@ fun LibraryListTab.localizedMembershipTitle(): String {
         TrackingProviderId.MDBLIST -> stringResource(R.string.mdblist_name)
         TrackingProviderId.FLOPPY -> stringResource(R.string.floppy_name)
         TrackingProviderId.WETRAKR -> stringResource(R.string.wetrakr_name)
+        TrackingProviderId.ANILIST -> stringResource(R.string.anilist_name)
         null -> null
     }
     return provider?.let { "$it · ${localizedTitle()}" } ?: localizedTitle()
@@ -37,6 +38,12 @@ fun LibraryListTab.titleRes(): Int? = when {
     key == "wetrakr:status:watched" -> R.string.library_filter_watched
     key == "wetrakr:status:hold" -> R.string.library_status_on_hold
     key == "wetrakr:status:dropped" -> R.string.library_status_dropped
+    // NuvioArcKai AniList tabs
+    key == "anilist:status:current" -> R.string.library_status_watching
+    key == "anilist:status:planning" -> R.string.library_status_plan_to_watch
+    key == "anilist:status:completed" -> R.string.library_status_completed
+    key == "anilist:status:paused" -> R.string.library_status_on_hold
+    key == "anilist:status:dropped" -> R.string.library_status_dropped
     type == LibraryListTab.Type.WATCHLIST -> R.string.library_watchlist
     else -> null
 }
