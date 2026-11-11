@@ -121,6 +121,17 @@ Artefacto `kai-armv7-release` descargado y verificado por separado:
 Correcciones del workflow hasta llegar a verde: memoria de las pruebas a 2 GB (`2815f51`, la primera pasada daba
 `OutOfMemoryError`) y lectura de la salida real de apksigner/aapt2 y del dex sin `SIGPIPE` (`873df72`).
 
+## 4d. Pre-release publicada
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.1.0-nt.stable-kai.1 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/42976270884 (`publish=true`, commit `ce210ad`).
+
+Marcada como pre-release; tres assets (`app-full-armeabi-v7a-release.apk`, `SHA256SUMS.txt`, `native-inventory.json`);
+el cuerpo lleva `<!-- nuvio-fork-version-code: 1 -->`. Descargados de la release y verificados: el APK coincide con
+`SHA256SUMS.txt` (`277356acae3aeaa4fe2b8d8835516d6709b0305f309b186b65c8fee761bdad43`; es una compilación nueva, por eso
+difiere del artefacto de prueba), firma v2 válida con el mismo certificado
+`b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, mismo paquete, versión y ABI única `armeabi-v7a`.
+
 ## 5. Pendiente para el usuario
 
 1. La prueba en la TCL del anexo del prompt de continuación.
