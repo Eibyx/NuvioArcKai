@@ -181,15 +181,20 @@ jobs:
           "${bt}/zipalign" -c -P 4 -v 4 "${apk}" > /dev/null
           "${bt}/apksigner" verify --verbose --print-certs "${apk}" | tee apksigner.txt
           grep -q 'Verified using v2 scheme (APK Signature Scheme v2): true' apksigner.txt
-          cert="$(grep -m1 'Signer #1 certificate SHA-256 digest' apksigner.txt | awk '{print $NF}')"
+          # apksigner prints "Signer #1 certificate SHA-256 digest" or, with only some schemes, "V2 Signer: certificate SHA-256 digest".
+          cert="$(grep -m1 -E '^(Signer #1|V2 Signer:) certificate SHA-256 digest: ' apksigner.txt | awk '{print $NF}' || true)"
+          [[ "${cert}" =~ ^[0-9a-f]{64}$ ]] || { echo "No signer certificate SHA-256 in apksigner output" >&2; exit 1; }
           grep -qi 'CN=Android Debug' apksigner.txt && { echo "Signed with a debug certificate" >&2; exit 1; } || true
           "${bt}/aapt2" dump badging "${apk}" > badging.txt
           grep -q "package: name='com.eibyx.nuvioarckai' versionCode='${{ inputs.version_code }}' versionName='${{ inputs.version_name }}'" badging.txt
-          grep -q "sdkVersion:'24'" badging.txt
-          grep -q "targetSdkVersion:'36'" badging.txt
+          # aapt2 prints minSdkVersion (aapt printed sdkVersion); either way it must be 24.
+          grep -Eq "^(minSdkVersion|sdkVersion):'24'$" badging.txt
+          grep -q "^targetSdkVersion:'36'$" badging.txt
           [[ "$(grep '^native-code:' badging.txt)" == "native-code: 'armeabi-v7a'" ]]
           # The release carries Nuvio's public Supabase project (TV sign-in) in its BuildConfig.
-          unzip -p "${apk}" 'classes*.dex' | grep -aq 'https://api.nuvio.tv' || { echo "Nuvio Supabase URL missing from the APK" >&2; exit 1; }
+          unzip -p "${apk}" 'classes*.dex' > release-dex.bin
+          grep -aq 'https://api.nuvio.tv' release-dex.bin || { echo "Nuvio Supabase URL missing from the APK" >&2; exit 1; }
+          rm -f release-dex.bin
           baseline=()
           [[ -f docs/kai/baseline-native.json ]] && baseline=(--baseline docs/kai/baseline-native.json)
           python3 scripts/verify_native_apk.py "${apk}" --kai "${baseline[@]}" --output native-inventory.json > /dev/null
