@@ -68,3 +68,21 @@ NuvioTvLiteOG.
 9. Cambio de episodio (siguiente episodio y elegir otro): el subtítulo y las fuentes son las del nuevo episodio.
 10. Memoria: episodio con 30 MB de fuentes en un TCL de 1 GB; reproducir 20 min sin cierres.
 11. «Buscar en mis carpetas…» y «Vincular carpeta…»: elegir a mano, salir y volver; se recuerda.
+
+## Pre-release publicada
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.1.0-nt.stable-kai.2 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43063720015 (commit `baf7c18`).
+
+| Comprobación (APK descargado de la release) | Resultado |
+|---|---|
+| SHA-256 del APK | `347a457c092d2e10b3524eb5cb3470204c8508386ed335a976e567dd8cc40702` (coincide con `SHA256SUMS.txt`) |
+| Firma | v2 válida, el mismo certificado que kai.1: `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb` |
+| aapt2 | `com.eibyx.nuvioarckai`, versionCode 2, versionName `1.1.0-nt.stable-kai.2`, native-code `armeabi-v7a` |
+| Bibliotecas | solo `lib/armeabi-v7a/`; `libasskt.so` y `libmpv.so` presentes |
+| Release | pre-release, tres assets, `<!-- nuvio-fork-version-code: 2 -->` |
+
+Ejecuciones previas: `43044293410` falló por `SettingsSearchTest` (filas nuevas sin indexar; corregido en `2d59f2e` sin tocar la
+prueba); `43052003525` falló dos veces porque el runner no resolvía `security.ubuntu.com` al instalar Chromium con apt
+(corregido en `baf7c18`: Chromium sin apt salvo que el render lo necesite). `HomeEnrichmentRetryTest` es inestable (carrera
+en la propia prueba) y no falló en la ejecución publicada.
