@@ -28,9 +28,20 @@ por proveedor, cascada de IDs). No se copió código.
 
 ## Descartado o pendiente
 
-- Biblioteca AniList por estados (`AniListTrackingLibraryProvider`, `AniListProjection`, `AniListListLinker` de Mobile),
-  `TrackingProviderId.ANILIST` y `LibrarySourceMode.ANILIST`: **pendiente** (ver informe final).
+- Biblioteca AniList: **hecha en la fase 2**, ver abajo.
 - Selección del subtítulo por defecto del archivo para nube (`findFileDefaultSubtitleTrackIndex` de LiteOG): no portado;
   cambia la selección automática de subtítulos del reproductor, fuera del alcance permitido (regla 2).
 - «Siguiente episodio» desde el punto de rewatch AniList en la ficha: no portado.
 - Logotipos de Mobile: rechazados (ver `brand-assets.md`).
+
+## Fase 2: AniList desde NuvioMobileKai
+
+| Mobile (`composeApp/src/commonMain/kotlin/com/nuvio/app/features/anilist/`) | TV | Qué se tomó |
+| --- | --- | --- |
+| `AniListTrackingLibraryProvider.kt` | `data/anilist/AniListLibrary.kt` (`AniListTrackingLibraryProvider`) | Lógica: cinco pestañas, `selectionGroup` de estado, un estado por entrada, Planeado al marcar, confirmación al perder progreso o puntuación, resolver la entrada si aún no está en la lista. Reescrito para la interfaz de Arc (`items`/`tabs`/`observeMembership`). |
+| `AniListProjection.kt` (`aniListStatusDefinitions`) | `aniListStatusTabs`, `aniListTabFor`, `aniListLibraryEntries`, `entriesFor` | REPEATING en Viendo con marca «↻»; IDs `mal:`/`kitsu:`/`tt` en ese orden; alias para la pertenencia. No se porta la proyección de Continuar viendo (AniList no es fuente de progreso). |
+| `AniListTrackingWrites.kt` (`setStatus`, `deleteEntry`) | `AniListRepository.setListStatus` / `deleteListEntry` / `resolveMediaId` | Mismas mutaciones GraphQL que ya tenía el cliente de LiteOG; nunca escriben una entrada REPEATING. |
+| `AniListListLinker.kt` | `AniListLinkHelpers.kt` | Solo las reglas puras (`aniListListEntries`, `aniListEntriesToLink`, `armSeasonsOf`, `animeIdLinks`). El enlazador en segundo plano no se porta: sería un trabajo periódico nuevo (regla 6). |
+| `AniListLinkUi.kt` (`aniListLinkStatus`), `AniListWatchedSyncAdapter.kt` (`withoutImported`) | `AniListLinkHelpers.kt` | Funciones puras; sin UI. |
+| `AniListSyncRepository.kt` | — | No se porta: el `AniListRepository` de LiteOG ya sincroniza la lista y guarda el snapshot; se expone como `listSnapshot`. |
+| Pruebas `AniListLinkStatusTest`, `AniListTwoWaySyncTest`, `AniListListLinkerTest` | mismas clases en `app/src/test/.../data/anilist/` | LinkStatus sin cambios; TwoWaySync comprueba el mismo resultado de importación en lugar de las acciones de ficha de Mobile; ListLinker conserva los casos de reglas (los de extremo a extremo dependen del enlazador no portado). |

@@ -35,3 +35,15 @@ falso) encolan en disco antes de la red; lectura fresca y solo aumentos (`aniLis
 COMPLETED ni genera REPEATING; clave de cola por perfil/temporada/parte; reintentos con `AniListRetryService`
 (JobScheduler puntual con red, 30 s → 6 h, `Retry-After`). AniList **no** se registra como `TrackingHistoryWriter`,
 así que no hay doble envío.
+
+## Biblioteca (fase 2)
+
+`LibrarySourceMode.ANILIST` aparece en la fuente de biblioteca cuando AniList está conectado. Pestañas: Viendo
+(`CURRENT`, más `REPEATING` marcado con «↻» y nunca escrito), Planeado (`PLANNING`), Completado (`COMPLETED`), Pausado
+(`PAUSED`) y Abandonado (`DROPPED`). Cada entrada abre `mal:<id>`, si no `kitsu:<id>`, si no el IMDb de ARM; sin ninguno
+se lista como `anilist:<id>` y al pulsarla se muestra un aviso en lugar de abrir una ficha vacía. Cambiar de estado
+desde la ficha usa el grupo `anilist:status` (un estado por entrada); quitar una entrada con progreso o puntuación pide
+confirmación. Arc muestra el proveedor de biblioteca por su nombre en texto, no con logotipo, así que AniList aparece
+como «ANILIST» en la cabecera, igual que los demás. El calendario no lee AniList.
+
+En el diálogo QR una línea pide usar una red de confianza (el token viaja sin cifrar dentro de la red local).

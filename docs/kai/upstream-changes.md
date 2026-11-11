@@ -33,3 +33,21 @@ recoge cada archivo **original** de Arc que se tocó y por qué, para poder segu
 | `ui/screens/player/PlayerRuntimeControllerPlaybackEvents.kt` | D | Salto a fin + 100 ms con `SeekParameters(0, 300 ms)` y seek exacto en mpv; traza `ArcSkipDiag`. |
 | `ui/screens/player/PlayerRuntimeControllerObservers.kt` | D | Prefijos `anilist:`/`anidb:`; `tmdb:`/`tvdb:` usan el IMDb de los metadatos; trazas. |
 | `ui/screens/player/PlayerRuntimeControllerChapters.kt`, `PlayerRuntimeControllerMetadata.kt`, `PlayerScreen.kt` | D | Solo llamadas a la traza `ArcSkipDiag`. |
+
+## Fase 2 (11-nov-2026)
+
+| Archivo | Motivo |
+| --- | --- |
+| `core/tracking/TrackingProvider.kt` | `TrackingProviderId.ANILIST("anilist")`. |
+| `domain/model/LibraryModels.kt` | `LibrarySourceMode.ANILIST`. |
+| `core/tracking/TrackingSources.kt` | `LibrarySourceMode.ANILIST → TrackingProviderId.ANILIST`; AniList aparece como fuente de biblioteca si está conectado; **no** como fuente de progreso. |
+| `core/catalog/TrackerListRows.kt`, `domain/model/LibraryListTabLocalization.kt`, `ui/screens/settings/LibraryTransferFlow.kt`, `ui/screens/settings/CalendarSettingsSection.kt` | Rama `ANILIST` en sus `when` (nombre «AniList» y títulos de las cinco pestañas con las cadenas de estado existentes de Arc). |
+| `ui/screens/settings/TrackingSettingsScreen.kt` | Rama `ANILIST` en todos los `when`; `openProvider(ANILIST)` abre el diálogo propio de AniList; desconexión con su confirmación y textos propios. |
+| `ui/screens/settings/TrackingSettingsViewModel.kt` | AniList entra en el conjunto de proveedores conectados (parámetro opcional al final del constructor). |
+| `ui/screens/library/LibraryScreen.kt` | Etiqueta «ANILIST», textos de biblioteca vacía sin conexión y aviso en lugar de abrir una ficha vacía para entradas sin ID resoluble. |
+| `data/repository/LibraryGenreFill.kt` | AniList trae sus géneros como Simkl/MDBList/WeTrakr. |
+| `data/repository/WatchProgressRepositoryImpl.kt` | `notifyAniList()`: relanza `CancellationException` y solo registra el resto. |
+
+Tratados por `else`/conjuntos sin cambio (comprobado): `core/calendar/CalendarFollowedSourceReader.kt` (el calendario no lee AniList),
+`data/repository/LibraryTransferService.kt` (ruta genérica: la transferencia a AniList usa Planeado mediante `applyMembershipChanges`),
+`ui/screens/settings/MDBListSettingsScreen.kt` (solo `WatchProgressSource`, que no incluye AniList), y los de `data/wetrakr/*`.

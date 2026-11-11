@@ -1,8 +1,8 @@
 {
  "total": {
-  "tests": 9089,
-  "passed": 9065,
-  "failed": 12,
+  "tests": 9108,
+  "passed": 9086,
+  "failed": 10,
   "skipped": 12
  },
  "classes": {
@@ -2647,6 +2647,27 @@
    "skipped": 0,
    "failedCases": []
   },
+  "com.nuvio.tv.data.anilist.AniListLibraryTest": {
+   "tests": 5,
+   "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListLinkStatusTest": {
+   "tests": 3,
+   "passed": 3,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListListLinkerTest": {
+   "tests": 2,
+   "passed": 2,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
   "com.nuvio.tv.data.anilist.AniListMushokuTenseiSendTest": {
    "tests": 4,
    "passed": 4,
@@ -2699,6 +2720,13 @@
   "com.nuvio.tv.data.anilist.AniListTvProjectionTest": {
    "tests": 9,
    "passed": 9,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.anilist.AniListTwoWaySyncTest": {
+   "tests": 3,
+   "passed": 3,
    "failed": 0,
    "skipped": 0,
    "failedCases": []
@@ -3700,6 +3728,13 @@
   "com.nuvio.tv.data.repository.ImdbEpisodeRatingsRepositoryTest": {
    "tests": 5,
    "passed": 5,
+   "failed": 0,
+   "skipped": 0,
+   "failedCases": []
+  },
+  "com.nuvio.tv.data.repository.KaiAniListCompletionHookTest": {
+   "tests": 6,
+   "passed": 6,
    "failed": 0,
    "skipped": 0,
    "failedCases": []
@@ -5115,12 +5150,10 @@
   },
   "com.nuvio.tv.ui.screens.home.HomeEnrichmentRepositoryBoundaryTest": {
    "tests": 4,
-   "passed": 3,
-   "failed": 1,
+   "passed": 4,
+   "failed": 0,
    "skipped": 0,
-   "failedCases": [
-    "failed full metadata prefetch is not marked complete and can retry"
-   ]
+   "failedCases": []
   },
   "com.nuvio.tv.ui.screens.home.HomeEnrichmentRetryTest": {
    "tests": 9,
@@ -7383,12 +7416,10 @@
   },
   "com.nuvio.tv.ui.screens.settings.SettingsSearchTest": {
    "tests": 17,
-   "passed": 16,
-   "failed": 1,
+   "passed": 17,
+   "failed": 0,
    "skipped": 0,
-   "failedCases": [
-    "every settings row with a fixed name can be found"
-   ]
+   "failedCases": []
   },
   "com.nuvio.tv.ui.screens.settings.SettingsStructureTest": {
    "tests": 8,
