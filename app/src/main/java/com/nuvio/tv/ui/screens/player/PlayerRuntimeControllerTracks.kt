@@ -1712,6 +1712,11 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
         Log.d(PlayerRuntimeController.TAG, "AUTO_SUB stop: server is burning in a subtitle")
         return
     }
+    // Kai: the user's own folder subtitle for this episode comes first ("Elegir automáticamente").
+    autoSelectableLibrarySubtitle()?.let { library ->
+        if (deferredAutoAddonSubtitle?.id != library.id) autoSelectAddonSubtitleDeferringReload(library)
+        return
+    }
     val state = _uiState.value
     val preferredTargets = subtitleLanguageTargets()
     val primaryTarget = preferredTargets.firstOrNull()

@@ -63,7 +63,11 @@ internal object MpvLibraryFonts {
                 if (!linked) source.copyTo(temporary, overwrite = true)
                 check(temporary.renameTo(target)) { "rename failed" }
             }
-        }.onFailure { Log.w(TAG, "mpv font directory not updated: ${it::class.java.simpleName}") }
+        }.onFailure {
+            Log.w(TAG, "mpv font directory not updated: ${it::class.java.simpleName}")
+            // As before Kai: the bundled fonts directory itself.
+            if (subtitlePath == null) return runCatching { prepareMpvSubtitleFonts(context) }.getOrDefault(dir)
+        }
         return dir
     }
 }

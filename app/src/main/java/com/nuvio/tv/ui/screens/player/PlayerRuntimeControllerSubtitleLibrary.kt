@@ -237,14 +237,18 @@ private fun PlayerRuntimeController.publishLibraryResult(result: LibrarySearchRe
         )
     }
     Log.i(LIBRARY_TAG, "Folder subtitles for this episode: ${subtitles.size} (unavailable roots ${result.unavailable.size})")
-    if (autoSelect) autoSelectableLibrarySubtitle()?.let(::autoSelectAddonSubtitleDeferringReload)
+    // Before the player exists the track-change pass does it (tryAutoSelectPreferredSubtitleFromAvailableTracks).
+    val playerReady = if (isUsingMpvEngine()) mpvView != null else _exoPlayer != null
+    if (autoSelect && playerReady) autoSelectableLibrarySubtitle()?.let(::autoSelectAddonSubtitleDeferringReload)
 }
 
 /** The folder subtitle to choose by itself: picked by hand, or in the preferred language. */
-private fun PlayerRuntimeController.autoSelectableLibrarySubtitle(): Subtitle? {
+internal fun PlayerRuntimeController.autoSelectableLibrarySubtitle(): Subtitle? {
     val library = subtitleLibrary ?: return null
     if (!library.settings.value.autoSelect) return null
     if (isUserExplicitSubtitleSelection || subtitleDisabledByPersistedPreference) return null
+    // A subtitle the user chose before and that is being restored is not overridden.
+    pendingRestoredAddonSubtitle?.let { if (!it.id.startsWith(LIBRARY_SUBTITLE_ID_PREFIX)) return null }
     val subtitles = subtitleLibraryState.subtitles
     if (subtitles.isEmpty()) return null
     val selected = _uiState.value.selectedAddonSubtitle
