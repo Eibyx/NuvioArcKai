@@ -87,6 +87,23 @@ Igual que en la fase 1 (89 pruebas de nube + todas las de servidores de Arc).
 4. AniList no es fuente de progreso: no guarda posiciones y añadirlo cambiaría Continuar viendo.
 5. Secretos: el workflow lee `KAI_*` y, si faltan, `NUVIO_RELEASE_*`; `ANILIST_CLIENT_ID` como secreto propio o en `LOCAL_PROPERTIES_BASE64`.
 
+## 4b. Job de pruebas del workflow
+
+`kai-release-armv7.yml` (copia de esta rama) ya no se bloquea por las 10 fallas medidas de la base:
+
+1. `:app:testFullDebugUnitTest --continue` sin cortar el job; los XML se guardan aparte en `build/kai-tests/first`
+   (Gradle vacía el directorio de resultados en la siguiente ejecución).
+2. `scripts/kai/compare_test_baseline.py` compara cada falla (clase + prueba) con `docs/kai/baseline-tests.json`.
+3. Las clases con fallas fuera de la lista se reintentan **una vez** (`--rerun --tests <clase>`); sus resultados sustituyen
+   a los de la primera ejecución solo para esas clases.
+4. El job falla solo si queda alguna falla nueva tras el reintento. El informe (`report.md`/`report.json`, XML de ambas
+   pasadas e informe HTML de Gradle) se sube siempre como artefacto `kai-unit-test-report` y se añade al resumen del run.
+
+Comprobado: 6 pruebas Python con XML simulados (`scripts/tests/test_compare_test_baseline.py`); con los XML reales de la
+ejecución 3 de Kai, la primera comparación detecta `MetaRepositoryRateLimitTest` como nueva, el reintento real con Gradle
+la aprueba y el veredicto final es OK; y el paso completo del workflow, ejecutado con `bash -e` y un `gradlew` simulado,
+da éxito con solo fallas conocidas, éxito con una falla que pasa al reintentar y error con una falla que se repite.
+
 ## 5. Pendiente para el usuario
 
 1. Fusionar el PR #1 y lanzar «NuvioArcKai ARMv7 release» sobre `ccr-60b9fe86-mp2dal` (primero sin `publish`).

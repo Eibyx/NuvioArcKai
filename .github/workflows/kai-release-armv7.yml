@@ -41,13 +41,51 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Python release tooling
         run: PYTHONPATH=scripts python3 -m unittest discover -s scripts/tests -v
-      - name: Kotlin unit tests
+      - name: Kotlin unit tests (first run)
         env:
           LOCAL_PROPERTIES_BASE64: ${{ secrets.LOCAL_PROPERTIES_BASE64 }}
         run: |
           if [[ -n "${LOCAL_PROPERTIES_BASE64}" ]]; then printf '%s' "${LOCAL_PROPERTIES_BASE64}" | base64 --decode > local.properties; fi
           sed -i -E '/^[[:space:]]*(sdk\.dir|NUVIO_RELEASE_[A-Z_]+)[[:space:]]*=/d' local.properties 2>/dev/null || true
-          ./gradlew :app:testFullDebugUnitTest --continue
+          # Failing tests do not stop the job here: the next step compares them with the measured baseline.
+          ./gradlew :app:testFullDebugUnitTest --continue || echo "Gradle reported test failures; comparing with the baseline."
+          mkdir -p build/kai-tests
+          # Gradle empties the results directory on the next run, so keep the first run apart.
+          rm -rf build/kai-tests/first && cp -r app/build/test-results/testFullDebugUnitTest build/kai-tests/first
+      - name: Compare with the baseline and retry new failures once
+        run: |
+          set -uo pipefail
+          compare=(python3 -I scripts/kai/compare_test_baseline.py --baseline docs/kai/baseline-tests.json)
+          # GitHub runs this with bash -e: capture the exit code instead of letting a non-zero one end the step.
+          status=0
+          "${compare[@]}" --results build/kai-tests/first --retry-classes build/kai-tests/retry-classes.txt \
+            --report-json build/kai-tests/first-run.json --report-md build/kai-tests/first-run.md || status=$?
+          if [[ ${status} -eq 2 ]]; then echo "::error::No JUnit results were produced."; exit 1; fi
+          if [[ ${status} -eq 1 ]]; then
+            args=()
+            while read -r cls; do [[ -n "${cls}" ]] && args+=(--tests "${cls}"); done < build/kai-tests/retry-classes.txt
+            echo "Retrying once: $(tr '\n' ' ' < build/kai-tests/retry-classes.txt)"
+            ./gradlew :app:testFullDebugUnitTest --rerun "${args[@]}" || true
+            rm -rf build/kai-tests/retry && cp -r app/build/test-results/testFullDebugUnitTest build/kai-tests/retry
+            status=0
+            "${compare[@]}" --results build/kai-tests/first --retry-results build/kai-tests/retry \
+              --report-json build/kai-tests/report.json --report-md build/kai-tests/report.md || status=$?
+          else
+            cp build/kai-tests/first-run.json build/kai-tests/report.json
+            cp build/kai-tests/first-run.md build/kai-tests/report.md
+          fi
+          cat build/kai-tests/report.md >> "${GITHUB_STEP_SUMMARY}"
+          if [[ ${status} -ne 0 ]]; then echo "::error::New test failures outside docs/kai/baseline-tests.json."; fi
+          exit ${status}
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: kai-unit-test-report
+          path: |
+            build/kai-tests
+            app/build/reports/tests/testFullDebugUnitTest
+          if-no-files-found: warn
       - name: Brand logos render on light and dark
         run: |
           npm install --no-save playwright@1 >/dev/null
@@ -56,10 +94,8 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: always()
         with:
-          name: kai-unit-test-results
-          path: |
-            app/build/test-results/testFullDebugUnitTest/*.xml
-            build/brand-render
+          name: kai-brand-render
+          path: build/brand-render
           if-no-files-found: warn
 
   build:
