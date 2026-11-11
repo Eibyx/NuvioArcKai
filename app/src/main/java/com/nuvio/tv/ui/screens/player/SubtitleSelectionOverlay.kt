@@ -115,6 +115,7 @@ internal fun SubtitleSelectionOverlay(
     isLoadingAddons: Boolean,
     useLibass: Boolean = false,
     isUsingMpv: Boolean = false,
+    libraryMenu: SubtitleLibraryMenuState = SubtitleLibraryMenuState(),
     onInternalTrackSelected: (Int) -> Unit,
     onAddonSubtitleSelected: (Subtitle) -> Unit,
     onDisableSubtitles: () -> Unit,
@@ -176,7 +177,8 @@ internal fun SubtitleSelectionOverlay(
                 installedAddonOrder = sessionInstalledOrder,
                 selectedOptionId = sessionSelectedOptionId,
                 builtInLabel = builtInLabel,
-                forcedLabel = forcedLabel
+                forcedLabel = forcedLabel,
+                libraryDetails = libraryMenu.details
             )
         }
     }
@@ -362,6 +364,9 @@ internal fun SubtitleSelectionOverlay(
                                 },
                                 focusRequester = if (language.key == focusLanguage) listFocusRequester else null
                             )
+                        }
+                        if (libraryMenu.configured) {
+                            subtitleLibraryMenuRows(libraryMenu, onEvent)
                         }
                     } else {
                         item(key = "subtitle_languages") {
@@ -1325,7 +1330,8 @@ private fun buildSubtitleOptionRailItems(
     installedAddonOrder: List<String>,
     selectedOptionId: String?,
     builtInLabel: String,
-    forcedLabel: String
+    forcedLabel: String,
+    libraryDetails: Map<String, String> = emptyMap()
 ): List<SubtitleOptionRailItem> {
     if (selectedLanguageKey == SubtitleOffLanguageKey) return emptyList()
 
@@ -1341,7 +1347,8 @@ private fun buildSubtitleOptionRailItems(
                 Subtitle.languageCodeToName(PlayerSubtitleUtils.normalizeLanguageCode(subtitle.lang))
             },
             sourceLabel = if (subtitle.isStreamProvided) builtInLabel else subtitle.addonName,
-            meta = subtitle.id.takeIf { it.isNotBlank() && it != subtitle.lang && it != subtitle.url },
+            meta = libraryDetails[subtitle.id]
+                ?: subtitle.id.takeIf { it.isNotBlank() && it != subtitle.lang && it != subtitle.url && !subtitle.isLibrarySubtitle() },
             isSelected = optionId == selectedOptionId,
             addonSubtitle = subtitle
         )

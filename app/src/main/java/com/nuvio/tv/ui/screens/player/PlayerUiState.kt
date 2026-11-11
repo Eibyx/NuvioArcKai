@@ -277,7 +277,10 @@ data class PlayerUiState(
     val hideTorrentStats: Boolean = true,
     val controlLayout: com.nuvio.tv.data.local.PlayerControlLayout? = null,
     val isLive: Boolean = false,
-    val playerNotice: String? = null
+    val playerNotice: String? = null,
+    // The user's subtitle folders (Kai)
+    val subtitleLibraryMenu: SubtitleLibraryMenuState = SubtitleLibraryMenuState(),
+    val subtitleLibraryBrowser: SubtitleLibraryBrowserState? = null
 ) {
     /** Subtitle style to render with, after applying the HDR override for the current video. */
     val effectiveSubtitleStyle: SubtitleStyleSettings
@@ -384,6 +387,7 @@ sealed class PlayerEvent {
     data object OnDisableSubtitles : PlayerEvent()
     data object OnDisableSubtitlesQuietly : PlayerEvent()
     data class OnSelectAddonSubtitle(val subtitle: Subtitle, val openPanel: Boolean = true) : PlayerEvent()
+    data class OnSubtitleLibrary(val action: SubtitleLibraryAction) : PlayerEvent()
     data class OnSetPlaybackSpeed(val speed: Float) : PlayerEvent()
     data object OnToggleControls : PlayerEvent()
     data object OnShowAudioOverlay : PlayerEvent()

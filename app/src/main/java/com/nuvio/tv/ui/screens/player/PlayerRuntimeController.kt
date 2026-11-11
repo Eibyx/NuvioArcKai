@@ -115,8 +115,15 @@ class PlayerRuntimeController(
     internal val serverStreams: ServerStreams,
     internal val profileId: Int,
     savedStateHandle: SavedStateHandle,
-    internal val scope: CoroutineScope
+    internal val scope: CoroutineScope,
+    /** The user's subtitle folders (Kai); null in tests and builds without them. */
+    internal val subtitleLibrary: com.nuvio.tv.core.subtitlelibrary.SubtitleLibraryService? = null,
+    internal val cloudStreams: com.nuvio.tv.core.cloudstorage.CloudStreams? = null
 ) {
+    internal val subtitleLibraryState = SubtitleLibraryPlayerState()
+    /** Fonts of folder subtitles; shared by every ExoPlayer this controller builds. */
+    internal val libraryFontRegistry = LibraryFontRegistry()
+
 
     /** Resolved once so every `context.getString(...)` here follows the app language. */
     internal val context: Context = context.withAppLocale()

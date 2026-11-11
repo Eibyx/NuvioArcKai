@@ -1702,7 +1702,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                         renderersFactory = renderersFactory,
                         autoSyncSourceKey = url.takeIf {
                             com.nuvio.tv.ui.screens.player.autosync.AutoSyncPreferences.isEnabled(context)
-                        }
+                        },
+                        libraryFonts = libraryFontRegistry
                     )
             } else {
                 buildDefaultPlayer()
@@ -3195,7 +3196,8 @@ internal fun resolveDeviceAudioLanguages(): List<String> {
 internal suspend fun PlayerRuntimeController.prepareStartupSubtitles(): StartupSubtitlePreparation {
     return StartupSubtitlePreparation(
         fetchedSubtitles = emptyList(),
-        attachedSubtitles = emptyList(),
+        // A folder subtitle found within two seconds joins the first media item (no reload later).
+        attachedSubtitles = awaitStartupLibrarySubtitles(),
         fetchCompleted = false
     )
 }

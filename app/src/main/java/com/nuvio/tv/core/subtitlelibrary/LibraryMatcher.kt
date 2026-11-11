@@ -3,15 +3,19 @@ package com.nuvio.tv.core.subtitlelibrary
 import com.nuvio.tv.core.cloudstorage.CloudReleaseParser
 import com.nuvio.tv.core.cloudstorage.titleKey
 import java.util.Locale
+import kotlinx.serialization.Serializable
 
 /** A file or folder in one of the user's subtitle folders, whatever the origin. */
-internal data class LibraryEntry(
+@Serializable
+data class LibraryEntry(
     /** Origin-specific id: a cloud file id, a document id or an absolute path. */
     val id: String,
     val name: String,
     val isFolder: Boolean,
     val sizeBytes: Long = 0,
-    val modifiedEpochMs: Long = 0
+    val modifiedEpochMs: Long = 0,
+    /** Cloud path (TeraBox needs it with the id to make a download link); empty elsewhere. */
+    val path: String = ""
 )
 
 /** A subtitle file found for the episode, with the folder it sits in (for its fonts). */

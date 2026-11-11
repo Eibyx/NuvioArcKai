@@ -28,7 +28,8 @@ import java.util.WeakHashMap
 
 private class AssPlayerBinding(
     val handler: AssHandler,
-    val subtitleTimeShiftUs: () -> Long
+    val subtitleTimeShiftUs: () -> Long,
+    val libraryFonts: LibraryFontRegistry
 )
 
 private val assBindingsByPlayer = Collections.synchronizedMap(WeakHashMap<ExoPlayer, AssPlayerBinding>())
@@ -45,10 +46,11 @@ internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
     extractorsFactory: ExtractorsFactory = DefaultExtractorsFactory(),
     renderersFactory: RenderersFactory = DefaultRenderersFactory(context),
     autoSyncSourceKey: String? = null,
-    subtitleTimeShiftUs: () -> Long = { 0L }
+    subtitleTimeShiftUs: () -> Long = { 0L },
+    libraryFonts: LibraryFontRegistry = LibraryFontRegistry()
 ): ExoPlayer {
     val assHandler = AssHandler()
-    val assSubtitleParserFactory = CompatAssSubtitleParserFactory(assHandler)
+    val assSubtitleParserFactory = CompatAssSubtitleParserFactory(assHandler, libraryFonts)
     // AutoSync and the tap wrap after the Matroska swap, which matches extractors by class.
     val swappedExtractorsFactory = extractorsFactory.withAssMkvSupportCompat(
         subtitleParserFactory = RenderTimeSubtitles.extractionParsers(
@@ -79,12 +81,22 @@ internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
         .setRenderersFactory(AssRenderersFactory(assHandler, renderersFactory))
         .build()
 
-    assBindingsByPlayer[player] = AssPlayerBinding(assHandler, subtitleTimeShiftUs)
+    assBindingsByPlayer[player] = AssPlayerBinding(assHandler, subtitleTimeShiftUs, libraryFonts)
     assHandler.init(player)
+    // Registered after AssHandler, so it runs after libass has dropped the fonts: only a check
+    // that the reload's transition did come before the folder subtitle's parser (see the registry).
+    player.addListener(object : androidx.media3.common.Player.Listener {
+        override fun onMediaItemTransition(mediaItem: androidx.media3.common.MediaItem?, reason: Int) {
+            assSubtitleParserFactory.onMediaItemTransition()
+        }
+    })
     return player
 }
 
 internal fun ExoPlayer.getAssHandlerCompat(): AssHandler? = assBindingsByPlayer[this]?.handler
+
+/** The fonts of the user's subtitle folders for this player (null without libass). */
+internal fun ExoPlayer.libraryFontRegistryCompat(): LibraryFontRegistry? = assBindingsByPlayer[this]?.libraryFonts
 
 /**
  * The frame callback for [AssHandler.videoFrameCallback]: [render] gets the subtitle time with the
@@ -111,9 +123,20 @@ internal fun ExoPlayer.releaseAssHandlerCompat() {
 
 @OptIn(UnstableApi::class)
 private class CompatAssSubtitleParserFactory(
-    private val assHandler: AssHandler
+    private val assHandler: AssHandler,
+    private val libraryFonts: LibraryFontRegistry
 ) : SubtitleParser.Factory {
     private val delegate = AssSubtitleParserFactory(assHandler)
+    @Volatile private var folderParserCreatedAtMs = 0L
+
+    fun onMediaItemTransition() {
+        val createdAt = folderParserCreatedAtMs
+        // A transition right after a folder subtitle's parser would have wiped its fonts.
+        if (createdAt != 0L && android.os.SystemClock.elapsedRealtime() - createdAt < 2_000L) {
+            android.util.Log.w("KaiSubtitleFonts", "media item transition after a folder subtitle parser; fonts may be lost")
+        }
+        folderParserCreatedAtMs = 0L
+    }
 
     override fun supportsFormat(format: Format): Boolean {
         return delegate.supportsFormat(normalizeSsaFormat(format))
@@ -125,6 +148,12 @@ private class CompatAssSubtitleParserFactory(
 
     override fun create(format: Format): SubtitleParser {
         val normalized = normalizeSsaFormat(format)
+        if (normalized.sampleMimeType == MimeTypes.TEXT_SSA && !libraryFonts.isEmpty()) {
+            // Before delegate.create: AssHandler.createTrack flushes these pending fonts to libass.
+            if (libraryFonts.addFontsFor(format.id) { name, data -> assHandler.addFont(name, data) } > 0) {
+                folderParserCreatedAtMs = android.os.SystemClock.elapsedRealtime()
+            }
+        }
         return AutoSyncLibassSubtitles.wrapParser(assHandler, normalized, delegate.create(normalized)) // AutoSync hook
     }
 

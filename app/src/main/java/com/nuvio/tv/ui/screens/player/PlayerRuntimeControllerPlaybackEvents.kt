@@ -2150,6 +2150,7 @@ fun PlayerRuntimeController.onEvent(
                 )
             }
         }
+        is PlayerEvent.OnSubtitleLibrary -> handleSubtitleLibraryAction(event.action)
         is PlayerEvent.OnSelectAddonSubtitle -> {
             logSwitchTrace(
                 stage = "event-select-subtitle-addon",

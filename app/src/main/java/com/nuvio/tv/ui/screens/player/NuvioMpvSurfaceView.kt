@@ -643,6 +643,8 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
         if (!initialized) return false
         if (url.isBlank()) return false
         return runCatching {
+            // The decoder sub-add creates reads sub-fonts-dir now: fonts for this subtitle only.
+            MpvLibraryFonts.prepare(context, url)
             // "cached" avoids duplicate re-loads for the same external subtitle.
             val safeTitle = title?.takeIf { it.isNotBlank() }
             val safeLanguage = language?.takeIf { it.isNotBlank() }
@@ -826,7 +828,8 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
         // Preserve native ASS/SSA styling behavior on MPV.
         mpv.setOptionString("sub-ass-override", "no")
         mpv.setOptionString("sub-codepage", "auto:utf-8")
-        mpv.setOptionString("sub-fonts-dir", prepareMpvSubtitleFonts(context).absolutePath)
+        // Bundled fonts plus the fonts of the folder subtitle being added (see MpvLibraryFonts).
+        mpv.setOptionString("sub-fonts-dir", MpvLibraryFonts.prepare(context, null).absolutePath)
         mpv.setOptionString("sub-font", MPV_RENDERER_DEFAULT_SUBTITLE_FONT)
         mpv.setOptionString("sub-use-margins", "yes")
         mpv.setOptionString("sub-ass-force-margins", "yes")

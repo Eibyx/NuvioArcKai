@@ -115,6 +115,8 @@ class PlayerViewModel @Inject constructor(
     private val serverPlayback: com.nuvio.tv.data.mediaserver.ServerPlayback,
     private val serverStreams: com.nuvio.tv.data.mediaserver.ServerStreams,
     private val thumbnailCopyDebrid: com.nuvio.tv.core.debrid.ThumbnailCopyDebrid,
+    private val subtitleLibrary: com.nuvio.tv.core.subtitlelibrary.SubtitleLibraryService,
+    private val cloudStreams: com.nuvio.tv.core.cloudstorage.CloudStreams,
     profileManager: com.nuvio.tv.core.profile.ProfileManager,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
@@ -172,7 +174,9 @@ class PlayerViewModel @Inject constructor(
         profileId = savedStateHandle.get<String>("profileId")?.toIntOrNull()
             ?: profileManager.activeProfileId.value,
         savedStateHandle = savedStateHandle,
-        scope = viewModelScope
+        scope = viewModelScope,
+        subtitleLibrary = subtitleLibrary,
+        cloudStreams = cloudStreams
     )
 
     private val postPlayRecommendationController = PostPlayRecommendationController(

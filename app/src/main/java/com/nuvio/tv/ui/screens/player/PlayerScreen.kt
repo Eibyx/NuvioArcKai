@@ -2709,7 +2709,8 @@ fun PlayerScreen(
             )
 
             SubtitleSelectionOverlay(
-                visible = uiState.showSubtitleOverlay,
+                // The folder browser stands in for the menu while it is open.
+                visible = uiState.showSubtitleOverlay && uiState.subtitleLibraryBrowser == null,
                 internalTracks = uiState.serverSubtitleTracks.ifEmpty { uiState.subtitleTracks },
                 selectedInternalIndex = if (uiState.serverSubtitleTracks.isEmpty()) {
                     uiState.selectedSubtitleTrackIndex
@@ -2725,6 +2726,7 @@ fun PlayerScreen(
                 isLoadingAddons = uiState.isLoadingAddonSubtitles,
                 useLibass = uiState.useLibass,
                 isUsingMpv = uiState.internalPlayerEngine == InternalPlayerEngine.MVP_PLAYER,
+                libraryMenu = uiState.subtitleLibraryMenu,
                 onInternalTrackSelected = { viewModel.onEvent(PlayerEvent.OnSelectSubtitleTrack(it)) },
                 onAddonSubtitleSelected = { viewModel.onEvent(PlayerEvent.OnSelectAddonSubtitle(it)) },
                 onDisableSubtitles = { viewModel.onEvent(PlayerEvent.OnDisableSubtitles) },
@@ -2733,6 +2735,14 @@ fun PlayerScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .zIndex(2.6f)
+            )
+
+            SubtitleLibraryBrowserOverlay(
+                state = uiState.subtitleLibraryBrowser,
+                onEvent = { viewModel.onEvent(it) },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .zIndex(2.65f)
             )
 
             PlayerOverlayScaffold(

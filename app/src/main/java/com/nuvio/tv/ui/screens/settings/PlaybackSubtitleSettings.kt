@@ -117,6 +117,18 @@ internal fun PlaybackSubtitlesSection(
         enabled = enabled
     )
 
+    // Kai: the user's own subtitle folders (TeraBox, Google Drive, internal storage / USB).
+    var showSubtitleFolders by remember { mutableStateOf(false) }
+    SettingsActionRow(
+        title = stringResource(R.string.subtitle_library_settings_title),
+        subtitle = stringResource(R.string.subtitle_library_settings_desc),
+        enabled = enabled,
+        onClick = { showSubtitleFolders = true }
+    )
+    if (showSubtitleFolders && enabled) {
+        SubtitleFoldersDialog(onDismiss = { showSubtitleFolders = false })
+    }
+
     SettingsSectionLabel(text = stringResource(R.string.sub_style_label))
     var showFontPicker by remember { mutableStateOf(false) }
     SettingsActionRow(

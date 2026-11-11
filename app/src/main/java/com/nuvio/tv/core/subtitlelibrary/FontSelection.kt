@@ -96,16 +96,20 @@ internal object FontSelection {
      * The order to fetch fonts from a cloud folder in: files whose name looks like a used font first,
      * so the usual case (one or two families) needs only those downloads.
      */
-    fun fetchOrder(used: Set<String>, fileNames: List<String>): List<String> {
+    fun fetchOrder(used: Set<String>, fileNames: List<String>): List<String> =
+        fileNames.sortedByDescending { nameScore(used, it) }
+
+    /** True when the file name looks like one of the used fonts (`GandhiSans-Bold.otf` for "gandhi sans"). */
+    fun looksLike(used: Set<String>, fileName: String): Boolean = nameScore(used, fileName) > 0
+
+    private fun nameScore(used: Set<String>, fileName: String): Int {
         val keys = used.map(::compact)
-        return fileNames.sortedByDescending { fileName ->
-            val stem = compact(fileName.substringBeforeLast('.'))
-            when {
-                keys.any { it == stem } -> 3
-                keys.any { it.isNotEmpty() && (stem.startsWith(it) || it.startsWith(stem)) } -> 2
-                keys.any { it.length >= 4 && stem.contains(it) } -> 1
-                else -> 0
-            }
+        val stem = compact(fileName.substringBeforeLast('.'))
+        return when {
+            keys.any { it == stem } -> 3
+            keys.any { it.isNotEmpty() && stem.isNotEmpty() && (stem.startsWith(it) || it.startsWith(stem)) } -> 2
+            keys.any { it.length >= 4 && stem.contains(it) } -> 1
+            else -> 0
         }
     }
 
@@ -115,5 +119,5 @@ internal object FontSelection {
 
     private fun compact(value: String): String =
         value.lowercase(Locale.ROOT).filter { it.isLetterOrDigit() }
-            .removeSuffix("regular").removeSuffix("bold").removeSuffix("italic")
+            .removeSuffix("italic").removeSuffix("bold").removeSuffix("regular")
 }
