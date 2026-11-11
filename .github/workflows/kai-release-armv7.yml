@@ -247,5 +247,10 @@ jobs:
 
           <!-- nuvio-fork-version-code: ${{ inputs.version_code }} -->
           NOTES
+          # What is new in this version, when the branch has notes for it, goes right after the first line.
+          extra="docs/kai/release-notes/${tag}.md"
+          if [[ -f "${extra}" ]]; then
+            { head -n 2 notes.md; cat "${extra}"; echo; tail -n +3 notes.md; } > notes.tmp && mv notes.tmp notes.md
+          fi
           gh release create "${tag}" --target "${GITHUB_SHA}" --title "Nuvio Arc Kai ${tag}" --notes-file notes.md --prerelease \
             app-full-armeabi-v7a-release.apk SHA256SUMS.txt native-inventory.json

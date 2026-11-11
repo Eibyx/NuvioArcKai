@@ -64,3 +64,24 @@ Tratados por `else`/conjuntos sin cambio (comprobado): `core/calendar/CalendarFo
 | `core/sync/ProviderCredentialSyncService.kt` | Tras `sync_pull_provider_credentials`, guarda la clave de TMDB de la cuenta (solo lectura, sin registrar el valor). |
 
 Nuevos: `core/tmdb/TmdbApiKey.kt`, `core/sync/AccountTmdbKeyStore.kt` (cifrado por perfil con Android Keystore; se borra con el perfil o al cerrar sesión).
+
+## Fase 4: subtítulos de carpetas con sus fuentes
+
+| Archivo de Arc | Cambio |
+|---|---|
+| `AndroidManifest.xml` | `READ_EXTERNAL_STORAGE` (máx. API 32), `MANAGE_EXTERNAL_STORAGE`, `requestLegacyExternalStorage`, dos `<queries>` |
+| `core/cloudstorage/CloudProviders.kt`, `CloudStorageRepository.kt`, `CloudStorageModels.kt` | `listFiles` sin filtrar (solo lectura) y `CLOUD_FOLDER_MIME` |
+| `ui/screens/player/PlayerLibassCompat.kt` | registro de fuentes de carpeta; fuentes añadidas en `create(format)` antes de `delegate.create` |
+| `ui/screens/player/NuvioMpvSurfaceView.kt` | `sub-fonts-dir` al directorio activo; preparación antes de `sub-add` |
+| `ui/screens/player/PlayerRuntimeController.kt`, `PlayerViewModel.kt` | dos dependencias opcionales y el estado de la búsqueda |
+| `ui/screens/player/PlayerRuntimeControllerInitialization.kt` | `prepareStartupSubtitles` espera ≤ 2 s; registro pasado al ExoPlayer |
+| `ui/screens/player/PlayerRuntimeControllerObservers.kt` | la búsqueda arranca con `fetchAddonSubtitles`; la lista conserva los de carpeta |
+| `ui/screens/player/PlayerRuntimeControllerTrackSelection.kt` | aviso de fuentes; en MPV, la ruta del ASS en caché |
+| `ui/screens/player/PlayerRuntimeControllerPlaybackEvents.kt`, `PlayerUiState.kt` | evento y estado del menú/explorador |
+| `ui/screens/player/PlayerScreen.kt`, `SubtitleSelectionOverlay.kt` | filas del menú y explorador |
+| `ui/screens/settings/PlaybackSubtitleSettings.kt` | entrada «Mis carpetas de subtítulos» |
+| `.github/workflows/kai-release-armv7.yml` | notas por versión opcionales (`docs/kai/release-notes/<tag>.md`) |
+| `app/build.gradle.kts` | versión por defecto `1.1.0-nt.stable-kai.2` / 2 |
+
+Archivos nuevos: `core/subtitlelibrary/*`, `ui/screens/player/{LibraryFontRegistry,MpvLibraryFonts,PlayerRuntimeControllerSubtitleLibrary,SubtitleLibraryPlayerUi}.kt`,
+`ui/screens/settings/SubtitleFolders{Dialog,ViewModel}.kt`, `res/values{,-es}/strings_kai_subtitles.xml`.
