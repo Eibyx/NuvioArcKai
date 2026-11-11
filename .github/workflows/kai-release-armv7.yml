@@ -89,8 +89,14 @@ jobs:
       - name: Brand logos render on light and dark
         run: |
           npm install --no-save playwright@1 >/dev/null
-          npx playwright install --with-deps chromium >/dev/null
-          node scripts/kai/render_brand_logos.js build/brand-render app/src/main/res/raw/terabox_logo.png app/src/main/res/raw/google_drive_logo.png app/src/main/res/raw/anilist_logo.png
+          logos=(app/src/main/res/raw/terabox_logo.png app/src/main/res/raw/google_drive_logo.png app/src/main/res/raw/anilist_logo.png)
+          # The runner image already has Chromium's libraries; apt (--with-deps) only if the render needs it,
+          # since the Ubuntu mirrors have been unreachable from the runners.
+          npx playwright install chromium >/dev/null
+          if ! node scripts/kai/render_brand_logos.js build/brand-render "${logos[@]}"; then
+            npx playwright install --with-deps chromium >/dev/null
+            node scripts/kai/render_brand_logos.js build/brand-render "${logos[@]}"
+          fi
       - uses: actions/upload-artifact@v6
         if: always()
         with:
