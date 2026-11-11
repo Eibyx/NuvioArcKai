@@ -104,8 +104,23 @@ ejecución 3 de Kai, la primera comparación detecta `MetaRepositoryRateLimitTes
 la aprueba y el veredicto final es OK; y el paso completo del workflow, ejecutado con `bash -e` y un `gradlew` simulado,
 da éxito con solo fallas conocidas, éxito con una falla que pasa al reintentar y error con una falla que se repite.
 
+## 4c. Compilación firmada verificada
+
+Ejecución de prueba (`publish=false`, commit `873df72`): https://github.com/Eibyx/NuvioArcKai/actions/runs/42970511854
+
+Artefacto `kai-armv7-release` descargado y verificado por separado:
+
+| Comprobación | Resultado |
+|---|---|
+| SHA-256 del APK (`app-full-armeabi-v7a-release.apk`) | `1f7c9e6f4aa0ba0a728005bd5c944e56882359cab0e9ead340250490cbdbc041` (coincide con `SHA256SUMS.txt`) |
+| apksigner | firma v2 válida, un firmante, `CN=Eibyx, OU=Development, O=NuvioArcKai, L=Lima, ST=Lima, C=PE` (no es de depuración) |
+| SHA-256 del certificado | `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb` |
+| aapt2 | `com.eibyx.nuvioarckai`, versionCode 1, versionName `1.1.0-nt.stable-kai.1`, targetSdk 36, native-code `armeabi-v7a` |
+| Bibliotecas nativas | solo `lib/armeabi-v7a/` |
+
+Correcciones del workflow hasta llegar a verde: memoria de las pruebas a 2 GB (`2815f51`, la primera pasada daba
+`OutOfMemoryError`) y lectura de la salida real de apksigner/aapt2 y del dex sin `SIGPIPE` (`873df72`).
+
 ## 5. Pendiente para el usuario
 
-1. Fusionar el PR #1 y lanzar «NuvioArcKai ARMv7 release» sobre `ccr-60b9fe86-mp2dal` (primero sin `publish`).
-2. Pasarme el resultado para revisar registros y artefactos y anotar aquí el SHA-256 del certificado.
-3. La prueba en la TCL del anexo del prompt de continuación.
+1. La prueba en la TCL del anexo del prompt de continuación.
