@@ -7,7 +7,6 @@
     <string name="subtitle_library_origin_terabox_long">TeraBox</string>
     <string name="subtitle_library_origin_drive_long">Google Drive</string>
     <string name="subtitle_library_origin_local_long">Almacenamiento interno / USB</string>
-    <string name="subtitle_library_missing_fonts">Faltan fuentes: %1$s. Se usará la predeterminada.</string>
     <string name="subtitle_library_usb_disconnected">USB no conectado</string>
     <string name="subtitle_library_connect_account">Conecta la cuenta en Servidores multimedia</string>
     <string name="subtitle_library_permission_missing">Ya no se puede leer esta carpeta: vuelve a añadirla</string>

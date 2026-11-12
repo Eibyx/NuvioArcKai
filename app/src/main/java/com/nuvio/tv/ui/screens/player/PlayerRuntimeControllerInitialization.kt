@@ -534,6 +534,10 @@ internal fun PlayerRuntimeController.initializePlayer(
                 resolvedAutoPlayerEngine = null
             }
             currentInternalPlayerEngine = effectiveInternalPlayerEngine
+            noteKaiEngineDecision(
+                engine = effectiveInternalPlayerEngine,
+                chosenByAuto = overrideInternalPlayerEngine == null && playerSettings.internalPlayerEngine == InternalPlayerEngine.AUTO
+            )
             playbackAnalyticsDiagnostics.setTraceContext(
                 host = url.safeHost(),
                 engine = effectiveInternalPlayerEngine.name
@@ -3114,13 +3118,17 @@ internal suspend fun PlayerRuntimeController.resolveAutoInternalPlayerEngine(): 
     val isHdrOrDv = Regex("""(?i)\b(hdr|hdr10\+?|dv|dolby\s*vision)\b""").containsMatchIn(streamMetadataText)
 
     return if (isHdrOrDv) {
+        kaiAutoEngineReasonRes = R.string.kai_engine_reason_hdr
         InternalPlayerEngine.EXOPLAYER
     } else {
         val hasAnimeId = currentVideoId?.startsWith("kitsu:") == true ||
                 currentVideoId?.startsWith("mal:") == true ||
                 currentVideoId?.startsWith("anilist:") == true
 
-        if (hasAnimeId) return InternalPlayerEngine.MVP_PLAYER
+        if (hasAnimeId) {
+            kaiAutoEngineReasonRes = R.string.kai_engine_reason_anime_id
+            return InternalPlayerEngine.MVP_PLAYER
+        }
 
         metaFetchJob?.let { job ->
             withTimeoutOrNull(3000L) { job.join() }
@@ -3131,6 +3139,11 @@ internal suspend fun PlayerRuntimeController.resolveAutoInternalPlayerEngine(): 
                 metaCountry?.contains("Japan", ignoreCase = true) == true)
 
         val isAnime = hasAnimeGenre || isAnimationFromJapan
+        kaiAutoEngineReasonRes = when {
+            hasAnimeGenre -> R.string.kai_engine_reason_anime_genre
+            isAnimationFromJapan -> R.string.kai_engine_reason_japan
+            else -> R.string.kai_engine_reason_default
+        }
 
         if (isAnime) InternalPlayerEngine.MVP_PLAYER else InternalPlayerEngine.EXOPLAYER
     }

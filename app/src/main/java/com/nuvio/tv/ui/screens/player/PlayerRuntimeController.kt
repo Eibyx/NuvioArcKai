@@ -121,6 +121,10 @@ class PlayerRuntimeController(
     internal val cloudStreams: com.nuvio.tv.core.cloudstorage.CloudStreams? = null
 ) {
     internal val subtitleLibraryState = SubtitleLibraryPlayerState()
+    /** Kai diagnostics: why Auto chose the engine (string resource), and the reason shown in stream info. */
+    internal var kaiAutoEngineReasonRes: Int? = null
+    internal var kaiEngineReason: String? = null
+    internal var kaiEngineSwitchPending: String? = null
     /** Fonts of folder subtitles; shared by every ExoPlayer this controller builds. */
     internal val libraryFontRegistry = LibraryFontRegistry()
 

@@ -227,7 +227,9 @@ internal fun PlayerRuntimeController.autoSelectAddonSubtitleDeferringReload(subt
         usingMpv = isUsingMpvEngine(),
         preAttached = attachedAddonSubtitleKeys.contains(addonSubtitleKey(subtitle)),
         drawnOnTop = canAttachAddonSubtitleViaSidecar(subtitle),
-        playing = isPlaybackCurrentlyPlaying()
+        // Kai: a rebuffer after the picture started counts as playing, so a reload never freezes it.
+        playing = isPlaybackCurrentlyPlaying() ||
+            (hasRenderedFirstFrame && _uiState.value.isBuffering && !userPausedManually)
     )
     if (seamless) {
         autoSubtitleSelected = true
@@ -239,7 +241,18 @@ internal fun PlayerRuntimeController.autoSelectAddonSubtitleDeferringReload(subt
         PlayerRuntimeController.TAG,
         "deferred addon subtitle attach (would reload mid-play): id=${subtitle.id} lang=${subtitle.lang}"
     )
+    KaiPlaybackDiagnostics.record("subtitle", "${subtitle.addonName} (${subtitle.lang}) waits for the next pause: attaching it now would reload the video")
     deferredAutoAddonSubtitle = subtitle
+}
+
+/**
+ * Kai: every automatic subtitle pick goes through here, so none of them reloads the media while
+ * it plays (that reload is the freeze after the picture starts). Returns true when the pick was
+ * applied now; false when it waits for the next pause.
+ */
+internal fun PlayerRuntimeController.autoPickAddonSubtitle(subtitle: Subtitle): Boolean {
+    autoSelectAddonSubtitleDeferringReload(subtitle)
+    return deferredAutoAddonSubtitle?.id != subtitle.id
 }
 
 internal fun PlayerRuntimeController.maybeAttachDeferredAddonSubtitle() {
@@ -1071,8 +1084,9 @@ internal fun PlayerRuntimeController.scheduleStartupWatchdog() {
             val elapsedMs = System.currentTimeMillis() - armedAtMs
             val bufferedAheadMs = livePlayer.totalBufferedDuration.coerceAtLeast(0L)
             val positionMs = livePlayer.currentPosition
-            val ceilingMs =
-                if (slowStart) SlowStartServer.STARTUP_CEILING_MS else PlayerRuntimeController.STARTUP_WATCHDOG_CEILING_MS
+            // Kai: every stream gets the slow-server ceiling and waits while it is still loading,
+            // instead of reporting a hung decoder after 20 s of a slow debrid or cloud start.
+            val ceilingMs = SlowStartServer.STARTUP_CEILING_MS
             val step = StartupWatchdogDecision.next(
                 elapsedMs = elapsedMs,
                 intervalMs = PlayerRuntimeController.STARTUP_WATCHDOG_TIMEOUT_MS,
@@ -1088,6 +1102,7 @@ internal fun PlayerRuntimeController.scheduleStartupWatchdog() {
                 tracksRead = hasScannedTextTracksOnce,
                 hasVideoTrack = currentStreamHasVideoTrack,
                 videoSelected = currentVideoTrackSelected,
+                patientStart = true,
             )
             lastPositionMs = positionMs
             when (step) {
@@ -1095,9 +1110,11 @@ internal fun PlayerRuntimeController.scheduleStartupWatchdog() {
                     // A home server or a Usenet stream may still be fetching what playback asked for (start or resume point).
                     Log.w(
                         PlayerRuntimeController.TAG,
-                        "STARTUP_WATCHDOG: no data ${elapsedMs}ms after starting_stream from a server that may still " +
-                            "be preparing it; waiting (ceiling=${SlowStartServer.STARTUP_CEILING_MS}ms)"
+                        "STARTUP_WATCHDOG: still loading ${elapsedMs}ms after starting_stream " +
+                            "(bufferedAheadMs=$bufferedAheadMs); waiting (ceiling=${SlowStartServer.STARTUP_CEILING_MS}ms)"
                     )
+                    lastBufferedAheadMs = bufferedAheadMs
+                    KaiPlaybackDiagnostics.record("startup_wait", "still loading after ${elapsedMs / 1000}s; waiting up to ${SlowStartServer.STARTUP_CEILING_MS / 1000}s")
                     continue
                 }
                 StartupWatchdogDecision.Step.Extend -> {
@@ -1150,6 +1167,7 @@ internal fun PlayerRuntimeController.scheduleStartupWatchdog() {
                     "surfacing error"
             )
             com.nuvio.tv.core.util.TtffTrace.mark("startup_watchdog_fired")
+            KaiPlaybackDiagnostics.record("startup_failed", "no picture after ${elapsedMs / 1000}s ($fireReason)")
             _uiState.update {
                 if (it.error == null) {
                     it.copy(

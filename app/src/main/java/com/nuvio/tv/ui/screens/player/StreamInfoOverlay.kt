@@ -178,6 +178,10 @@ private fun StreamInfoContent(data: StreamInfoData) {
                 )
             }
         }
+        data.engineReason?.let { reason ->
+            Spacer(modifier = Modifier.height(NuvioTheme.spacing.sm))
+            InfoItem(label = stringResource(R.string.kai_diag_engine_reason), value = reason)
+        }
         Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
     }
 
@@ -261,6 +265,22 @@ private fun StreamInfoContent(data: StreamInfoData) {
                 value = data.subtitleLanguage?.let { languageCodeToName(it) }
             )
             InfoItem(label = stringResource(R.string.stream_info_source), value = data.subtitleSource)
+        }
+    }
+
+    // Kai: DIAGNOSTICS section, newest first.
+    if (data.diagnostics.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.lg))
+        SectionLabel(stringResource(R.string.kai_diag_title))
+        Spacer(modifier = Modifier.height(NuvioTheme.spacing.xs))
+        data.diagnostics.forEach { line ->
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.75f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

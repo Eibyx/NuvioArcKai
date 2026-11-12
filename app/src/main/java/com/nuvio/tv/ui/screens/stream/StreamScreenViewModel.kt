@@ -126,6 +126,7 @@ class StreamScreenViewModel @Inject constructor(
     private val torrentService: TorrentService,
     private val serverStreams: ServerStreams,
     private val serverPlayback: ServerPlayback,
+    private val subtitleLibrary: com.nuvio.tv.core.subtitlelibrary.SubtitleLibraryService,
     thumbnailCopyDebrid: com.nuvio.tv.core.debrid.ThumbnailCopyDebrid,
     partyRuntime: com.nuvio.tv.core.party.PartyRuntime,
     profileManager: com.nuvio.tv.core.profile.ProfileManager,
@@ -467,6 +468,17 @@ class StreamScreenViewModel @Inject constructor(
             // badge-merge and chip-merge work on Main afterwards. Logging only.
             val loadSplitT0 = SystemClock.elapsedRealtime()
             val playerSettings = playerSettingsDataStore.playerSettings.first()
+            // Kai: look for this episode in the user's subtitle folders while the streams load,
+            // so the subtitle and its fonts are ready when the player opens.
+            subtitleLibrary.prefetch(
+                type = contentType,
+                videoId = videoId,
+                seriesKey = contentId,
+                season = season,
+                episode = episode,
+                titles = listOfNotNull(contentName, title).filter { it.isNotBlank() },
+                preferredLanguage = playerSettings.subtitleStyle.preferredLanguage
+            )
             listSortBestFirst = playerSettings.streamListSort == StreamListSort.BEST_QUALITY_FIRST
             android.util.Log.i(TAG, "LOAD_SPLIT playerSettings=${SystemClock.elapsedRealtime() - loadSplitT0}ms")
             if (latestDebridStreamPreferences == null) {

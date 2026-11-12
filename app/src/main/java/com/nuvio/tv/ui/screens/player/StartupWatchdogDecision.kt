@@ -30,9 +30,15 @@ internal object StartupWatchdogDecision {
         tracksRead: Boolean,
         hasVideoTrack: Boolean,
         videoSelected: Boolean,
+        /**
+         * Kai: wait while the player is still loading (not READY), whatever the server, up to the
+         * ceiling. Only a player that is READY without a picture is treated as a hung decoder early.
+         */
+        patientStart: Boolean = false,
     ): Step {
         val anotherIntervalFits = elapsedMs + intervalMs <= ceilingMs
         if (slowStart && bufferedAheadMs == 0L && !ready && anotherIntervalFits) return Step.WaitForData
+        if (patientStart && !ready && anotherIntervalFits) return Step.WaitForData
         if (ready && playing && hasVideoTrack && videoSelected && !videoRestarted &&
             positionMs - lastPositionMs >= PLAYING_WITHOUT_PICTURE_MS
         ) return Step.RestartVideo

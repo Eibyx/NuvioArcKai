@@ -516,5 +516,8 @@ data class StreamInfoData(
     val subtitleLanguage: String? = null,
     val subtitleSource: String? = null,
     val playerEngine: String? = null,
-    val serverPlayback: String? = null
+    val serverPlayback: String? = null,
+    // Kai diagnostics: why this engine, and the latest player decisions.
+    val engineReason: String? = null,
+    val diagnostics: List<String> = emptyList()
 )

@@ -34,6 +34,7 @@ internal fun PlayerRuntimeController.maybeAutoSwitchInternalPlayerOnStartupError
     )
     rememberCurrentTrackPreferenceForEngineSwitch()
     Log.w(PlayerRuntimeController.TAG, "Startup playback error; auto-switching engine: ${detailedError.redactLinksForLog()}")
+    noteKaiEngineSwitch(context.getString(R.string.kai_engine_reason_failover, detailedError.redactLinksForLog().take(120)))
     startupEngineFailoverTriggered = true
 
     val targetEngineLabel = targetEngineLabel(targetEngine)
@@ -88,6 +89,7 @@ internal fun PlayerRuntimeController.switchToInternalPlayerEngine(
     )
 
     rememberCurrentTrackPreferenceForEngineSwitch()
+    noteKaiEngineSwitch(context.getString(R.string.kai_engine_reason_manual))
 
     if (currentPosition > 0L) {
         pendingResumeProgress = null

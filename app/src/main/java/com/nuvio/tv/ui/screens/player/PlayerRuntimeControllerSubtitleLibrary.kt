@@ -83,6 +83,8 @@ internal class SubtitleLibraryPlayerState {
 
 internal const val LIBRARY_SUBTITLE_ID_PREFIX = "kai-lib-"
 private const val LIBRARY_STARTUP_WAIT_MS = 2_000L
+/** A search started on the streams screen is usually done; when it is not, the player waits this long for it. */
+private const val LIBRARY_STARTUP_PREFETCH_WAIT_MS = 8_000L
 private const val LIBRARY_TAG = "KaiSubtitleLibrary"
 
 internal fun Subtitle.isLibrarySubtitle(): Boolean = id.startsWith(LIBRARY_SUBTITLE_ID_PREFIX)
@@ -96,7 +98,7 @@ internal fun PlayerRuntimeController.librarySubtitleLocalPath(subtitle: Subtitle
 private fun PlayerRuntimeController.librarySearchKey(): String? {
     if (subtitleLibrary == null) return null
     val id = currentVideoId ?: videoId ?: contentId ?: return null
-    return "$id|${currentSeason ?: 0}|${currentEpisode ?: 0}"
+    return com.nuvio.tv.core.subtitlelibrary.SubtitleLibraryService.prefetchKey(id, currentSeason, currentEpisode)
 }
 
 /**
@@ -129,9 +131,17 @@ internal fun PlayerRuntimeController.startSubtitleLibrarySearchIfNeeded(): Defer
     }
     _uiState.update { it.copy(subtitleLibraryMenu = SubtitleLibraryMenuState(configured = true, searching = true)) }
     val deferred = scope.async(Dispatchers.IO, start = CoroutineStart.DEFAULT) {
+        // Usually ready already: the search started on the streams screen.
+        library.takePrefetched(key, timeoutMs = Long.MAX_VALUE)?.let { (query, result) ->
+            KaiPlaybackDiagnostics.record("folders", "found while the streams loaded: ${result.subtitles.size}")
+            state.query = query
+            return@async result
+        }
         val query = buildLibraryQuery()
         state.query = query
-        library.search(query)
+        library.search(query).also {
+            KaiPlaybackDiagnostics.record("folders", "found in the player: ${it.subtitles.size}")
+        }
     }
     state.search = deferred
     scope.launch {
@@ -150,32 +160,31 @@ internal fun PlayerRuntimeController.startSubtitleLibrarySearchIfNeeded(): Defer
 }
 
 private suspend fun PlayerRuntimeController.buildLibraryQuery(): LibraryQuery {
-    val type = contentType ?: "series"
-    val id = currentVideoId ?: videoId ?: contentId.orEmpty()
-    val request = runCatching { cloudStreams?.request(type, id, currentSeason, currentEpisode) }.getOrNull()
-    val titles = buildList {
-        request?.displayTitle?.let(::add)
-        request?.aliases?.forEach { add(it.title) }
-        _uiState.value.contentName?.let(::add)
-        _uiState.value.title.takeIf { it.isNotBlank() }?.let(::add)
-    }.filter { it.isNotBlank() }.distinct()
-    return LibraryQuery(
+    val library = subtitleLibrary ?: error("no subtitle library")
+    return library.buildQuery(
+        type = contentType ?: "series",
+        videoId = currentVideoId ?: videoId ?: contentId.orEmpty(),
         seriesKey = contentId,
-        season = request?.season ?: currentSeason,
-        episode = request?.episode ?: currentEpisode,
-        absoluteEpisode = request?.absoluteEpisode,
-        titles = titles,
+        season = currentSeason,
+        episode = currentEpisode,
+        titles = listOfNotNull(_uiState.value.contentName, _uiState.value.title.takeIf { it.isNotBlank() }),
         preferredLanguage = _uiState.value.subtitleStyle.preferredLanguage
     )
 }
 
 /**
- * For the first ExoPlayer media item: waits at most two seconds for the search and returns the
- * subtitle to attach from the start (so choosing it needs no reload). Never blocks longer.
+ * For the first media item: waits for the search (two seconds, or eight when it was started on the
+ * streams screen and is still running) and returns the subtitle to attach from the start, so
+ * choosing it never reloads the media while it plays.
  */
 internal suspend fun PlayerRuntimeController.awaitStartupLibrarySubtitles(): List<Subtitle> {
+    val key = librarySearchKey()
     val deferred = startSubtitleLibrarySearchIfNeeded() ?: return emptyList()
-    val result = withTimeoutOrNull(LIBRARY_STARTUP_WAIT_MS) { runCatching { deferred.await() }.getOrNull() } ?: return emptyList()
+    val waitMs = if (key != null && subtitleLibrary?.hasPrefetch(key) == true) LIBRARY_STARTUP_PREFETCH_WAIT_MS else LIBRARY_STARTUP_WAIT_MS
+    val result = withTimeoutOrNull(waitMs) { runCatching { deferred.await() }.getOrNull() } ?: run {
+        KaiPlaybackDiagnostics.record("folders", "not ready after ${waitMs / 1000}s; playing without waiting")
+        return emptyList()
+    }
     if (subtitleLibraryState.subtitles.isEmpty()) publishLibraryResult(result, autoSelect = false)
     val auto = autoSelectableLibrarySubtitle() ?: return emptyList()
     return listOf(auto)
@@ -281,19 +290,15 @@ private fun PlayerRuntimeController.clearLibraryFontRegistrations() {
     MpvLibraryFonts.clear()
 }
 
-/** "Faltan fuentes: X, Y…": once per subtitle, when it is chosen. */
+/**
+ * Missing fonts only go to the diagnostics and the log, once per subtitle: the user asked not to
+ * see a notice for them (libass falls back to the default font).
+ */
 internal fun PlayerRuntimeController.onLibrarySubtitleSelected(subtitle: Subtitle) {
     if (!subtitle.isLibrarySubtitle()) return
     val prepared = subtitleLibraryState.prepared[subtitle.id] ?: return
     if (prepared.missingFonts.isEmpty() || !subtitleLibraryState.warnedMissingFonts.add(subtitle.id)) return
-    val names = prepared.missingFonts.take(4).joinToString(", ")
-    val notice = context.getString(R.string.subtitle_library_missing_fonts, names)
-    _uiState.update { it.copy(playerNotice = notice) }
-    playerNoticeJob?.cancel()
-    playerNoticeJob = scope.launch {
-        kotlinx.coroutines.delay(5_000)
-        _uiState.update { if (it.playerNotice == notice) it.copy(playerNotice = null) else it }
-    }
+    KaiPlaybackDiagnostics.record("fonts", "not in the folder: ${prepared.missingFonts.take(4).joinToString(", ")}")
 }
 
 // ---- In-player browser ------------------------------------------------------------------------
@@ -404,6 +409,58 @@ private fun PlayerRuntimeController.pickLibraryFile(state: SubtitleLibraryBrowse
             throw error
         } catch (error: Exception) {
             _uiState.update { it.copy(subtitleLibraryBrowser = state.copy(loading = false, error = context.getString(R.string.subtitle_library_read_failed))) }
+        }
+    }
+}
+
+// ---- Kai diagnostics ---------------------------------------------------------------------------
+
+/** Remembers why this engine plays now; a short notice when Auto sends the title to MPV. */
+internal fun PlayerRuntimeController.noteKaiEngineDecision(
+    engine: com.nuvio.tv.data.local.InternalPlayerEngine,
+    chosenByAuto: Boolean
+) {
+    val engineLabel = context.getString(
+        if (engine == com.nuvio.tv.data.local.InternalPlayerEngine.MVP_PLAYER) R.string.playback_engine_mvplayer
+        else R.string.playback_engine_exoplayer
+    )
+    val reason = kaiEngineSwitchPending
+        ?: if (chosenByAuto) kaiAutoEngineReasonRes?.let(context::getString) else context.getString(R.string.kai_engine_reason_setting)
+    kaiEngineSwitchPending = null
+    kaiEngineReason = reason
+    KaiPlaybackDiagnostics.record("engine", "$engineLabel — ${reason.orEmpty()}")
+    if (chosenByAuto && engine == com.nuvio.tv.data.local.InternalPlayerEngine.MVP_PLAYER && reason != null) {
+        val notice = context.getString(R.string.kai_engine_auto_notice, reason)
+        hidePlayerEngineSwitchInfoJob?.cancel()
+        _uiState.update { it.copy(showPlayerEngineSwitchInfo = true, playerEngineSwitchInfoText = notice) }
+        hidePlayerEngineSwitchInfoJob = scope.launch {
+            kotlinx.coroutines.delay(4_000)
+            _uiState.update { it.copy(showPlayerEngineSwitchInfo = false) }
+        }
+    }
+}
+
+/** A switch is about to rebuild the player: the next engine decision carries this reason. */
+internal fun PlayerRuntimeController.noteKaiEngineSwitch(reason: String) {
+    kaiEngineSwitchPending = reason
+    KaiPlaybackDiagnostics.record("engine_switch", reason)
+}
+
+/** Every change of the subtitle selection goes to the diagnostics, with what caused it. */
+internal fun PlayerRuntimeController.startKaiSubtitleSelectionWatch() {
+    scope.launch {
+        var previous: String? = null
+        _uiState.collect { state ->
+            val now = when {
+                state.selectedAddonSubtitle != null -> "${state.selectedAddonSubtitle.addonName} (${state.selectedAddonSubtitle.lang})"
+                state.selectedSubtitleTrackIndex >= 0 -> "interno #${state.selectedSubtitleTrackIndex}"
+                else -> "ninguno"
+            }
+            if (now != previous) {
+                val cause = if (isUserExplicitSubtitleSelection) "usuario" else "automático"
+                if (previous != null) KaiPlaybackDiagnostics.record("subtitle", "$previous → $now ($cause)")
+                previous = now
+            }
         }
     }
 }

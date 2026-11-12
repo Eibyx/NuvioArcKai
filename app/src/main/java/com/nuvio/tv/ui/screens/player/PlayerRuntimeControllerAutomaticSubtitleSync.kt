@@ -90,6 +90,8 @@ internal fun PlayerRuntimeController.maybeRunAutomaticSubtitleSync(
     AutoSyncPreferences.ensureLoaded(context)
     if (!AutoSyncPreferences.isEnabled(context)) return
     if (selectedSubtitle.lang.isBlank()) return
+    // Kai: the user's own folder subtitles are timed for their file: AutoSync neither retimes nor replaces them.
+    if (selectedSubtitle.isLibrarySubtitle()) return
     if (!currentStreamUrl.startsWith("http://", ignoreCase = true) &&
         !currentStreamUrl.startsWith("https://", ignoreCase = true)
     ) {

@@ -86,3 +86,14 @@ Ejecuciones previas: `43044293410` falló por `SettingsSearchTest` (filas nuevas
 prueba); `43052003525` falló dos veces porque el runner no resolvía `security.ubuntu.com` al instalar Chromium con apt
 (corregido en `baf7c18`: Chromium sin apt salvo que el render lo necesite). `HomeEnrichmentRetryTest` es inestable (carrera
 en la propia prueba) y no falló en la ejecución publicada.
+
+## kai.3: correcciones tras la prueba en la TV
+
+| Problema | Causa encontrada | Cambio |
+|---|---|---|
+| Se congela al cargar el subtítulo después de empezar | Algunas selecciones automáticas (idioma principal, forzados, respaldo de addon) llamaban a `selectAddonSubtitle` directamente; con ASS + libass eso recarga el medio en plena reproducción | Todas pasan por `autoPickAddonSubtitle` → `autoSelectAddonSubtitleDeferringReload`; una recarga durante la reproducción (o un rebuffer tras la primera imagen) espera a la siguiente pausa |
+| El subtítulo de la carpeta tiene que llegar antes | La búsqueda empezaba en el reproductor | `SubtitleLibraryService.prefetch` desde `StreamScreenViewModel.loadStreams` (como `SubtitleLibraryPrefetch` de NuvioMobileKai); el reproductor toma ese resultado y lo espera hasta 8 s para meterlo en el primer `MediaItem` |
+| El subtítulo seleccionado se cambia/apaga solo | AutoSync puede sustituir el subtítulo elegido por otro «mejor sincronizado» | AutoSync no actúa sobre subtítulos de carpeta; cada cambio de selección queda en el diagnóstico con su causa (usuario / automático) |
+| «El decodificador no responde» a los ~20 s | `StartupWatchdogDecision` disparaba si el búfer no crecía en 20 s | `patientStart`: mientras no esté READY espera hasta 80 s (techo de servidores lentos); READY sin imagen sigue avisando |
+| Pasa a MPV sin explicación | Con el motor en Automático, cualquier anime va a MPV (`resolveAutoInternalPlayerEngine`) | Motivo guardado y mostrado (aviso breve + Información del stream + diagnóstico); también cambios manuales y tras error |
+| Aviso de fuentes que faltan | — | Eliminado; solo diagnóstico/log |

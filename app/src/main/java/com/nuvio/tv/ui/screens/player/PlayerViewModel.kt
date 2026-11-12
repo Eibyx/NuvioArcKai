@@ -179,6 +179,11 @@ class PlayerViewModel @Inject constructor(
         cloudStreams = cloudStreams
     )
 
+    init {
+        // Kai: subtitle selection changes and their cause, for the stream info diagnostics.
+        controller.startKaiSubtitleSelectionWatch()
+    }
+
     private val postPlayRecommendationController = PostPlayRecommendationController(
         playbackController = controller,
         profileManager = profileManager,

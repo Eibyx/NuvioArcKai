@@ -1814,8 +1814,7 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
                     PlayerRuntimeController.TAG,
                     "AUTO_SUB pick addon (primary) over internal (secondary): addon lang=${primaryAddonMatch.lang} vs internal variant=$trackVariant"
                 )
-                selectAddonSubtitle(primaryAddonMatch)
-                maybeRunAutomaticSubtitleSync(primaryAddonMatch) // AutoSync hook
+                if (autoPickAddonSubtitle(primaryAddonMatch)) maybeRunAutomaticSubtitleSync(primaryAddonMatch) // AutoSync hook
                 return
             }
         }
@@ -1859,7 +1858,7 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
         if (forcedAddonMatch != null) {
             autoSubtitleSelected = true
             Log.d(PlayerRuntimeController.TAG, "AUTO_SUB pick forced addon lang=${forcedAddonMatch.lang} id=${forcedAddonMatch.id}")
-            selectAddonSubtitle(forcedAddonMatch)
+            autoPickAddonSubtitle(forcedAddonMatch)
             return
         }
         autoSubtitleSelected = true
@@ -1926,8 +1925,7 @@ internal fun PlayerRuntimeController.tryAutoSelectPreferredSubtitleFromAvailable
     if (addonMatch != null) {
         autoSubtitleSelected = true
         Log.d(PlayerRuntimeController.TAG, "AUTO_SUB pick addon lang=${addonMatch.lang} id=${addonMatch.id}")
-        selectAddonSubtitle(addonMatch)
-        maybeRunAutomaticSubtitleSync(addonMatch) // AutoSync hook
+        if (autoPickAddonSubtitle(addonMatch)) maybeRunAutomaticSubtitleSync(addonMatch) // AutoSync hook
     } else {
         Log.d(PlayerRuntimeController.TAG, "AUTO_SUB no addon match for targets=$targets")
     }

@@ -18,6 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -74,7 +75,8 @@ class SubtitleLibraryService @Inject internal constructor(
     @ApplicationContext private val context: Context,
     private val store: SubtitleLibraryStore,
     private val cloudRepository: CloudStorageRepository,
-    @CloudHttpClient cloudClient: OkHttpClient
+    @CloudHttpClient cloudClient: OkHttpClient,
+    private val cloudStreams: com.nuvio.tv.core.cloudstorage.CloudStreams
 ) {
     private val client = cloudClient.newBuilder().followRedirects(true).followSslRedirects(true).build()
     private val json = Json { ignoreUnknownKeys = true }
@@ -91,6 +93,98 @@ class SubtitleLibraryService @Inject internal constructor(
     private class CachedListing(val atEpochMs: Long, val entries: List<LibraryEntry>)
 
     val settings get() = store.settings
+
+    // ---- Prefetch while the streams load -------------------------------------------------------
+
+    private val prefetchScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO)
+
+    private class Prefetch(
+        val key: String,
+        val startedAtMs: Long,
+        val work: kotlinx.coroutines.Deferred<Pair<LibraryQuery, LibrarySearchResult>?>
+    )
+
+    @Volatile private var prefetch: Prefetch? = null
+
+    /**
+     * Starts looking for the episode in the user's folders while its streams are fetched, so the
+     * subtitle and its fonts are in the cache when the player opens (ported from NuvioMobileKai's
+     * `SubtitleLibraryPrefetch`). One episode at a time; opening another one cancels it. Only the
+     * streams screen calls it: nothing runs on its own.
+     */
+    fun prefetch(
+        type: String,
+        videoId: String,
+        seriesKey: String?,
+        season: Int?,
+        episode: Int?,
+        titles: List<String>,
+        preferredLanguage: String?
+    ) {
+        if (videoId.isBlank() || type.equals("tv", ignoreCase = true)) return
+        if (store.settings.value.enabledFolders.isEmpty()) return
+        val key = prefetchKey(videoId, season, episode)
+        val current = prefetch
+        if (current != null && current.key == key && System.currentTimeMillis() - current.startedAtMs < PREFETCH_VALID_MS &&
+            !current.work.isCancelled
+        ) return
+        current?.work?.cancel()
+        prefetch = Prefetch(key, System.currentTimeMillis(), prefetchScope.async {
+            try {
+                val query = buildQuery(type, videoId, seriesKey, season, episode, titles, preferredLanguage)
+                query to search(query)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Log.w(TAG, "Folder prefetch failed: ${error::class.java.simpleName}")
+                null
+            }
+        })
+        Log.i(TAG, "Folder subtitle prefetch started while the streams load")
+    }
+
+    /** True while (or after) a prefetch for this episode was started and is still valid. */
+    fun hasPrefetch(key: String): Boolean {
+        val current = prefetch ?: return false
+        return current.key == key && System.currentTimeMillis() - current.startedAtMs < PREFETCH_VALID_MS
+    }
+
+    /** The prefetched result for [key], waiting at most [timeoutMs] for it; null when there is none (yet). */
+    internal suspend fun takePrefetched(key: String, timeoutMs: Long): Pair<LibraryQuery, LibrarySearchResult>? {
+        val current = prefetch?.takeIf { hasPrefetch(key) } ?: return null
+        return kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
+            try {
+                current.work.await()
+            } catch (error: CancellationException) {
+                if (current.work.isCancelled) null else throw error
+            }
+        }
+    }
+
+    /** The episode and every title it may be filed under: the catalogue's, the given ones and AniList/ARM aliases. */
+    internal suspend fun buildQuery(
+        type: String,
+        videoId: String,
+        seriesKey: String?,
+        season: Int?,
+        episode: Int?,
+        titles: List<String>,
+        preferredLanguage: String?
+    ): LibraryQuery {
+        val request = runCatching { cloudStreams.request(type, videoId, season, episode) }
+            .getOrElse { if (it is CancellationException) throw it; null }
+        val allTitles = (listOfNotNull(request?.displayTitle) + titles + request?.aliases.orEmpty().map { it.title })
+            .filter { it.isNotBlank() }
+            .distinct()
+        return LibraryQuery(
+            seriesKey = seriesKey,
+            season = request?.season ?: season,
+            episode = request?.episode ?: episode,
+            absoluteEpisode = request?.absoluteEpisode,
+            titles = allTitles,
+            preferredLanguage = preferredLanguage
+        )
+    }
 
     internal fun sourceFor(folder: SubtitleFolder): LibrarySource? = when (folder.originKind) {
         SubtitleOrigin.TERABOX, SubtitleOrigin.DRIVE -> CloudLibrarySource(folder, cloudRepository, client)
@@ -353,16 +447,19 @@ class SubtitleLibraryService @Inject internal constructor(
     private fun hash(value: String): String =
         MessageDigest.getInstance("SHA-256").digest(value.toByteArray()).joinToString("") { "%02x".format(it) }
 
-    private companion object {
-        const val TAG = "KaiSubtitleLibrary"
-        const val LISTING_TTL_MS = 10 * 60 * 1000L
-        const val MAX_MEMORY_LISTINGS = 64
-        const val MAX_FACE_INDEX = 256
-        const val MAX_CANDIDATES_PER_ROOT = 4
-        const val MAX_SEASON_FOLDERS = 12
-        const val MAX_SUBTITLE_BYTES = 50L * 1024 * 1024
+    companion object {
+        private const val TAG = "KaiSubtitleLibrary"
+        private const val PREFETCH_VALID_MS = 10 * 60 * 1000L
+
+        fun prefetchKey(videoId: String, season: Int?, episode: Int?): String = "$videoId|${season ?: 0}|${episode ?: 0}"
+        private const val LISTING_TTL_MS = 10 * 60 * 1000L
+        private const val MAX_MEMORY_LISTINGS = 64
+        private const val MAX_FACE_INDEX = 256
+        private const val MAX_CANDIDATES_PER_ROOT = 4
+        private const val MAX_SEASON_FOLDERS = 12
+        private const val MAX_SUBTITLE_BYTES = 50L * 1024 * 1024
         /** Fonts downloaded to find the used ones in one folder, at most. */
-        const val MAX_FONT_FETCH_BYTES = 80L * 1024 * 1024
-        val SCRIPT_LANGUAGE = Regex("""(?im)^\s*Language\s*:\s*([A-Za-z]{2,3})""")
+        private const val MAX_FONT_FETCH_BYTES = 80L * 1024 * 1024
+        private val SCRIPT_LANGUAGE = Regex("""(?im)^\s*Language\s*:\s*([A-Za-z]{2,3})""")
     }
 }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kai_diag_title">Diagnostics</string>
+    <string name="kai_diag_engine_reason">Why this player</string>
+    <string name="kai_engine_reason_setting">Chosen in Settings</string>
+    <string name="kai_engine_reason_hdr">Auto: HDR / Dolby Vision in the stream name (ExoPlayer keeps HDR)</string>
+    <string name="kai_engine_reason_anime_id">Auto: anime id (Kitsu / MAL / AniList) → MPV</string>
+    <string name="kai_engine_reason_anime_genre">Auto: the title is tagged anime → MPV</string>
+    <string name="kai_engine_reason_japan">Auto: Japanese animation → MPV</string>
+    <string name="kai_engine_reason_default">Auto: not anime → ExoPlayer</string>
+    <string name="kai_engine_reason_failover">Switched after an error: %1$s</string>
+    <string name="kai_engine_reason_manual">Switched by hand</string>
+    <string name="kai_engine_auto_notice">Auto player: %1$s</string>
+</resources>
