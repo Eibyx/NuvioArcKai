@@ -105,3 +105,12 @@ https://github.com/Eibyx/NuvioArcKai/actions/runs/43238346876 (commit `53b8173`)
 APK descargado y verificado: SHA-256 `fa699f9bb0ea6293782988b50fa9d9ce1dc50495d8e09454671e213b7183c567` (coincide con
 `SHA256SUMS.txt`), firma v2 con el mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`,
 `com.eibyx.nuvioarckai` versionCode 3 / `1.1.0-nt.stable-kai.3`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
+
+### Pre-release kai.4 publicada
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.1.0-nt.stable-kai.4 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43255870230 (commit `fcc4058`). Las ejecuciones 43250118102 y 43253419275 se
+cancelaron a propósito (antes de publicar) para incluir el visor de registros y el arreglo de Hi10P.
+APK verificado: SHA-256 `b496dfccdf4f2d8915c879402da4cc17e397df4ea9f2a6d10b9fcdc35619cede` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 4 /
+`1.1.0-nt.stable-kai.4`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
