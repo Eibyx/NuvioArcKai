@@ -89,7 +89,10 @@ internal fun PlayerRuntimeController.switchToInternalPlayerEngine(
     )
 
     rememberCurrentTrackPreferenceForEngineSwitch()
-    noteKaiEngineSwitch(context.getString(R.string.kai_engine_reason_manual))
+    // Kai: say why. Only presses of the player's switch are "by hand"; a format ExoPlayer cannot play is named.
+    val kaiReason = kaiEngineSwitchReason(reason)
+    noteKaiEngineSwitch(kaiReason)
+    val automaticFormatSwitch = reason.startsWith("unsupported-format:")
 
     if (currentPosition > 0L) {
         pendingResumeProgress = null
@@ -117,7 +120,7 @@ internal fun PlayerRuntimeController.switchToInternalPlayerEngine(
             showChaptersPanel = false,
             internalPlayerEngine = targetEngine,
             showPlayerEngineSwitchInfo = true,
-            playerEngineSwitchInfoText = switchMessage
+            playerEngineSwitchInfoText = if (automaticFormatSwitch) kaiReason else switchMessage
         )
     }
     clearChapterSkipState()
@@ -136,8 +139,23 @@ internal fun PlayerRuntimeController.switchToInternalPlayerEngine(
     )
 
     hidePlayerEngineSwitchInfoJob = scope.launch {
-        delay(2200)
+        // The reason for an automatic switch stays long enough to be read.
+        delay(if (automaticFormatSwitch) 6_000 else 2200)
         _uiState.update { state -> state.copy(showPlayerEngineSwitchInfo = false) }
+    }
+}
+
+/** Kai: the reason behind a switch, in words (diagnostics and the on-screen notice). */
+internal fun PlayerRuntimeController.kaiEngineSwitchReason(reason: String): String {
+    val format = reason.removePrefix("unsupported-format:").takeIf { reason.startsWith("unsupported-format:") }
+    return when {
+        format == "h264-high-bit-depth" -> context.getString(R.string.kai_engine_reason_format_hi10p)
+        format == "no-decoder" -> context.getString(R.string.kai_engine_reason_format_no_decoder)
+        format == "no-video-track" -> context.getString(R.string.kai_engine_reason_format_no_video)
+        format == "vc1-decoder-failure" -> context.getString(R.string.kai_engine_reason_format_vc1)
+        format != null -> context.getString(R.string.kai_engine_reason_format_other, format)
+        reason == "user-error-dialog-switch-to-mpv" -> context.getString(R.string.kai_engine_reason_error_dialog)
+        else -> context.getString(R.string.kai_engine_reason_manual)
     }
 }
 

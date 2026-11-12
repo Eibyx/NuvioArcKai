@@ -153,8 +153,8 @@ android {
         minSdk = 24
         targetSdk = 36
         // Kai has its own version line on top of Arc's; the code only ever grows.
-        versionCode = providers.gradleProperty("arcVersionCode").orNull?.toIntOrNull() ?: 3
-        versionName = providers.gradleProperty("arcVersionName").orNull ?: "1.1.0-nt.stable-kai.3"
+        versionCode = providers.gradleProperty("arcVersionCode").orNull?.toIntOrNull() ?: 4
+        versionName = providers.gradleProperty("arcVersionName").orNull ?: "1.1.0-nt.stable-kai.4"
         // Optional -PnuvioAppIdSuffix=.name installs a local test build next to the main app.
         providers.gradleProperty("nuvioAppIdSuffix").orNull?.takeIf { it.isNotBlank() }?.let {
             applicationIdSuffix = it

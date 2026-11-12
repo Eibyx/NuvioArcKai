@@ -11,4 +11,10 @@
     <string name="kai_engine_reason_failover">Cambiado tras un error: %1$s</string>
     <string name="kai_engine_reason_manual">Cambiado a mano</string>
     <string name="kai_engine_auto_notice">Reproductor automático: %1$s</string>
+    <string name="kai_engine_reason_format_hi10p">ExoPlayer no puede: H.264 de 10 bits (Hi10P), que esta TV no decodifica → MPV</string>
+    <string name="kai_engine_reason_format_no_decoder">ExoPlayer no puede: la TV no tiene decodificador para este vídeo → MPV</string>
+    <string name="kai_engine_reason_format_no_video">ExoPlayer no puede: no hay imagen en este contenedor (VC-1 / TS) → MPV</string>
+    <string name="kai_engine_reason_format_vc1">ExoPlayer no puede: el decodificador VC-1 no arranca → MPV</string>
+    <string name="kai_engine_reason_format_other">ExoPlayer no puede reproducir este formato (%1$s) → MPV</string>
+    <string name="kai_engine_reason_error_dialog">Elegido en el aviso de error</string>
 </resources>

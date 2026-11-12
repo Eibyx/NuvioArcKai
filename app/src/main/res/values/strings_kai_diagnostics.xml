@@ -11,4 +11,10 @@
     <string name="kai_engine_reason_failover">Switched after an error: %1$s</string>
     <string name="kai_engine_reason_manual">Switched by hand</string>
     <string name="kai_engine_auto_notice">Auto player: %1$s</string>
+    <string name="kai_engine_reason_format_hi10p">ExoPlayer can\'t play it: 10-bit H.264 (Hi10P), which this TV can\'t decode → MPV</string>
+    <string name="kai_engine_reason_format_no_decoder">ExoPlayer can\'t play it: this TV has no decoder for this video → MPV</string>
+    <string name="kai_engine_reason_format_no_video">ExoPlayer can\'t play it: no picture in this container (VC-1 / TS) → MPV</string>
+    <string name="kai_engine_reason_format_vc1">ExoPlayer can\'t play it: the VC-1 decoder won\'t start → MPV</string>
+    <string name="kai_engine_reason_format_other">ExoPlayer can\'t play this format (%1$s) → MPV</string>
+    <string name="kai_engine_reason_error_dialog">Chosen in the error message</string>
 </resources>
