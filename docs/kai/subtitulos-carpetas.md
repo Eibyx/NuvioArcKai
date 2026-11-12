@@ -97,3 +97,11 @@ en la propia prueba) y no falló en la ejecución publicada.
 | «El decodificador no responde» a los ~20 s | `StartupWatchdogDecision` disparaba si el búfer no crecía en 20 s | `patientStart`: mientras no esté READY espera hasta 80 s (techo de servidores lentos); READY sin imagen sigue avisando |
 | Pasa a MPV sin explicación | Con el motor en Automático, cualquier anime va a MPV (`resolveAutoInternalPlayerEngine`) | Motivo guardado y mostrado (aviso breve + Información del stream + diagnóstico); también cambios manuales y tras error |
 | Aviso de fuentes que faltan | — | Eliminado; solo diagnóstico/log |
+
+### Pre-release kai.3 publicada
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.1.0-nt.stable-kai.3 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43238346876 (commit `53b8173`), en verde a la primera.
+APK descargado y verificado: SHA-256 `fa699f9bb0ea6293782988b50fa9d9ce1dc50495d8e09454671e213b7183c567` (coincide con
+`SHA256SUMS.txt`), firma v2 con el mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`,
+`com.eibyx.nuvioarckai` versionCode 3 / `1.1.0-nt.stable-kai.3`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
