@@ -478,6 +478,17 @@ fun AdvancedSettingsContent(
             UiDiagnosticsSettingsRow()
         }
 
+        // Kai: the in-app log viewer (as in NuvioMobileKai).
+        item(key = "kai_app_logs") {
+            var showLogs by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+            SettingsActionRow(
+                title = stringResource(R.string.kai_logs_title),
+                subtitle = stringResource(R.string.kai_logs_desc),
+                onClick = { showLogs = true }
+            )
+            if (showLogs) AppLogsDialog(onDismiss = { showLogs = false })
+        }
+
         item(key = "network_tests") {
             SettingsGroupCard(
                 modifier = Modifier.fillMaxWidth(),

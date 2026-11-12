@@ -17,4 +17,18 @@
     <string name="kai_engine_reason_format_vc1">ExoPlayer can\'t play it: the VC-1 decoder won\'t start → MPV</string>
     <string name="kai_engine_reason_format_other">ExoPlayer can\'t play this format (%1$s) → MPV</string>
     <string name="kai_engine_reason_error_dialog">Chosen in the error message</string>
+    <string name="kai_logs_title">App logs</string>
+    <string name="kai_logs_desc">What the app is doing: player, subtitles, cloud accounts and errors. Links, tokens and cookies are hidden.</string>
+    <string name="kai_logs_filter_all">All</string>
+    <string name="kai_logs_filter_player">Player</string>
+    <string name="kai_logs_filter_subtitles">Subtitles</string>
+    <string name="kai_logs_filter_cloud">Cloud and accounts</string>
+    <string name="kai_logs_filter_errors">Errors</string>
+    <string name="kai_logs_refresh">Refresh</string>
+    <string name="kai_logs_clear">Clear</string>
+    <string name="kai_logs_phone">View on phone</string>
+    <string name="kai_logs_phone_hint">Scan the code with a phone on the same Wi-Fi, or open %1$s</string>
+    <string name="kai_logs_decisions">Player decisions</string>
+    <string name="kai_logs_loading">Reading…</string>
+    <string name="kai_logs_count">Log lines: %1$d</string>
 </resources>

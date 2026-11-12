@@ -17,4 +17,18 @@
     <string name="kai_engine_reason_format_vc1">ExoPlayer no puede: el decodificador VC-1 no arranca → MPV</string>
     <string name="kai_engine_reason_format_other">ExoPlayer no puede reproducir este formato (%1$s) → MPV</string>
     <string name="kai_engine_reason_error_dialog">Elegido en el aviso de error</string>
+    <string name="kai_logs_title">Registros de la app</string>
+    <string name="kai_logs_desc">Lo que está haciendo la app: reproductor, subtítulos, cuentas en la nube y errores. Los enlaces, tokens y cookies se ocultan.</string>
+    <string name="kai_logs_filter_all">Todo</string>
+    <string name="kai_logs_filter_player">Reproductor</string>
+    <string name="kai_logs_filter_subtitles">Subtítulos</string>
+    <string name="kai_logs_filter_cloud">Nube y cuentas</string>
+    <string name="kai_logs_filter_errors">Errores</string>
+    <string name="kai_logs_refresh">Actualizar</string>
+    <string name="kai_logs_clear">Borrar</string>
+    <string name="kai_logs_phone">Ver en el celular</string>
+    <string name="kai_logs_phone_hint">Escanea el código con un celular en el mismo Wi-Fi, o abre %1$s</string>
+    <string name="kai_logs_decisions">Decisiones del reproductor</string>
+    <string name="kai_logs_loading">Leyendo…</string>
+    <string name="kai_logs_count">Líneas del registro: %1$d</string>
 </resources>
