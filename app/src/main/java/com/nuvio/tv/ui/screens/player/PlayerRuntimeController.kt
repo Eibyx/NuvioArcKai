@@ -761,6 +761,7 @@ class PlayerRuntimeController(
     internal var hasScannedTextTracksOnce: Boolean = false
     internal var streamReuseLastLinkEnabled: Boolean = false
     internal var autoSwitchInternalPlayerOnErrorEnabled: Boolean = false
+    internal var kaiFormatFallbackToMpvEnabled: Boolean = true
     internal var addonSubtitlesEnabled: Boolean = false
     internal var startupEngineFailoverTriggered: Boolean = false
     internal var runtimeInternalPlayerEngineOverride: InternalPlayerEngine? = null

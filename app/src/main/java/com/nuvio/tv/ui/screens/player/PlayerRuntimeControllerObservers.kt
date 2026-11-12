@@ -506,6 +506,7 @@ internal fun PlayerRuntimeController.observeSubtitleSettings() {
             }
             streamReuseLastLinkEnabled = settings.streamReuseLastLinkEnabled
             autoSwitchInternalPlayerOnErrorEnabled = settings.autoSwitchInternalPlayerOnError
+            kaiFormatFallbackToMpvEnabled = settings.kaiFormatFallbackToMpv
             addonSubtitlesEnabled = settings.addonSubtitlesEnabled
             currentInternalPlayerEngine = resolvedInternalPlayerEngine
             streamAutoPlayModeSetting = settings.streamAutoPlayMode

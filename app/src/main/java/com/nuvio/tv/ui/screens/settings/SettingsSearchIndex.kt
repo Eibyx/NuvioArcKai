@@ -229,6 +229,7 @@ internal val SETTINGS_SEARCH_ENTRIES: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.sub_addon_subtitles, R.string.sub_addon_subtitles_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.sub_strip_sdh, R.string.sub_strip_sdh_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.kai_logs_title, R.string.kai_logs_desc, SettingsCategory.ADVANCED, modes = SettingsSearchModes.ADVANCED, keywords = listOf("logs", "registros", "diagnóstico", "debug")),
+    SettingsSearchEntry(R.string.kai_format_fallback_title, R.string.kai_format_fallback_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.PLAYER, modes = SettingsSearchModes.ADVANCED, keywords = listOf("mpv", "exoplayer", "hi10p")),
     // Kai: "Mis carpetas de subtítulos" (its rows live in SubtitleFoldersDialog, opened from the Subtitles page).
     SettingsSearchEntry(R.string.subtitle_library_settings_title, R.string.subtitle_library_settings_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.subtitle_library_add, R.string.subtitle_library_settings_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),

@@ -38,6 +38,13 @@ internal fun PlaybackPlayerSection(
         onToggle = { onUpdate { setAutoSwitchInternalPlayerOnError(!settings.autoSwitchInternalPlayerOnError) } },
         enabled = !usesExternalPlayer
     )
+    SettingsToggleRow(
+        title = stringResource(R.string.kai_format_fallback_title),
+        subtitle = stringResource(R.string.kai_format_fallback_desc),
+        checked = settings.kaiFormatFallbackToMpv,
+        onToggle = { onUpdate { setKaiFormatFallbackToMpv(!settings.kaiFormatFallbackToMpv) } },
+        enabled = !usesExternalPlayer
+    )
     if (!usesExternalPlayer) {
         SettingsToggleRow(
             title = stringResource(R.string.playback_release_decoder_on_background),

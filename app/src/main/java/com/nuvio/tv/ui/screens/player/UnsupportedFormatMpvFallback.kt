@@ -113,7 +113,15 @@ internal object UnsupportedFormatMpvFallbackPolicy {
 /** Switches the current stream to MPV. Returns false when the stream already took this route once. */
 internal fun PlayerRuntimeController.switchToMpvForUnsupportedFormat(reason: String): Boolean {
     val url = currentStreamUrl
-    if (url.isBlank() || !mpvFormatFallbackStreamUrls.add(url)) return false
+    if (url.isBlank()) return false
+    if (!kaiFormatFallbackToMpvEnabled) {
+        // Kai: the user keeps ExoPlayer; say what would have happened.
+        if (mpvFormatFallbackStreamUrls.add(url)) {
+            KaiPlaybackDiagnostics.record("engine", "ExoPlayer stays (moving to MPV is off): ${kaiEngineSwitchReason("unsupported-format:$reason")}")
+        }
+        return false
+    }
+    if (!mpvFormatFallbackStreamUrls.add(url)) return false
     if (UnsupportedFormatMpvFallbackPolicy.isHighBitDepthH264(currentVideoTrackMimeType, currentVideoTrackCodecs)) {
         mpvSoftwareDecodeStreamUrls.add(url)
     }

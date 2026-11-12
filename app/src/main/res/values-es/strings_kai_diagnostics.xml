@@ -31,4 +31,6 @@
     <string name="kai_logs_decisions">Decisiones del reproductor</string>
     <string name="kai_logs_loading">Leyendo…</string>
     <string name="kai_logs_count">Líneas del registro: %1$d</string>
+    <string name="kai_format_fallback_title">Pasar a MPV si ExoPlayer no puede con el vídeo</string>
+    <string name="kai_format_fallback_desc">Desactivado: se queda siempre ExoPlayer, aunque el formato no se pueda ver (el motivo queda en el diagnóstico)</string>
 </resources>

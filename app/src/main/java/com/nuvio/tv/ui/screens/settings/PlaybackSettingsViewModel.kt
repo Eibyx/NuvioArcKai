@@ -118,6 +118,10 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setInternalPlayerEngine(engine)
     }
 
+    suspend fun setKaiFormatFallbackToMpv(enabled: Boolean) {
+        playerSettingsDataStore.setKaiFormatFallbackToMpv(enabled)
+    }
+
     suspend fun setAutoSwitchInternalPlayerOnError(enabled: Boolean) {
         playerSettingsDataStore.setAutoSwitchInternalPlayerOnError(enabled)
     }

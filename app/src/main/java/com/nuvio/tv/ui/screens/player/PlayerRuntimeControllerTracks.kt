@@ -260,7 +260,9 @@ internal fun PlayerRuntimeController.updateAvailableTracks(tracks: Tracks) {
         ) {
             return
         }
-        if (UnsupportedFormatMpvFallbackPolicy.shouldSwitchForHighBitDepthH264(
+        // Kai: when ExoPlayer selected the video it gets to play it (many TVs decode 10-bit H.264 while
+        // reporting it beyond their capabilities); a real decoder error still moves it to MPV.
+        if (!currentVideoTrackSelected && UnsupportedFormatMpvFallbackPolicy.shouldSwitchForHighBitDepthH264(
                 exoPlayerActive = isExoPlayerActiveForFormatFallback,
                 alreadySwitched = currentStreamUrl in mpvFormatFallbackStreamUrls,
                 videoMimeType = currentVideoTrackMimeType,

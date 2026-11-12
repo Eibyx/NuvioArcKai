@@ -87,6 +87,7 @@ internal val localOnlyPlayerProfileSettingsKeys = setOf(
     "player_preference",
     "internal_player_engine",
     "auto_switch_internal_player_on_error",
+    "kai_format_fallback_to_mpv",
     "use_libass",
     "libass_render_type",
     "decoder_priority",

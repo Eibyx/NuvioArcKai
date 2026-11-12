@@ -31,4 +31,6 @@
     <string name="kai_logs_decisions">Player decisions</string>
     <string name="kai_logs_loading">Reading…</string>
     <string name="kai_logs_count">Log lines: %1$d</string>
+    <string name="kai_format_fallback_title">Move to MPV when ExoPlayer can\'t play the video</string>
+    <string name="kai_format_fallback_desc">Off: ExoPlayer is kept for every video, even formats it may not show (the reason is still in the diagnostics)</string>
 </resources>

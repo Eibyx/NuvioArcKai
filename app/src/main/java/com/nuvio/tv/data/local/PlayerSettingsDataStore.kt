@@ -313,6 +313,8 @@ data class PlayerSettings(
     val controlLayout: PlayerControlLayout? = null,
     val internalPlayerEngine: InternalPlayerEngine = InternalPlayerEngine.EXOPLAYER,
     val autoSwitchInternalPlayerOnError: Boolean = false,
+    /** Kai: move a stream ExoPlayer cannot show to MPV by itself. Off keeps ExoPlayer whatever the format. */
+    val kaiFormatFallbackToMpv: Boolean = true,
     val useLibass: Boolean = false,
     val libassRenderType: LibassRenderType = LibassRenderType.OVERLAY_OPEN_GL,
     val libassRenderScale: LibassRenderScale = LibassRenderScale.FULL,
@@ -804,6 +806,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val controlLayoutKey = stringPreferencesKey("player_control_layout")
     private val internalPlayerEngineKey = stringPreferencesKey("internal_player_engine")
     private val autoSwitchInternalPlayerOnErrorKey = booleanPreferencesKey("auto_switch_internal_player_on_error")
+    private val kaiFormatFallbackToMpvKey = booleanPreferencesKey("kai_format_fallback_to_mpv")
     private val useLibassKey = booleanPreferencesKey("use_libass")
     private val libassRenderTypeKey = stringPreferencesKey("libass_render_type")
     private val libassRenderScaleKey = stringPreferencesKey("libass_render_scale")
@@ -1291,6 +1294,7 @@ class PlayerSettingsDataStore @Inject constructor(
                     runCatching { InternalPlayerEngine.valueOf(it) }.getOrDefault(InternalPlayerEngine.EXOPLAYER)
                 } ?: InternalPlayerEngine.EXOPLAYER,
                 autoSwitchInternalPlayerOnError = prefs[autoSwitchInternalPlayerOnErrorKey] ?: false,
+                kaiFormatFallbackToMpv = prefs[kaiFormatFallbackToMpvKey] ?: true,
                 useLibass = prefs[useLibassKey] ?: false,
                 libassRenderType = prefs[libassRenderTypeKey]?.let {
                     try { LibassRenderType.valueOf(it) } catch (e: Exception) { LibassRenderType.OVERLAY_OPEN_GL }
@@ -1600,6 +1604,10 @@ class PlayerSettingsDataStore @Inject constructor(
         store().edit { prefs ->
             prefs[internalPlayerEngineKey] = engine.name
         }
+    }
+
+    suspend fun setKaiFormatFallbackToMpv(enabled: Boolean) {
+        store().edit { prefs -> prefs[kaiFormatFallbackToMpvKey] = enabled }
     }
 
     suspend fun setAutoSwitchInternalPlayerOnError(enabled: Boolean) {
