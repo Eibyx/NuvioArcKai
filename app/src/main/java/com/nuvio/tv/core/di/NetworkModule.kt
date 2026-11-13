@@ -693,7 +693,16 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideSeriesGraphApi(@Named("seriesGraph") retrofit: Retrofit): SeriesGraphApi =
-        retrofit.create(SeriesGraphApi::class.java)
+        if (BuildConfig.IMDB_RATINGS_API_BASE_URL.isBlank()) {
+            // Kai: the ratings service is not in this build; answer "no ratings" without connecting
+            // (the Retrofit client would point at http://localhost/ and fail once per series).
+            object : SeriesGraphApi {
+                override suspend fun getSeasonRatings(tmdbId: Int) =
+                    retrofit2.Response.success(emptyList<com.nuvio.tv.data.remote.api.SeriesGraphSeasonRatingsDto>())
+            }
+        } else {
+            retrofit.create(SeriesGraphApi::class.java)
+        }
 
     @Provides
     @Singleton
