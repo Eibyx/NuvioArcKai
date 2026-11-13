@@ -1297,6 +1297,10 @@ internal fun ModernRowSection(
                                 cardFocused = false,
                                 rowHasFocus = hasFocus,
                                 isPendingTarget = pending == index
+                            ) && (
+                                // Kai: break the two-row focus loop (see HomeFocusClaimGuard).
+                                HomeFocusClaimGuard.shared.tryClaim(row.key, android.os.SystemClock.uptimeMillis()) ||
+                                    run { Log.d(ROW_FOCUS_TAG, "claim refused row=${row.key}: rows taking focus in turn"); false }
                             )
                         }
                     }
