@@ -367,6 +367,10 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
             setVo(videoOutput)
             mpv.setPropertyString("vo", videoOutput)
             mpv.setPropertyString("hwdec", hardwareDecoder)
+            // Kai: lighter decoding while it runs in software (see MpvLowEndTuning).
+            MpvLowEndTuning.softwareDecodeOptions(active).forEach { (key, value) ->
+                runCatching { mpv.setPropertyString(key, value) }
+            }
             appliedHi10pGnextSoftwareFallback = active
         }.onFailure {
             Log.w(TAG, "Failed to apply mpv Hi10P G-NEXT SW fallback (active=$active): ${it.message}")
@@ -844,8 +848,13 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
         mpv.setOptionString("tls-verify", "yes")
         mpv.setOptionString("tls-ca-file", "${context.filesDir.path}/cacert.pem")
         mpv.setOptionString("input-default-bindings", "yes")
-        mpv.setOptionString("demuxer-max-bytes", "${64 * 1024 * 1024}")
-        mpv.setOptionString("demuxer-max-back-bytes", "${64 * 1024 * 1024}")
+        // Kai: a smaller cache on low-RAM TVs (see MpvLowEndTuning).
+        val demuxer = MpvLowEndTuning.demuxerBytes(com.nuvio.tv.core.device.DeviceMemoryTier.isLowRam)
+        mpv.setOptionString("demuxer-max-bytes", demuxer.forward.toString())
+        mpv.setOptionString("demuxer-max-back-bytes", demuxer.back.toString())
+        MpvLowEndTuning.softwareDecodeOptions(hi10pGnextSoftwareFallbackActive).forEach { (key, value) ->
+            mpv.setOptionString(key, value)
+        }
         mpv.setOptionString("keep-open", "yes")
         mpv.setOptionString("softvol", "yes")
         mpv.setOptionString("volume-max", MPV_MAX_VOLUME_PERCENT.toInt().toString())
