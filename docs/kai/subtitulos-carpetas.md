@@ -114,3 +114,14 @@ cancelaron a propósito (antes de publicar) para incluir el visor de registros y
 APK verificado: SHA-256 `b496dfccdf4f2d8915c879402da4cc17e397df4ea9f2a6d10b9fcdc35619cede` (coincide con `SHA256SUMS.txt`),
 mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 4 /
 `1.1.0-nt.stable-kai.4`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
+
+### Pre-release kai.5 publicada
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.1.0-nt.stable-kai.5 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43429178931 (commit `64bc3ae`), intento 2. En el intento 1 falló
+`MetaRepositoryNotFoundClassificationTest › transport failure does not poison the negative cache after recovery`
+(línea 46, también en el reintento automático); pasa en local 3/3 y en el intento 2. No se cambió ninguna prueba.
+Queda pendiente averiguar por qué falla a veces en CI.
+APK verificado: SHA-256 `4283c778fd4f2165f5bb2747e6054ba7711ecc06a9a6482d59d634c17dd3f9fa` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 5 /
+`1.1.0-nt.stable-kai.5`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
