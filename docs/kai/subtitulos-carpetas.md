@@ -125,3 +125,12 @@ Queda pendiente averiguar por qué falla a veces en CI.
 APK verificado: SHA-256 `4283c778fd4f2165f5bb2747e6054ba7711ecc06a9a6482d59d634c17dd3f9fa` (coincide con `SHA256SUMS.txt`),
 mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 5 /
 `1.1.0-nt.stable-kai.5`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
+
+### Pre-release kai.6 publicada
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.1.0-nt.stable-kai.6 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43458369067 (commit `29e07ac`). Las ejecuciones 43453617704 y 43455437525 se
+cancelaron a propósito (antes de publicar) para incluir los IDs de TMDB en disco y el arreglo del bucle de foco del inicio.
+APK verificado: SHA-256 `5590c0ee5a9747d8658639224ae337f609fe545496ac631a682ed7106414d7fe` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 6 /
+`1.1.0-nt.stable-kai.6`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
