@@ -5,7 +5,12 @@ import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.data.remote.api.TmdbApi
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -14,6 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 private const val TAG = "TmdbService"
+private const val STORE_SAVE_DELAY_MS = 5_000L
 // NuvioArcKai: the account key first, then the build key (read on every call).
 private val TMDB_API_KEY: String get() = TmdbApiKey.current()
 
@@ -23,8 +29,15 @@ private val TMDB_API_KEY: String get() = TmdbApiKey.current()
  */
 @Singleton
 class TmdbService @Inject constructor(
-    private val tmdbApi: TmdbApi
+    private val tmdbApi: TmdbApi,
+    @dagger.hilt.android.qualifiers.ApplicationContext context: android.content.Context
 ) {
+    // Kai: IMDb → TMDB ids survive restarts (see ImdbTmdbIdStore).
+    private val idStore = ImdbTmdbIdStore(java.io.File(context.filesDir, "kai/imdb_tmdb_ids.tsv"))
+    private val storeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    @Volatile private var storeLoaded = false
+    private var saveJob: Job? = null
+
     // Cache: IMDB ID -> TMDB ID (keyed by "$imdbId:$mediaType")
     private val imdbToTmdbCache = ConcurrentHashMap<String, Int>()
     
@@ -54,6 +67,7 @@ class TmdbService @Inject constructor(
         
         val normalizedType = normalizeMediaType(mediaType)
         val cacheKey = "$imdbId:$normalizedType"
+        ensureStoreLoaded()
 
         // Check cache first
         imdbToTmdbCache[cacheKey]?.let { cached ->
@@ -105,7 +119,8 @@ class TmdbService @Inject constructor(
                 }
 
                 requestDeferred.complete(found.id)
-                 
+                scheduleStoreSave()
+
                 return@withContext found.id
             }
             
@@ -125,6 +140,30 @@ class TmdbService @Inject constructor(
         }
     }
     
+    private fun ensureStoreLoaded() {
+        if (storeLoaded) return
+        synchronized(idStore) {
+            if (storeLoaded) return
+            idStore.load().forEach { (key, id) ->
+                if (imdbToTmdbCache.putIfAbsent(key, id) == null) {
+                    tmdbToImdbCache.putIfAbsent("$id:${key.substringAfter(':')}", key.substringBefore(':'))
+                }
+            }
+            storeLoaded = true
+        }
+    }
+
+    /** Writes the ids a few seconds after the last new one, so a busy start writes once. */
+    private fun scheduleStoreSave() {
+        synchronized(idStore) {
+            saveJob?.cancel()
+            saveJob = storeScope.launch {
+                delay(STORE_SAVE_DELAY_MS)
+                idStore.save(HashMap(imdbToTmdbCache))
+            }
+        }
+    }
+
     /** The IMDB ID if it is already known, with no request. */
     fun cachedImdbId(tmdbId: Int, mediaType: String): String? =
         tmdbToImdbCache["$tmdbId:${normalizeMediaType(mediaType)}"]
@@ -282,6 +321,7 @@ class TmdbService @Inject constructor(
      * Clear all caches
      */
     fun clearCache() {
+        idStore.clear()
         imdbToTmdbCache.clear()
         tmdbToImdbCache.clear()
         imdbToTmdbInFlight.clear()
