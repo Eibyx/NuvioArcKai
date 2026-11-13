@@ -54,9 +54,6 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 private const val CW_MAX_RECENT_PROGRESS_ITEMS = 300
-private const val CW_MAX_NEXT_UP_LOOKUPS = 32
-private const val CW_MAX_NEXT_UP_CONCURRENCY = 4
-private const val CW_MAX_ENRICHMENT_CONCURRENCY = 4
 private const val CW_PROGRESS_DEBOUNCE_MS = 500L
 
 private data class ProgressSnapshot(
@@ -309,6 +306,7 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
             .distinctUntilChanged()
             .collectLatest { (owner, pipelineProfileId) ->
                 if (!owner.active) return@collectLatest
+                CwLowRamPacing.firstBuiltAt(SystemClock.elapsedRealtime())
                 coroutineScope {
                     val restoreClearVersion = cwEnrichmentCache.cacheCleared.value
                     launch { restoreContinueWatchingSnapshot(pipelineProfileId, owner, restoreClearVersion) }
@@ -882,8 +880,19 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                                 // new CW entries appearing progressively.
                                                 val discoveredNextUpItems = mutableListOf<ContinueWatchingItem.NextUp>()
                                                 var resolvedSinceLastEmit = 0
+                                                // Kai: on low-RAM TVs, wait until the start-up rush is over and space
+                                                // the shows out (see CwLowRamPacing).
+                                                val lowRam = com.nuvio.tv.core.device.DeviceMemoryTier.isLowRam
+                                                val waitMs = CwLowRamPacing.olderPassWaitMs(
+                                                    lowRam,
+                                                    CwLowRamPacing.firstBuiltAt(SystemClock.elapsedRealtime()),
+                                                    SystemClock.elapsedRealtime()
+                                                )
+                                                if (waitMs > 0L) delay(waitMs)
+                                                val seedGapMs = CwLowRamPacing.olderSeedGapMs(lowRam)
                                                 for (seed in uncachedSeeds) {
                                                     PlayerSessionTracker.isSessionOpen.first { open -> !open }
+                                                    if (seedGapMs > 0L) delay(seedGapMs)
                                                     cwProcessedOlderSeedContentIds += seed.contentId
                                                     // Re-check freshness — badge pipeline may have validated
                                                     // this series while we were processing earlier seeds.
@@ -1497,7 +1506,7 @@ private suspend fun HomeViewModel.buildLightweightNextUpItems(
                 // Negative hit (no next-up) — skip if TTL is fresh
                 !fullyWatchedSeriesIds.isSeriesValidationFresh(progress.contentId)
             }
-            .take(CW_MAX_NEXT_UP_LOOKUPS)
+            .take(CwLowRamPacing.nextUpLookups(com.nuvio.tv.core.device.DeviceMemoryTier.isLowRam))
 
         seeds to ipIds
     }
@@ -1511,7 +1520,7 @@ private suspend fun HomeViewModel.buildLightweightNextUpItems(
         return@coroutineScope emptyList()
     }
 
-    val lookupSemaphore = Semaphore(CW_MAX_NEXT_UP_CONCURRENCY)
+    val lookupSemaphore = Semaphore(CwLowRamPacing.concurrency(com.nuvio.tv.core.device.DeviceMemoryTier.isLowRam))
     val mergeMutex = Mutex()
     val nextUpByContent = linkedMapOf<String, ContinueWatchingItem.NextUp>()
     val processedContentIds = Collections.synchronizedSet(mutableSetOf<String>())
@@ -1600,7 +1609,7 @@ private suspend fun HomeViewModel.enrichVisibleContinueWatchingItems(
     if (finalItems.isEmpty()) return@coroutineScope false
 
     val metaCache = cwMetaCache
-    val enrichmentSemaphore = Semaphore(CW_MAX_ENRICHMENT_CONCURRENCY)
+    val enrichmentSemaphore = Semaphore(CwLowRamPacing.concurrency(com.nuvio.tv.core.device.DeviceMemoryTier.isLowRam))
     val enrichedItems = finalItems
         .mapIndexed { index, item ->
             async(Dispatchers.IO) {
