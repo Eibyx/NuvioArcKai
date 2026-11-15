@@ -271,7 +271,7 @@ internal class PlayerMediaSourceFactory(
         if (!shape.useChunkSessionSource || shape.mp4SessionMode) return
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return
         val sanitizedHeaders = sanitizeHeaders(headers)
-        val okHttpFactory = OkHttpDataSource.Factory(chunkSessionClient(url)).apply {
+        val okHttpFactory = OkHttpDataSource.Factory(PieceCallFactory(chunkSessionClient(url))).apply {
             setDefaultRequestProperties(sanitizedHeaders)
             if (sanitizedHeaders.none { it.key.equals("User-Agent", ignoreCase = true) }) {
                 setUserAgent(DEFAULT_USER_AGENT)
@@ -319,7 +319,7 @@ internal class PlayerMediaSourceFactory(
         // DefaultDataSource stays in front so data: manifests resolve; loopback engines serve
         // adaptive manifests slowly, so they get the long read timeout as well.
         val httpDataSourceFactory = if (isHls || isDash) {
-            DefaultDataSource.Factory(
+            val adaptiveFactory = DefaultDataSource.Factory(
                 context,
                 PlayerPlaybackNetworking.createHttpDataSourceFactory(
                     sanitizedHeaders,
@@ -327,6 +327,7 @@ internal class PlayerMediaSourceFactory(
                     slowStart = slowStart
                 )
             )
+            if (isHls) HlsParameterSetInitDataSource.Factory(adaptiveFactory) else adaptiveFactory
         } else {
             PlayerPlaybackNetworking.createDataSourceFactory(context, sanitizedHeaders, slowStart = slowStart)
         }
@@ -348,7 +349,7 @@ internal class PlayerMediaSourceFactory(
 
         val parallelCount =
             if (usesParallelConnections(useParallelConnections, isMediaServerUrl(url))) parallelConnectionCount else 0
-        Log.i(
+        PlayerMemoryReporter.logWithSnapshot(
             "PlayerMediaSource",
             "PLAYBACK_CONFIG: native=$nativeEngineEnabled " +
                 "customBuffers=$bufferEngineEnabled budgetManaged=$bufferBudgetManaged " +
@@ -357,8 +358,8 @@ internal class PlayerMediaSourceFactory(
                 "backBufferMs=${NuvioExoPlayerPerformanceHelper.backBufferMs} " +
                 "targetMb=${NuvioExoPlayerPerformanceHelper.targetBufferSizeMb} " +
                 "safeNativeMb=${NuvioExoPlayerPerformanceHelper.getSafeNativeMemoryLimitMb(context)} " +
-                "parallel=$parallelCount chunkKb=$parallelChunkSizeKb auto=$autoSpeedupEnabled " +
-                PlayerMemoryReporter.snapshot(context)
+                "parallel=$parallelCount chunkKb=$parallelChunkSizeKb auto=$autoSpeedupEnabled ",
+            context
         )
         PlayerMemoryReporter.startSampling(context)
         // 1. Chunk-session source: parallel connections (opt-in), or MP4 session
@@ -382,7 +383,7 @@ internal class PlayerMediaSourceFactory(
                         "for progressive MP4 with parallel connections off"
                 )
             }
-            val okHttpFactory = OkHttpDataSource.Factory(chunkSessionClient(url)).apply {
+            val okHttpFactory = OkHttpDataSource.Factory(PieceCallFactory(chunkSessionClient(url))).apply {
                 setDefaultRequestProperties(sanitizedHeaders)
                 if (sanitizedHeaders.none { it.key.equals("User-Agent", ignoreCase = true) }) {
                     setUserAgent(DEFAULT_USER_AGENT)
@@ -533,7 +534,7 @@ internal class PlayerMediaSourceFactory(
         // Free any chunk buffers retained across seek reopens so native
         // allocations never outlive the player.
         AutoSpeedup.end()
-        ParallelRangeDataSource.releaseRetainedSession()
+        ParallelRangeDataSource.handOffRetainedSession()
     }
 
     private fun autoSpeedupFactory(
@@ -552,7 +553,7 @@ internal class PlayerMediaSourceFactory(
             .cookieJar(NuvioApplication.extensionCookieJar)
             .let(::withChunkSessionTimeouts)
             .build()
-        val okHttpFactory = OkHttpDataSource.Factory(client).apply {
+        val okHttpFactory = OkHttpDataSource.Factory(PieceCallFactory(client)).apply {
             setDefaultRequestProperties(headers)
             if (headers.none { it.key.equals("User-Agent", ignoreCase = true) }) setUserAgent(DEFAULT_USER_AGENT)
         }
@@ -1304,7 +1305,10 @@ internal class PlayerMediaSourceFactory(
 
             query.split('&').forEach { parameter ->
                 val key = parameter.substringBefore('=', missingDelimiterValue = "").trim()
-                val value = parameter.substringAfter('=', missingDelimiterValue = "").trim()
+                val rawValue = parameter.substringAfter('=', missingDelimiterValue = "").trim()
+                val value = runCatching {
+                    URLDecoder.decode(rawValue.replace("+", "%2B"), Charsets.UTF_8.name())
+                }.getOrDefault(rawValue).lowercase(Locale.US)
                 if (key.isBlank() || value.isBlank()) return@forEach
 
                 when (key) {
@@ -1482,12 +1486,14 @@ private class PlayerLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy(6) 
     private companion object {
         // No 429/503 for this long -> the streak is considered ended and resets.
         private const val RATE_LIMIT_STREAK_QUIET_RESET_MS = 10_000L
-        // A continuous throttle with zero successful progress longer than this is treated
-        // as a dead stream: surface one clean fatal so mid-play source failover can act.
-        // A longer ceiling delays failover on a dead stream; a shorter one gives up on
-        // rate-limit storms that would have recovered.
-        private const val RATE_LIMIT_STREAK_CEILING_MS = 120_000L
     }
+
+    // Before the first frame nothing is lost by moving on: a source that refuses from the first request is over
+    // its own limit, and asking again every few seconds for two minutes only keeps the viewer waiting.
+    private fun rateLimitCeilingMs(): Long = rateLimitStreakCeilingMs(
+        beforeFirstFrame = !com.nuvio.tv.core.player.PlayerSessionTracker.settled.value &&
+            !com.nuvio.tv.core.player.PlayerSessionTracker.firstFrameShown
+    )
 
     override fun getFallbackSelectionFor(
         fallbackOptions: LoadErrorHandlingPolicy.FallbackOptions,
@@ -1543,7 +1549,7 @@ private class PlayerLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy(6) 
                 rateLimitStreakStartMs.set(now)
             }
             val streakMs = now - rateLimitStreakStartMs.get()
-            if (streakMs > RATE_LIMIT_STREAK_CEILING_MS) {
+            if (streakMs > rateLimitCeilingMs()) {
                 Log.w(
                     "NuvioLoadErrPolicy",
                     "Rate-limit streak ${streakMs}ms > ceiling; giving up (clean fatal for failover)"
@@ -1580,7 +1586,7 @@ private class PlayerLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy(6) 
         if (last != 0L) {
             val now = android.os.SystemClock.elapsedRealtime()
             if (now - last <= RATE_LIMIT_STREAK_QUIET_RESET_MS &&
-                now - rateLimitStreakStartMs.get() <= RATE_LIMIT_STREAK_CEILING_MS
+                now - rateLimitStreakStartMs.get() <= rateLimitCeilingMs()
             ) {
                 // Active throttle streak within budget: never fatal on the retry count.
                 // getRetryDelayMsFor owns the give-up (ceiling -> C.TIME_UNSET).
@@ -1590,6 +1596,14 @@ private class PlayerLoadErrorHandlingPolicy : DefaultLoadErrorHandlingPolicy(6) 
         return super.getMinimumLoadableRetryCount(dataType)
     }
 }
+
+// A continuous throttle with zero successful progress longer than this is treated as a dead stream: one clean
+// fatal so mid-play source failover can act. Longer delays failover; shorter gives up on storms that recover.
+internal const val RATE_LIMIT_STREAK_CEILING_MS = 120_000L
+internal const val RATE_LIMIT_START_CEILING_MS = 15_000L
+
+internal fun rateLimitStreakCeilingMs(beforeFirstFrame: Boolean): Long =
+    if (beforeFirstFrame) RATE_LIMIT_START_CEILING_MS else RATE_LIMIT_STREAK_CEILING_MS
 
 internal fun shouldPreferAlternativeHlsTrack(
     responseCode: Int?,

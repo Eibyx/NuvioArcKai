@@ -62,6 +62,8 @@ class HomePosterViewport {
     var lastRow by mutableIntStateOf(1)
     var scrolling by mutableStateOf(false)
     internal val visibleRequests = java.util.concurrent.atomic.AtomicInteger()
+    /** Uptime of the last focus move on Home; 0 before the first. */
+    @Volatile var lastFocusMoveAtMs = 0L
     internal val progressiveLock = Mutex()
 
     /** One disk warmer per Home viewport; three download slots stay available. */
@@ -117,13 +119,12 @@ const val HOME_POSTER_DOWNLOADS = 8
 const val HOME_POSTER_BACKGROUND_DOWNLOADS = 2
 private const val MIB = 1024L * 1024
 private const val STRONG_BOX_TOTAL_BYTES = 2_560L * MIB
-private const val SMALL_BOX_TOTAL_BYTES = 1_536L * MIB
 private const val LARGE_MEMORY_BOX_TOTAL_BYTES = 3_072L * MIB
 private const val LARGE_BOX_ARTWORK_CACHE_BYTES = 176L * MIB
 
 /** Disk-hit decode lanes by device class, never more than BitmapFactory's own parallelism. */
 fun homePosterDiskDecodeSlots(totalRamBytes: Long, lowRamDevice: Boolean, cores: Int): Int = when {
-    lowRamDevice || totalRamBytes < SMALL_BOX_TOTAL_BYTES || cores < 4 -> 2
+    homeLoadLevel(totalRamBytes, lowRamDevice, cores) == HomeLoadLevel.Small -> 2
     totalRamBytes >= STRONG_BOX_TOTAL_BYTES -> HOME_POSTER_BITMAP_PARALLELISM
     else -> 3
 }
@@ -145,10 +146,38 @@ internal fun homePosterMemoryWarmRows(count: Int, first: Int, last: Int, previou
     return ((first..last) + next).filter { it in 0 until count }
 }
 
-/** Posters of one row held decoded at idle: half a screen behind its position and one screen beyond. */
-internal fun homePosterMemoryWarmColumns(first: Int, visibleCount: Int): IntRange {
+/** Posters of one row held decoded at idle: half a screen behind its position and [screens] screens from it. */
+internal fun homePosterMemoryWarmColumns(first: Int, visibleCount: Int, screens: Int = 2): IntRange {
     val count = visibleCount.coerceIn(4, 16)
-    return maxOf(0, first - count / 2)..(maxOf(0, first) + count * 2 - 1)
+    return maxOf(0, first - count / 2)..(maxOf(0, first) + count * screens - 1)
+}
+
+/** Screens of posters the idle warm-up saves to disk for one row, whatever the row's length. */
+const val HOME_POSTER_DISK_WARM_SCREENS = 3
+
+/**
+ * Posters of one row the idle warm-up saves to disk, nearest first. A row on screen reaches out from its visible
+ * posters; a row off screen covers half a screen before where it stands and [screens] screens after it.
+ */
+internal fun homePosterDiskWarmIndices(
+    count: Int,
+    onScreen: Boolean,
+    first: Int,
+    last: Int,
+    firstColumn: Int,
+    screenColumns: Int,
+    screens: Int = HOME_POSTER_DISK_WARM_SCREENS,
+): Sequence<Int> {
+    if (count <= 0) return emptySequence()
+    if (onScreen) {
+        if (first < 0 || last < first) return emptySequence()
+        val reach = (last - first + 1).coerceIn(4, 16) * screens / 2
+        return progressivePosterIndices(count, first, last).filter { it in (first - reach)..(last + reach) }
+    }
+    val columns = screenColumns.coerceIn(4, 16)
+    val start = maxOf(0, firstColumn - columns / 2).coerceAtMost(count - 1)
+    val end = minOf(count, maxOf(0, firstColumn) + columns * screens)
+    return (start until end).asSequence()
 }
 
 /** Ahead-row work already started keeps running while it stays near the viewport. */
@@ -163,11 +192,70 @@ internal fun homePosterPrefetchRows(first: Int, last: Int, previousFirst: Int, a
     return (forward + if (up) last + 1 else first - 1).filter { it >= 0 }
 }
 
+/** Background poster lanes left while a Home list is moving. Posters on screen keep all of theirs. */
+internal fun homePosterBackgroundLanes(lanes: Int, scrolling: Boolean): Int = if (scrolling) 1 else lanes
+
+const val HOME_SCROLL_LANES_RESTORE_MS = 150L
+const val HOME_SCROLL_REPORT_EVERY_MS = 1_000L
+private const val HOME_SCROLL_REPORT_STALE_MS = 3_000L
+
+/** Home lists report scrolling here. A report goes stale, so a lost "stopped" cannot keep the lanes cut. */
+internal class HomeScrollSignal(private val nowMs: () -> Long) {
+    @Volatile private var reported = false
+    @Volatile private var reportedAtMs = 0L
+    @Volatile var onStopped: (() -> Unit)? = null
+
+    val scrolling: Boolean get() = reported && nowMs() - reportedAtMs < HOME_SCROLL_REPORT_STALE_MS
+
+    fun reportScrolling() {
+        reportedAtMs = nowMs()
+        reported = true
+    }
+
+    fun reportStopped() {
+        reported = false
+        onStopped?.invoke()
+    }
+}
+
+internal val HomePosterScroll = HomeScrollSignal { android.os.SystemClock.uptimeMillis() }
+
+/**
+ * Posters seen in the disk cache. It only picks the lane: the fetcher opens the file itself, so an entry that is
+ * no longer true costs a wait in the wrong lane and nothing else.
+ */
+internal class KnownDiskKeys(private val limit: Int = 4_000) {
+    private val keys = HashSet<String>()
+
+    operator fun contains(key: String): Boolean = synchronized(keys) { key in keys }
+
+    fun add(key: String) {
+        synchronized(keys) {
+            if (keys.size >= limit) keys.clear()
+            keys += key
+        }
+    }
+
+    fun remove(key: String) {
+        synchronized(keys) { keys.remove(key) }
+    }
+
+    fun clear() {
+        synchronized(keys) { keys.clear() }
+    }
+}
+
+internal val HomePostersOnDisk = KnownDiskKeys()
+
 /**
  * Bounded priority queue; cancellation releases a slot even when granted just before await. Background work holds at
  * most [backgroundConcurrency] slots, so the rest stay free for what is on screen.
  */
-internal class ImagePriorityQueue(private val concurrency: Int, private val backgroundConcurrency: Int = concurrency) {
+internal class ImagePriorityQueue(
+    private val concurrency: Int,
+    private val backgroundConcurrency: Int = concurrency,
+    private val scrolling: () -> Boolean = { false }
+) {
     private class Ticket(val rank: () -> Int, val background: () -> Boolean, val ready: CompletableDeferred<Unit> = CompletableDeferred()) {
         var countedAsBackground = false
     }
@@ -197,9 +285,14 @@ internal class ImagePriorityQueue(private val concurrency: Int, private val back
         }
     }
 
+    /** Hands out lanes that opened without a request finishing, such as when scrolling stops. */
+    fun recheck() {
+        synchronized(waiting) { drain() }
+    }
+
     private fun drain() {
         while (active < concurrency) {
-            val backgroundRoom = activeBackground < backgroundConcurrency
+            val backgroundRoom = activeBackground < homePosterBackgroundLanes(backgroundConcurrency, scrolling())
             val next = waiting.filter { backgroundRoom || !it.background() }.minByOrNull { it.rank() } ?: return
             waiting.remove(next)
             active++
@@ -214,11 +307,21 @@ internal class ImagePriorityQueue(private val concurrency: Int, private val back
 
 /** Only Home artwork opts in. Cached images never wait behind network/decode work. */
 class HomePosterLoadingInterceptor(diskDecodeSlots: Int = 2) : Interceptor {
-    private val downloads = ImagePriorityQueue(HOME_POSTER_DOWNLOADS, HOME_POSTER_BACKGROUND_DOWNLOADS)
+    private val downloads = ImagePriorityQueue(HOME_POSTER_DOWNLOADS, HOME_POSTER_BACKGROUND_DOWNLOADS) {
+        HomePosterScroll.scrolling
+    }
     private val cached = diskDecodeSlots.coerceIn(1, HOME_POSTER_BITMAP_PARALLELISM).let { slots ->
-        ImagePriorityQueue(slots, (slots - 1).coerceAtLeast(1))
+        ImagePriorityQueue(slots, (slots - 1).coerceAtLeast(1)) { HomePosterScroll.scrolling }
     }
     private val locks = PosterRequestLocks()
+
+    init {
+        HomePosterScroll.onStopped = {
+            downloads.recheck()
+            cached.recheck()
+        }
+    }
+
     override suspend fun intercept(chain: Interceptor.Chain): ImageResult {
         val priority = chain.request.extras[HomePosterPriorityKey] ?: return chain.proceed()
         val visible = !priority.prefetch && !priority.progressive
@@ -242,11 +345,20 @@ class HomePosterLoadingInterceptor(diskDecodeSlots: Int = 2) : Interceptor {
                     sizedHomeArtworkUrl(it, (chain.size.width as? coil3.size.Dimension.Pixels)?.px)
                 }
                 // Any saved copy is shown straight from disk; an older one is checked online afterwards.
-                val onDisk = request.diskCachePolicy.readEnabled && diskKey != null && withContext(Dispatchers.IO) {
-                    loader.diskCache?.openSnapshot(diskKey)?.use { true } ?: false
-                }
+                val known = diskKey != null && diskKey in HomePostersOnDisk
+                val onDisk = request.diskCachePolicy.readEnabled && diskKey != null &&
+                    (known || withContext(Dispatchers.IO) {
+                        loader.diskCache?.openSnapshot(diskKey)?.use { true } ?: false
+                    })
                 // Local files get independent slots; absent images cannot hold up their decode.
-                (if (onDisk) cached else downloads).run(shared::rank, { shared.background }) { chain.proceed() }
+                val loaded = (if (onDisk) cached else downloads).run(shared::rank, { shared.background }) {
+                    chain.proceed()
+                }
+                if (onDisk && diskKey != null) {
+                    val fromDisk = (loaded as? coil3.request.SuccessResult)?.dataSource == coil3.decode.DataSource.DISK
+                    if (fromDisk) HomePostersOnDisk.add(diskKey) else if (known) HomePostersOnDisk.remove(diskKey)
+                }
+                loaded
             }
             if (com.nuvio.tv.BuildConfig.DEBUG || android.util.Log.isLoggable("HomePosterCache", android.util.Log.VERBOSE)) {
                 val source = (result as? coil3.request.SuccessResult)?.dataSource?.name ?: "ERROR"
@@ -282,11 +394,18 @@ internal fun progressivePosterIndices(count: Int, first: Int, last: Int): Sequen
 }
 
 /** Keep a bounded decoded window ahead of fast D-pad travel; retain a return flank. */
-internal fun homePosterWarmWindow(count: Int, first: Int, last: Int, previousFirst: Int): List<Int> {
+internal fun homePosterWarmWindow(
+    count: Int,
+    first: Int,
+    last: Int,
+    previousFirst: Int,
+    level: HomeLoadLevel = HomeLoadLevel.Full,
+): List<Int> {
     if (count <= 0 || first < 0 || last < first) return emptyList()
     val visible = last - first + 1
-    val ahead = (visible * 2).coerceIn(8, 32)
-    val behind = visible.coerceIn(5, 16)
+    val small = level == HomeLoadLevel.Small
+    val ahead = if (small) visible.coerceIn(6, 16) else (visible * 2).coerceIn(8, 32)
+    val behind = if (small) 3 else visible.coerceIn(5, 16)
     val movingLeft = previousFirst >= 0 && first < previousFirst
     val right = ((last + 1)..minOf(count - 1, last + if (movingLeft) behind else ahead)).toList()
     val left = ((first - 1) downTo maxOf(0, first - if (movingLeft) ahead else behind)).toList()

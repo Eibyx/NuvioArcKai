@@ -115,7 +115,7 @@ class ScoutFolderSupport @Inject constructor(
     private suspend fun namesToHide(profile: ScoutProfile, listed: ScoutListed): Set<String> = namesLock.withLock {
         val profileId = profiles.activeProfileId.value
         val now = System.currentTimeMillis()
-        seenNames?.takeIf { it.profileId == profileId && it.profile == profile && it.listed === listed && now - it.at < LISTED_FRESH_MS }?.let { return@withLock it.names }
+        seenNames?.takeIf { it.profileId == profileId && it.profile == profile && it.listed == listed && now - it.at < LISTED_FRESH_MS }?.let { return@withLock it.names }
         val repository = watchProgress.get()
         val names = repository.tasteHistory.first().map { scoutExclusionName(it.title, it.releaseInfo) }.toSet() +
             repository.allProgress.first().map { scoutNormalizedName(it.name) } +
@@ -130,11 +130,12 @@ class ScoutFolderSupport @Inject constructor(
         val profile = store.current()
         val listed = listed()
         val names = namesToHide(profile, listed)
+        val leaveOut = ScoutLeaveOut.of(profile.settings)
         val named = System.currentTimeMillis()
         items.filterNot { item ->
             val name = scoutNormalizedName(item.name)
             val year = item.releaseInfo?.take(4)?.toIntOrNull()
-            item.id in listed.ids || name in names ||
+            !leaveOut.keeps(item) || item.id in listed.ids || name in names ||
                 (year != null && (year - 1..year + 1).any { "$name|$it" in names })
         }.also {
             Log.i("ScoutSpeed", "seen names=${named - started} filter=${System.currentTimeMillis() - named} items=${items.size}")

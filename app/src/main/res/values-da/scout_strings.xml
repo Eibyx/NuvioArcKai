@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Bedømmelser</string>
     <string name="scout_row_picked">Valgt til dig</string>
     <string name="scout_row_picked_sub">Film og serier, opdateres en gang om dagen</string>
+    <string name="scout_row_genre">Rækker efter genre</string>
+    <string name="scout_row_genre_sub">Forslag grupperet efter de genrer, du kan lide</string>
     <string name="scout_row_because">Fordi du så…</string>
     <string name="scout_row_because_sub">Følger det, du sidst så færdigt</string>
     <string name="scout_row_gems">Skjulte perler</string>
     <string name="scout_row_gems_sub">Godt bedømte titler, som få har set</string>
     <string name="scout_row_tiles">Scout-felter</string>
     <string name="scout_row_tiles_sub">Overrask mig, stemninger, årtier</string>
+    <string name="scout_row_mixes">Mix</string>
+    <string name="scout_row_mixes_sub">Dine gemte mix og årets højtidsmix</string>
     <string name="scout_ratings_enabled">Bedøm titler</string>
     <string name="scout_ratings_enabled_sub">Viser knappen Bedøm, tommelfingrene i langtryksmenuen og spørgsmålet efter en film</string>
     <string name="scout_ratings_off_note">Skjuler knappen Bedøm, tommelfingrene i menuen og spørgsmålet efter en film. Dine bedømmelser tæller stadig.</string>
     <string name="scout_ask_enabled">Spørg hvordan det var efter en film</string>
     <string name="scout_ask_enabled_sub">Ikke noget for mig, kan lide eller elsker, når du forlader afspilleren</string>
+    <string name="scout_send_ratings">Send mine bedømmelser til trackere</string>
+    <string name="scout_send_ratings_sub">Ikke noget for mig, Kan lide og Elsker sendes til Trakt, Simkl, MDBList og WeTrakr som 3, 7 og 10 ud af 10. En bedømmelse, du selv har givet på en tracker, ændres aldrig. Simkl får kun titler, du har set.</string>
+    <string name="scout_send_ratings_none">Ingen tracker er logget ind på denne profil, så intet sendes endnu.</string>
+    <string name="scout_use_ratings">Brug mine tracker-bedømmelser</string>
+    <string name="scout_use_ratings_sub">Bedømmelser, du har givet på dine trackere, bliver til tommelfingre her: 9 eller 10 er Elsker, 6 til 8 Kan lide, 1 til 4 Ikke noget for mig. En tommelfinger, du trykker på i Arc, vinder altid.</string>
+    <string name="scout_thumb_from">Fra %1$s</string>
     <string name="scout_your_thumbs">Dine tommelfingre</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="one">%1$d titel bedømt. Åbn for at ændre eller fortryde</item>
@@ -81,4 +91,6 @@
     <string name="scout_leave_out">Udelad</string>
     <string name="scout_leave_out_sub">Genrer, du aldrig vil se</string>
     <string name="scout_leave_out_none">Ingen</string>
+    <string name="scout_menu_visible">Vis Scout i menuen</string>
+    <string name="scout_menu_visible_sub">Scouts rækker på Hjem har deres egne kontakter</string>
 </resources>

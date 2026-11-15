@@ -107,6 +107,8 @@ class HomeViewModel @Inject constructor(
         internal const val STARTUP_GRACE_PERIOD_MS = 1_500L
         /** Off-screen rows from the background sweep reach the screen at most this often. */
         private const val CATALOG_SWEEP_UPDATE_BATCH_MS = 1_000L
+        /** Rows arriving in the first seconds of Home share one rebuild this far apart at most. */
+        internal const val HOME_START_UPDATE_BATCH_MS = 500L
         internal const val CONTINUE_WATCHING_ENRICHMENT_GRACE_PERIOD_MS = 1_000L
         private const val CONTINUE_WATCHING_WINDOW_MS = 30L * 24 * 60 * 60 * 1000
         private const val MAX_RECENT_PROGRESS_ITEMS = 300
@@ -450,12 +452,22 @@ class HomeViewModel @Inject constructor(
     internal val _heroSeriesFacts = MutableStateFlow<Map<String, HeroSeriesFacts>>(emptyMap())
     val heroSeriesFacts: StateFlow<Map<String, HeroSeriesFacts>> = _heroSeriesFacts.asStateFlow()
     internal val heroSeriesFactsAttempted: MutableSet<String> = Collections.newSetFromMap(createLruMap(MAX_CW_CACHE_SIZE))
-    internal var heroSeriesFactsJob: Job? = null
+    internal val heroSeriesFactsJobs = HeroSeriesFactsJobs()
     fun onSeriesHeroSettled(ref: HeroSeriesRef) = onSeriesHeroSettledPipeline(ref)
     internal val cwMetaCache: MutableMap<String, CwMetaSummary?> = createLruMap(MAX_CW_CACHE_SIZE)
     internal val cwMetaNegativeCacheTimestamps: MutableMap<String, Long> = createLruMap(MAX_CW_CACHE_SIZE)
     internal val cwMetaRefreshAtMs: MutableMap<String, Long> = createLruMap(MAX_CW_CACHE_SIZE)
     internal val cwMetaStaleKeys: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    internal val cwMetaKeepUntilMs: MutableMap<String, Long> = createLruMap(MAX_CW_CACHE_SIZE)
+    internal val cwMetaUnsavedKeys: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    internal val cwMetaStore: ContinueWatchingMetaStore? by lazy {
+        runCatching { appContext.filesDir?.takeIf { it.isDirectory } }.getOrNull()
+            ?.let { ContinueWatchingMetaStore(java.io.File(it, "cw_meta")) }
+    }
+    internal val cwMetaStoreMutex = kotlinx.coroutines.sync.Mutex()
+    @Volatile internal var cwMetaStoreLoadedFor: String? = null
+    @Volatile internal var cwMetaStoreProfileId: Int? = null
+    internal var cwMetaStoreSaveJob: Job? = null
     internal val cwEpisodeLists = MutableStateFlow<Map<String, Set<Pair<Int, Int>>>>(emptyMap())
     /** Ultra-light cache for badge evaluation: contentId → set of aired (season, episode) pairs. */
     internal val cwBadgeEpisodeCache: MutableMap<String, Set<Pair<Int, Int>>?> = createLruMap(MAX_CW_CACHE_SIZE)
@@ -474,6 +486,14 @@ class HomeViewModel @Inject constructor(
     internal val cwLastProcessedNextUpContentIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
     internal val cwProcessedOlderSeedContentIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
     internal val cwEnrichedNextUpOverlay = ConcurrentHashMap<String, NextUpInfo>()
+    /** Next-up overlay entries restored from the disk snapshot and not enriched yet in this session. */
+    internal val cwDiskSeededNextUpOverlayIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    /** Next-up seed keys an earlier launch found without a next episode, with their recheck time. */
+    internal val cwNoNextUpSeeds = ConcurrentHashMap<String, Long>()
+    /** Profile whose [cwNoNextUpSeeds] are loaded; null loads them again from disk. */
+    @Volatile internal var cwNoNextUpSeedsProfileId: Int? = null
+    /** Wall clock time the last Continue Watching cycle started, to spot releases passed since. */
+    @Volatile internal var cwLastCycleStartedAtMs: Long = System.currentTimeMillis()
     /** In-memory cache of enriched InProgress items per contentId+episode key. */
     internal val cwEnrichedInProgressOverlay = ConcurrentHashMap<String, ContinueWatchingItem.InProgress>()
     /** Bumped to force the CW pipeline to re-run (e.g. after cache clear). */
@@ -488,10 +508,13 @@ class HomeViewModel @Inject constructor(
     /** Latest trailer request made during the startup grace period, sent once grace ends. */
     internal var deferredTrailerPreviewRequest: (() -> Unit)? = null
     internal val adjacentItemPrefetchJobs = AdjacentPrefetchJobs()
+    internal val adjacentRowPrefetchJobs = AdjacentPrefetchJobs()
+    internal val focusStepPace = FocusStepPace()
     internal val movieWatchedObserverJobs = mutableMapOf<String, Job>()
     internal var movieWatchedBatchJob: Job? = null
     internal var lastMovieWatchedItemKeys: Set<String> = emptySet()
     internal var seriesWatchedObserverJob: Job? = null
+    internal var lastSeriesWatchedItemKeys: Set<String> = emptySet()
     internal var libraryTabsObserverJob: Job? = null
     internal var activePosterListPickerInput: LibraryEntryInput? = null
     internal var pendingPosterListPickerChanges: ListMembershipChanges? = null
@@ -518,9 +541,12 @@ class HomeViewModel @Inject constructor(
     internal var startupAuthNoticeJob: Job? = null
 
     // Lazy catalog loading
-    internal val eagerCatalogLoadCount: Int = 8
+    internal val eagerCatalogLoadCount: Int = com.nuvio.tv.core.image.HomeLoadLevel.current.startRows
     internal val lazyLoadRequestedKeys: MutableSet<String> = ConcurrentHashMap.newKeySet()
     internal val pendingLazyCatalogs = linkedMapOf<String, Pair<Addon, CatalogDescriptor>>()
+    /** Catalogs whose load failed with no row to show. A refresh asks for them again. */
+    internal val failedCatalogKeys: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    internal var failedCatalogRetryJob: Job? = null
     // Reserved-headroom background sweep state
     @Volatile
     internal var catalogSweepJob: Job? = null
@@ -549,6 +575,7 @@ class HomeViewModel @Inject constructor(
         shownUiState = createShuffleHomeState()
         observeCwPrefetch(shownUiState)
         observeServerArtwork()
+        startHeroSeriesFactsWarmup()
         android.util.Log.i("HOMEVM_LIFECYCLE", "INIT id=" + instanceId + " from " + homeViewModelCaller())
         // Accumulates individual watched status changes and flushes them as a single
         // update after 150ms of inactivity, preventing N separate recompositions.
@@ -577,6 +604,7 @@ class HomeViewModel @Inject constructor(
             observeModernHomePresentation()
             observeCwEpisodeListsPipeline()
             loadContinueWatching()
+            observeContinueWatchingReleases()
             watchedSeriesStateHolder.loadFromDisk()
             observeExternalMetaPrefetchPreference()
             observeTrailerSourceChanges()
@@ -622,15 +650,20 @@ class HomeViewModel @Inject constructor(
                     cwMetaNegativeCacheTimestamps.clear()
                     cwMetaRefreshAtMs.clear()
                     cwMetaStaleKeys.clear()
+                    cwMetaKeepUntilMs.clear()
+                    cwMetaUnsavedKeys.clear()
                     cwBadgeEpisodeCache.clear()
                     cwBadgeNextSeasonMs.clear()
                     cwTmdbIdCache.clear()
                     cwNextUpResolutionCache.clear()
                     cwNextUpNegativeCacheTimestamps.clear()
+                    cwNoNextUpSeeds.clear()
+                    cwNoNextUpSeedsProfileId = null
                     discoveredOlderNextUpItems.clear()
                     cwLastProcessedNextUpContentIds.clear()
                     cwProcessedOlderSeedContentIds.clear()
                     cwEnrichedNextUpOverlay.clear()
+                    cwDiskSeededNextUpOverlayIds.clear()
                     cwEnrichedInProgressOverlay.clear()
                     cwLastBadgeEpisodeKeys = emptySet()
                     cwLastShowIdSiblings = emptyMap()
@@ -648,6 +681,7 @@ class HomeViewModel @Inject constructor(
                     _movieWatchedStatus.value = emptyMap()
                     _pendingWatchedBatch.value = emptyMap()
                     _uiState.update { it.copy(movieWatchedStatus = emptyMap()) }
+                    lastSeriesWatchedItemKeys = emptySet()
                 }
             }
         }
@@ -686,15 +720,20 @@ class HomeViewModel @Inject constructor(
         cwMetaNegativeCacheTimestamps.clear()
         cwMetaRefreshAtMs.clear()
         cwMetaStaleKeys.clear()
+        cwMetaKeepUntilMs.clear()
+        cwMetaUnsavedKeys.clear()
         cwBadgeEpisodeCache.clear()
         cwBadgeNextSeasonMs.clear()
         cwTmdbIdCache.clear()
         cwNextUpResolutionCache.clear()
         cwNextUpNegativeCacheTimestamps.clear()
+        cwNoNextUpSeeds.clear()
+        cwNoNextUpSeedsProfileId = null
         discoveredOlderNextUpItems.clear()
         cwLastProcessedNextUpContentIds.clear()
         cwProcessedOlderSeedContentIds.clear()
         cwEnrichedNextUpOverlay.clear()
+        cwDiskSeededNextUpOverlayIds.clear()
         cwEnrichedInProgressOverlay.clear()
         cwLastBadgeEpisodeKeys = emptySet()
         cwLastShowIdSiblings = emptyMap()
@@ -771,6 +810,13 @@ class HomeViewModel @Inject constructor(
                 }
         }
         viewModelScope.launch {
+            layoutPreferenceDataStore.continueWatchingClickAction
+                .distinctUntilChanged()
+                .collect { action ->
+                    _uiState.update { it.copy(continueWatchingClickAction = action) }
+                }
+        }
+        viewModelScope.launch {
             var initialPattern = true
             layoutPreferenceDataStore.customPosterUrlPattern
                 .distinctUntilChanged()
@@ -841,6 +887,10 @@ class HomeViewModel @Inject constructor(
 
     fun preloadAdjacentItem(item: MetaPreview) = preloadAdjacentItemPipeline(item)
 
+    /** The card focus lands on in the row above or below: fetched to disk only, in its own two-job pool. */
+    fun preloadAdjacentRowItem(item: MetaPreview) =
+        preloadAdjacentItemPipeline(item, adjacentRowPrefetchJobs, warmDecode = false)
+
     private fun loadHomeCatalogOrderPreference() = loadHomeCatalogOrderPreferencePipeline()
 
     private fun loadFollowAddonsOrder() = loadFollowAddonsOrderPipeline()
@@ -885,7 +935,10 @@ class HomeViewModel @Inject constructor(
                         cwMetaCache.clear()
                         cwMetaRefreshAtMs.clear()
                         cwMetaStaleKeys.clear()
+                        cwMetaKeepUntilMs.clear()
+                        cwMetaUnsavedKeys.clear()
                         cwEnrichedNextUpOverlay.clear()
+                        cwDiskSeededNextUpOverlayIds.clear()
                         cwEnrichedInProgressOverlay.clear()
                         discoveredOlderNextUpItems.clear()
                         cwLastProcessedNextUpContentIds.clear()
@@ -953,6 +1006,7 @@ class HomeViewModel @Inject constructor(
         owner: ContinueWatchingHomeOwner,
         clearVersion: Int
     ) = withContext(kotlinx.coroutines.Dispatchers.IO) {
+            if (_uiState.value.continueWatchingItems.isNotEmpty()) return@withContext
             val cachedInProgress = runCatching { cwEnrichmentCache.getInProgressSnapshot(profileId) }.getOrDefault(emptyList())
             val cachedNextUp = runCatching { cwEnrichmentCache.getNextUpSnapshot(profileId) }.getOrDefault(emptyList())
             if (cachedInProgress.isEmpty() && cachedNextUp.isEmpty()) return@withContext
@@ -983,7 +1037,8 @@ class HomeViewModel @Inject constructor(
                         episodeDescription = cached.episodeDescription,
                         episodeImdbRating = if (cached.ratingVisible != false) cached.episodeImdbRating else null,
                         genres = cached.genres,
-                        releaseInfo = cached.releaseInfo
+                        releaseInfo = cached.releaseInfo,
+                        contentLanguage = cached.contentLanguage
                     )
                 }
             val nextUpItems = cachedNextUp
@@ -1032,7 +1087,10 @@ class HomeViewModel @Inject constructor(
                 cwEnrichmentCache.cacheCleared.value != clearVersion) return@withContext
             if (items.isNotEmpty()) {
                 val (mainItems, upcomingOnly) = splitUpcomingItems(items, sortMode)
-                _uiState.update { it.copy(continueWatchingItems = mainItems, upcomingItems = upcomingOnly) }
+                _uiState.update {
+                    if (it.continueWatchingItems.isNotEmpty()) it
+                    else it.copy(continueWatchingItems = mainItems, upcomingItems = upcomingOnly)
+                }
                 _initialCwResolved.value = true
             }
     }
@@ -1138,7 +1196,9 @@ class HomeViewModel @Inject constructor(
         // Only the background sweep is loading: its off-screen rows are batched into one pass rather than a
         // rebuild of the whole Home per row while the user scrolls. A pass still waiting takes this row too.
         val sweepOnly = pendingCatalogLoads > 0 && pendingCatalogLoads <= catalogSweepInFlight.get()
-        if (sweepOnly && catalogUpdateJob?.isActive == true &&
+        // In the first seconds after Arc opens, rows that land close together share one rebuild.
+        val startBatch = hasRenderedFirstCatalog && com.nuvio.tv.core.image.HomeStartCalm.active()
+        if ((sweepOnly || startBatch) && catalogUpdateJob?.isActive == true &&
             android.os.SystemClock.uptimeMillis() < catalogUpdateDueAtMs
         ) return
         catalogUpdateJob?.cancel()
@@ -1152,6 +1212,7 @@ class HomeViewModel @Inject constructor(
                     150L
                 }
                 sweepOnly -> CATALOG_SWEEP_UPDATE_BATCH_MS
+                startBatch -> HOME_START_UPDATE_BATCH_MS
                 // During bulk loading, batch aggressively — placeholders are
                 // already visible so the user won't notice the delay.
                 pendingCatalogLoads > 8 -> 300L

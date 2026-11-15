@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Ocene</string>
     <string name="scout_row_picked">Izbrano za vas</string>
     <string name="scout_row_picked_sub">Filmi in serije, osvežijo se enkrat na dan</string>
+    <string name="scout_row_genre">Vrstice po žanru</string>
+    <string name="scout_row_genre_sub">Predlogi, združeni po žanrih, ki so vam všeč</string>
     <string name="scout_row_because">Ker ste gledali…</string>
     <string name="scout_row_because_sub">Sledi temu, kar ste nazadnje dokončali</string>
     <string name="scout_row_gems">Skriti biseri</string>
     <string name="scout_row_gems_sub">Dobro ocenjeni naslovi, ki jih je videlo malo ljudi</string>
     <string name="scout_row_tiles">Ploščice Scout</string>
     <string name="scout_row_tiles_sub">Presenti me, razpoloženja, desetletja</string>
+    <string name="scout_row_mixes">Miksi</string>
+    <string name="scout_row_mixes_sub">Tvoji shranjeni miksi in praznični miks v sezoni</string>
     <string name="scout_ratings_enabled">Ocenjevanje naslovov</string>
     <string name="scout_ratings_enabled_sub">Prikaže gumb Oceni, palce v meniju dolgega pritiska in vprašanje po filmu</string>
     <string name="scout_ratings_off_note">Skrije gumb Oceni, palce v meniju in vprašanje po filmu. Vaše ocene še vedno štejejo.</string>
     <string name="scout_ask_enabled">Vprašanje, kako je bilo, po filmu</string>
     <string name="scout_ask_enabled_sub">Ni zame, všeč mi je ali obožujem ob izhodu iz predvajalnika</string>
+    <string name="scout_send_ratings">Pošlji moje ocene storitvam za sledenje</string>
+    <string name="scout_send_ratings_sub">Ni zame, Všeč mi je in Obožujem gredo v Trakt, Simkl, MDBList in WeTrakr kot 3, 7 in 10 od 10. Ocena, ki ste jo sami dali v storitvi za sledenje, se nikoli ne spremeni. Simkl dobi le naslove, ki ste jih gledali.</string>
+    <string name="scout_send_ratings_none">V tem profilu ni prijavljena nobena storitev za sledenje, zato se še nič ne pošilja.</string>
+    <string name="scout_use_ratings">Uporabi moje ocene iz storitev za sledenje</string>
+    <string name="scout_use_ratings_sub">Ocene iz vaših storitev za sledenje tukaj postanejo palci: 9 ali 10 je Obožujem, od 6 do 8 Všeč mi je, od 1 do 4 Ni zame. Palec, ki ga pritisnete v Arc, ima vedno prednost.</string>
+    <string name="scout_thumb_from">Vir: %1$s</string>
     <string name="scout_your_thumbs">Vaši palci</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="one">%1$d naslov ocenjen. Odprite za spremembo ali razveljavitev</item>
@@ -83,4 +93,6 @@
     <string name="scout_leave_out">Izpusti</string>
     <string name="scout_leave_out_sub">Žanri, ki jih nikoli ne želite videti</string>
     <string name="scout_leave_out_none">Brez</string>
+    <string name="scout_menu_visible">Prikaži Scout v meniju</string>
+    <string name="scout_menu_visible_sub">Vrstice Scout na začetnem zaslonu imajo svoja stikala</string>
 </resources>

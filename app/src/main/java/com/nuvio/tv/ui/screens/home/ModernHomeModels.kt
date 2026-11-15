@@ -35,6 +35,13 @@ internal const val MODERN_HERO_TEXT_WIDTH_FRACTION = 0.42f
 internal const val MODERN_HERO_MEDIA_WIDTH_FRACTION = 0.72f
 internal const val MODERN_TRAILER_OVERSCAN_ZOOM = 1.0f
 internal const val MODERN_HERO_FOCUS_DEBOUNCE_MS = 300L
+internal const val MODERN_HERO_QUICK_KEYS_GAP_MS = 450L
+internal const val MODERN_HERO_QUICK_KEYS_SETTLE_MS = 550L
+
+/** While keys follow each other quickly the hero waits longer, so its rebuild does not land on the next press. */
+internal fun heroSettleDelayMs(gapSinceLastMoveMs: Long): Long =
+    if (gapSinceLastMoveMs in 0 until MODERN_HERO_QUICK_KEYS_GAP_MS) MODERN_HERO_QUICK_KEYS_SETTLE_MS
+    else MODERN_HERO_FOCUS_DEBOUNCE_MS
 internal val MODERN_ROW_HEADER_FOCUS_INSET = 40.dp
 private val MODERN_ROW_CARD_BOTTOM_ROOM = 8.dp
 private const val MODERN_ROWS_VIEWPORT_MAX_FRACTION = 0.6f
@@ -148,7 +155,8 @@ data class HeroCarouselRow(
     val apiType: String? = null,
     val supportsSkip: Boolean = false,
     val hasMore: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val seeAll: Boolean = false
 )
 
 @Immutable
@@ -195,7 +203,9 @@ internal data class ModernHeroSceneState(
     val fullScreenBackdrop: Boolean,
     val featheredTrailer: Boolean = false,
     val preparedImage: coil3.Image? = null,
-    val preparedLogo: coil3.Image? = null
+    val preparedLogo: coil3.Image? = null,
+    /** The title has a logo that is still loading: its slot stays empty instead of showing text first. */
+    val logoPending: Boolean = false
 )
 
 internal data class ModernCatalogRowBuildCacheEntry(
@@ -633,13 +643,18 @@ internal fun buildCollectionFolderItem(
     )
 }
 
+// One key per show, like the shuffle key: when its card moves to another episode it stays the
+// same row item, so focus stays on it instead of passing to the next card.
+/** One key per show, so a card that moves on to the next episode keeps its place and focus. */
 internal fun continueWatchingItemKey(item: ContinueWatchingItem): String {
-    return item.shuffleFocusKey ?: when (item) {
-        is ContinueWatchingItem.InProgress ->
-            "cw_inprogress_${item.progress.contentId}_${item.progress.season ?: -1}_${item.progress.episode ?: -1}"
-        is ContinueWatchingItem.NextUp ->
-            "cw_nextup_${item.info.contentId}_${item.info.season}_${item.info.episode}"
-    }
+    item.shuffleFocusKey?.let { return it }
+    val id = item.contentId().ifBlank { "untitled_${item.contentType()}_${item.title()}" }
+    return "cw_$id"
+}
+
+private fun ContinueWatchingItem.title(): String = when (this) {
+    is ContinueWatchingItem.InProgress -> progress.name
+    is ContinueWatchingItem.NextUp -> info.name
 }
 
 /** Two entries with one key would crash the row: every list the home rows get passes through here. */

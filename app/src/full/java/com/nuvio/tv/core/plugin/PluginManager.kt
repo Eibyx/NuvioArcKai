@@ -133,7 +133,7 @@ class PluginManager @Inject constructor(
     /**
      * Check if the input looks like a short code rather than a URL.
      * Short codes are alphanumeric strings without slashes, dots (other than in a domain),
-     * or protocol schemes — e.g. "cspr", "0094", "megarepo".
+     * or protocol schemes — e.g. "abcd", "1234".
      */
     private fun isShortCode(input: String): Boolean {
         val trimmed = input.trim()
@@ -274,6 +274,8 @@ class PluginManager @Inject constructor(
     private fun runKey(tmdbId: String, mediaType: String, season: Int?, episode: Int?) =
         "$tmdbId:${mediaType.lowercase()}:${season ?: ""}:${episode ?: ""}"
 
+    private val summaryRuns = java.util.concurrent.ConcurrentHashMap<String, Any>()
+
     private fun startSummary(key: String, total: Int) {
         _searchSummaries.update { current ->
             (current - key).entries.toList().takeLast(MAX_SEARCH_SUMMARIES - 1).associate { it.key to it.value } +
@@ -391,7 +393,7 @@ class PluginManager @Inject constructor(
         providers: NewRepoProviders = NewRepoProviders.NORMAL
     ): Result<PluginRepository> = withContext(Dispatchers.IO) {
         try {
-            // Resolve short codes (e.g. "cspr", "0094") via cutt.ly redirect
+            // Resolve short codes (e.g. "abcd", "1234") via cutt.ly redirect
             val resolvedUrl = if (isShortCode(manifestUrl)) {
                 Log.d(TAG, "Input looks like a short code: '$manifestUrl'")
                 resolveShortCode(manifestUrl.trim())
@@ -907,6 +909,7 @@ class PluginManager @Inject constructor(
         val preferred = plan.preferred
         val summaryKey = runKey(tmdbId, mediaType, season, episode)
         startSummary(summaryKey, plan.others.size + if (preferred != null) 1 else 0)
+        val run = Any().also { summaryRuns[summaryKey] = it }
         val linksDueAtMs = linkTimeLimitMs?.let { System.currentTimeMillis() + it }
         try {
             if (preferred != null) {
@@ -947,10 +950,13 @@ class PluginManager @Inject constructor(
                 }
             }
         } finally {
-            val planned = listOfNotNull(preferred?.id) + plan.others.map { it.id }
-            _searchSummaries.update { current ->
-                val summary = current[summaryKey] ?: return@update current
-                current + (summaryKey to summary.withUnfinishedStopped(planned))
+            // A newer search for the same title owns the summary now.
+            if (summaryRuns.remove(summaryKey, run)) {
+                val planned = listOfNotNull(preferred?.id) + plan.others.map { it.id }
+                _searchSummaries.update { current ->
+                    val summary = current[summaryKey] ?: return@update current
+                    current + (summaryKey to summary.withUnfinishedStopped(planned))
+                }
             }
         }
     }

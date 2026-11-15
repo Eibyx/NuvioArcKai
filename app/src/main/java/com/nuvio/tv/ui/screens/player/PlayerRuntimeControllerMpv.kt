@@ -14,6 +14,9 @@ private const val MPV_RESUME_SEEK_TOLERANCE_MS = 1500L
 
 internal fun PlayerRuntimeController.attachMpvView(view: NuvioMpvSurfaceView?) {
     if (mpvView === view) return
+    // A view that leaves the screen is never shown again. Released here, or its libmpv instance with
+    // the demuxer cache, decoders and threads outlives the player when the screen goes first.
+    if (mpvView != null) releaseMpvPlayer()
     mpvView = view
 
     if (view == null) return
@@ -23,11 +26,20 @@ internal fun PlayerRuntimeController.attachMpvView(view: NuvioMpvSurfaceView?) {
     if (mpvInitializationInProgress) return
 
     runCatching {
+        setLoadingStatus(
+            phase = "mpv_starting",
+            message = context.getString(com.nuvio.tv.R.string.player_loading_starting)
+        )
         performPendingMpvHardRestartIfNeeded(view)
         view.applyHi10pGnextSoftwareFallback(shouldUseMpvHi10pGnextSoftwareFallback())
         view.applyHardwareDecodeMode(mpvHardwareDecodeModeSetting)
         registerMpvEventRelay(view)
         view.setMedia(currentStreamUrl, currentHeaders)
+        val playerInitLine =
+            "PLAYER_INIT: engine=MPV host=${currentStreamUrl.safeMpvTraceHost()} " +
+                "playbackSpeed=${_uiState.value.playbackSpeed} surface=attached"
+        playbackAnalyticsDiagnostics.recordRawEventLine(playerInitLine)
+        TtffTrace.mirror(playerInitLine)
         view.setPlaybackSpeed(_uiState.value.playbackSpeed)
         view.applyAudioAmplificationDb(_uiState.value.audioAmplificationDb, _uiState.value.nightMode)
         view.applyDialogueBoostDb(_uiState.value.centerMixLevelDb)
@@ -39,6 +51,7 @@ internal fun PlayerRuntimeController.attachMpvView(view: NuvioMpvSurfaceView?) {
         )
         view.applySubtitleStyle(_uiState.value.effectiveSubtitleStyle)
         view.setSubtitleDelayMs(mpvSubtitleDelayMs(_uiState.value.subtitleDelayMs))
+        applyMpvPassthroughCodecs(view)
         view.applyBluetoothAudioRoute(currentAudioOutputRoute?.isBluetooth == true)
         view.setAudioDelayMs(_uiState.value.audioDelayMs)
         view.applyAspectMode(_uiState.value.aspectMode)
@@ -49,6 +62,7 @@ internal fun PlayerRuntimeController.attachMpvView(view: NuvioMpvSurfaceView?) {
         endDetectionArmed = false
         mpvEofSeenClear = false
         exoEndOverrunHandled = false
+        exoSourceEndReached = false
         _uiState.update {
             it.copy(
                 isBuffering = true,
@@ -143,6 +157,7 @@ internal fun PlayerRuntimeController.initializeMpvPlayer(
             ?: (_uiState.value.pendingSeekPosition?.coerceAtLeast(0L) ?: 0L)
         playbackAnalyticsDiagnostics.setStartupStartPosition(initialResumePosition)
         view.setMedia(url, headers, initialResumePosition)
+        com.nuvio.tv.core.player.PlaybackMemoryFacts.onMpvStarted(mpvHardwareDecodeModeSetting.name.lowercase())
         val playerInitLine =
             "PLAYER_INIT: engine=MPV host=${url.safeMpvTraceHost()} " +
                 "playbackSpeed=${_uiState.value.playbackSpeed} resumePositionMs=$initialResumePosition"
@@ -164,6 +179,7 @@ internal fun PlayerRuntimeController.initializeMpvPlayer(
         )
         view.applySubtitleStyle(_uiState.value.effectiveSubtitleStyle)
         view.setSubtitleDelayMs(mpvSubtitleDelayMs(_uiState.value.subtitleDelayMs))
+        applyMpvPassthroughCodecs(view)
         view.applyBluetoothAudioRoute(currentAudioOutputRoute?.isBluetooth == true)
         view.setAudioDelayMs(_uiState.value.audioDelayMs)
         view.applyAspectMode(_uiState.value.aspectMode)
@@ -175,6 +191,7 @@ internal fun PlayerRuntimeController.initializeMpvPlayer(
         endDetectionArmed = false
         mpvEofSeenClear = false
         exoEndOverrunHandled = false
+        exoSourceEndReached = false
         _uiState.update {
             it.copy(
                 isBuffering = true,
@@ -254,6 +271,8 @@ internal fun PlayerRuntimeController.pauseForLifecycle() {
     if (isUsingMpvEngine()) {
         mpvView?.setPaused(true)
         emitPauseScrobbleForCurrentProgress()
+        // The process may be killed while backgrounded; Exo saves on its pause, MPV has to here.
+        saveWatchProgress()
         stopWatchProgressSaving()
         stopProgressUpdates()
         _uiState.update { it.copy(isPlaying = false) }
@@ -272,10 +291,16 @@ internal fun PlayerRuntimeController.pauseForLifecycle() {
  * that was reclaimed while in the background. Opt-in per device: on devices that never reclaim
  * the decoder it only turns a screensaver or a quick app switch into a full player rebuild.
  */
-internal fun PlayerRuntimeController.releaseForBackground() {
-    if (!releaseDecoderOnBackground || isUsingMpvEngine() || pendingBackgroundCrashRecovery) return
+internal fun PlayerRuntimeController.releaseForBackground(atPause: Boolean = false) {
+    if (isUsingMpvEngine() || pendingBackgroundCrashRecovery) return
     val player = _exoPlayer ?: return
     if (currentStreamUrl.isEmpty()) return
+    val heldBytes = (_loadControl?.allocator as? androidx.media3.exoplayer.upstream.DefaultAllocator)
+        ?.memoryFootprint?.toLong() ?: 0L
+    // At the pause only a large buffer goes: the app being started in front needs that memory before Arc stops.
+    if (!releasesOnLeavingApp(releaseDecoderOnBackground && !atPause, heldBytes)) return
+    Log.i(PlayerRuntimeController.TAG, "BUFFER_MEMORY: player released on leaving the app heldMb=${heldBytes / (1024 * 1024)} " +
+        "setting=$releaseDecoderOnBackground at=${if (atPause) "pause" else "stop"}")
     backgroundCrashSavedPositionMs = if (_uiState.value.isLive) 0L else player.currentPosition.coerceAtLeast(0L)
     // Pausing while buffering fires no isPlaying change, so neither the pause save nor the pause
     // scrobble ran; do both while the player still reports a position.
@@ -283,8 +308,19 @@ internal fun PlayerRuntimeController.releaseForBackground() {
     emitPauseScrobbleForCurrentProgress()
     pendingBackgroundCrashRecovery = true
     errorRetryJob?.cancel()
+    val stopTrim = (_loadControl as? com.nuvio.tv.core.player.BufferBudgetControl)?.stopTrim
+    stopTrim?.trimUntilEmpty()
     releasePlayer(flushPlaybackState = false)
 }
+
+/**
+ * A player holding a large buffer is released when the app leaves the foreground even with the setting off:
+ * Android closes a background app that holds about a gigabyte. It comes back paused at the same position.
+ */
+internal fun releasesOnLeavingApp(settingOn: Boolean, heldBytes: Long): Boolean =
+    settingOn || heldBytes >= BACKGROUND_RELEASE_HELD_BYTES
+
+internal const val BACKGROUND_RELEASE_HELD_BYTES = 500L * 1024 * 1024
 
 /** True when a player ON_STOP means the app left the foreground, not an in-app navigation or exit. */
 internal fun isAppBackgroundStop(
@@ -294,6 +330,15 @@ internal fun isAppBackgroundStop(
 ): Boolean = !isFinishing &&
     !isChangingConfigurations &&
     !hostState.isAtLeast(androidx.lifecycle.Lifecycle.State.STARTED)
+
+/** True when a player ON_PAUSE comes from the activity itself pausing (another app in front), not an in-app move. */
+internal fun isAppBackgroundPause(
+    isFinishing: Boolean,
+    isChangingConfigurations: Boolean,
+    hostState: androidx.lifecycle.Lifecycle.State
+): Boolean = !isFinishing &&
+    !isChangingConfigurations &&
+    !hostState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
 
 internal fun PlayerRuntimeController.resumeForLifecycle() {
     isInBackground = false
@@ -316,6 +361,20 @@ internal fun PlayerRuntimeController.resumeForLifecycle() {
 
     if (isUsingMpvEngine()) {
         installMpvMediaSession()
+        if (MpvStartupWatchdogPolicy.restartTickOnResume(
+                hasRenderedFirstFrame = hasRenderedFirstFrame,
+                hasStream = currentStreamUrl.isNotBlank(),
+                mpvLoaded = mpvView?.isMpvLoaded == true
+            )
+        ) {
+            if (MpvStartupWatchdogPolicy.unpauseOnResume(hasRenderedFirstFrame, partyBridge?.inParty == true)) {
+                userPausedManually = false
+                setPlaybackPaused(false)
+            }
+            Log.i(PlayerRuntimeController.TAG, "MPV_START_RESUME: restarting start check paused=$userPausedManually")
+            startProgressUpdates()
+            startWatchProgressSaving()
+        }
         return
     }
 
@@ -717,7 +776,7 @@ internal fun PlayerRuntimeController.setPlaybackPaused(paused: Boolean) {
 internal fun PlayerRuntimeController.pauseForStillWatchingPrompt() {
     setPlaybackPaused(true)
     if (isUsingMpvEngine()) {
-        stopProgressUpdates()
+        stopMpvProgressUpdatesForPause()
         stopWatchProgressSaving()
         emitPauseScrobbleForCurrentProgress()
     }

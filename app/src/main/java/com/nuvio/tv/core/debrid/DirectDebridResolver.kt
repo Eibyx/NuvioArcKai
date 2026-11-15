@@ -31,7 +31,8 @@ class DirectDebridResolver @Inject constructor(
     private val healthStore: AddonHealthStore,
     private val thumbnailCopies: ThumbnailCopyAdded,
     private val linkStore: ResolvedLinkStore,
-    private val accounts: DebridAccounts
+    private val accounts: DebridAccounts,
+    private val torboxCopies: ThumbnailCopyDebrid
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutex = Mutex()
@@ -39,19 +40,20 @@ class DirectDebridResolver @Inject constructor(
     private val inFlightResolves = mutableMapOf<String, Deferred<DirectDebridResolveResult>>()
 
     /**
-     * [mayAddToAccount] false keeps Real-Debrid and AllDebrid to titles already in the account. Torbox and
-     * Premiumize keep their own rules (Torbox removes what it added for a copy). Only a lookup that may add claims a
-     * TorBox thumbnail copy of the same title for playback.
+     * [mayAddToAccount] false keeps Real-Debrid, AllDebrid and TorBox to titles already in the account. Premiumize
+     * adds nothing to the account either way. Only a lookup that may add claims a TorBox thumbnail copy of the same
+     * title for playback. [forceRefresh] drops the kept link first, so the provider is asked for a new one.
      */
     suspend fun resolve(
         stream: Stream,
         season: Int?,
         episode: Int?,
-        mayAddToAccount: Boolean = true
+        mayAddToAccount: Boolean = true,
+        forceRefresh: Boolean = false
     ): DirectDebridResolveResult {
         if (mayAddToAccount) thumbnailCopies.claimAndWait(stream.getEffectiveInfoHash())
         val t0 = android.os.SystemClock.elapsedRealtime()
-        val result = resolveInternal(stream, season, episode, mayAddToAccount)
+        val result = resolveInternal(stream, season, episode, mayAddToAccount, forceRefresh)
         recordResolverHealth(stream, result, android.os.SystemClock.elapsedRealtime() - t0)
         return result
     }
@@ -60,7 +62,8 @@ class DirectDebridResolver @Inject constructor(
         stream: Stream,
         season: Int?,
         episode: Int?,
-        mayAddToAccount: Boolean
+        mayAddToAccount: Boolean,
+        forceRefresh: Boolean
     ): DirectDebridResolveResult {
         if (!shouldResolveToPlayableStream(stream)) {
             return DirectDebridResolveResult.Stale
@@ -68,6 +71,10 @@ class DirectDebridResolver @Inject constructor(
         val cacheKey = stream.directDebridResolveCacheKey(season, episode)
         if (cacheKey == null) {
             return resolveUncached(stream, season, episode, mayAddToAccount)
+        }
+        if (forceRefresh) {
+            mutex.withLock { resolvedCache.remove(cacheKey) }
+            linkStore.forget(cacheKey)
         }
         getCachedResult(cacheKey)?.let {
             return it
@@ -138,16 +145,17 @@ class DirectDebridResolver @Inject constructor(
         stream: Stream,
         season: Int?,
         episode: Int?,
-        mayAddToAccount: Boolean = true
+        mayAddToAccount: Boolean = true,
+        forceRefresh: Boolean = false
     ): DirectDebridPlayableResult {
         if (!shouldResolveToPlayableStream(stream)) {
             return DirectDebridPlayableResult.Success(stream)
         }
-        return when (val result = resolve(stream, season, episode, mayAddToAccount)) {
+        return when (val result = resolve(stream, season, episode, mayAddToAccount, forceRefresh)) {
             is DirectDebridResolveResult.Success -> DirectDebridPlayableResult.Success(stream.withResolvedDebridUrl(result))
             DirectDebridResolveResult.MissingApiKey -> DirectDebridPlayableResult.MissingApiKey
             DirectDebridResolveResult.NotCached -> DirectDebridPlayableResult.NotCached
-            DirectDebridResolveResult.Stale -> DirectDebridPlayableResult.Stale
+            DirectDebridResolveResult.Stale, is DirectDebridResolveResult.Busy -> DirectDebridPlayableResult.Stale
             DirectDebridResolveResult.Error -> DirectDebridPlayableResult.Error
         }
     }
@@ -214,7 +222,12 @@ class DirectDebridResolver @Inject constructor(
         mayAddToAccount: Boolean
     ): DirectDebridResolveResult =
         when (DebridProviders.byId(service)?.id) {
-            DebridProviders.TORBOX_ID -> torboxResolver.resolve(stream, season, episode)
+            DebridProviders.TORBOX_ID ->
+                if (mayAddToAccount || torboxCopies.inTorboxList(stream) == true) {
+                    torboxResolver.resolve(stream, season, episode)
+                } else {
+                    DirectDebridResolveResult.NotCached
+                }
             DebridProviders.PREMIUMIZE_ID -> premiumizeResolver.resolve(stream, season, episode)
             DebridProviders.REAL_DEBRID_ID -> realDebridResolver.resolve(stream, season, episode, mayAddToAccount)
             DebridProviders.ALL_DEBRID_ID -> allDebridResolver.resolve(stream, season, episode, mayAddToAccount)
@@ -384,7 +397,8 @@ private fun Stream.withResolvedDebridUrl(result: DirectDebridResolveResult.Succe
     copy(
         url = result.url,
         externalUrl = null,
-        behaviorHints = behaviorHints.mergeResolvedDebridHints(result)
+        behaviorHints = behaviorHints.mergeResolvedDebridHints(result),
+        debridResolved = true
     )
 
 private fun StreamBehaviorHints?.mergeResolvedDebridHints(

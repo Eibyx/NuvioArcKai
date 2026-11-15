@@ -31,6 +31,7 @@
     <string name="scout_mixes_remix">リミックス</string>
     <string name="scout_mixes_unwatched_only">未視聴のみ</string>
     <string name="scout_mixes_keep_playing">続けて再生</string>
+    <string name="scout_mixes_pick_sources">ソースを自動で選ぶ</string>
     <string name="scout_mixes_edit">ミックスを編集</string>
     <string name="scout_mixes_in_this_mix">このミックスの作品</string>
     <string name="scout_mixes_next_in">%1$s の次のエピソード</string>
@@ -52,4 +53,8 @@
     <string name="scout_mixes_delete_title">%1$s を削除しますか?</string>
     <string name="scout_mixes_delete_detail">作品と視聴履歴はそのまま残ります</string>
     <string name="scout_mixes_delete_confirm">削除</string>
+    <string name="scout_mixes_menu_subtitle">ミックスの操作</string>
+    <string name="scout_mixes_menu_open">ミックスを開く</string>
+    <string name="scout_mixes_menu_remove">マイミックスから削除</string>
+    <string name="scout_mixes_menu_hide">来年まで非表示</string>
 </resources>

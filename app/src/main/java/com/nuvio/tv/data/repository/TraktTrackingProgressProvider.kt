@@ -28,6 +28,7 @@ class TraktTrackingProgressProvider @Inject constructor(
     override val remoteProgressLoaded = service.observeRemoteProgressLoaded()
     override val watchedMovieIds = service.observeAllWatchedMovieIds()
     override val tasteHistory = service.observeTasteHistory()
+    override val reportedWatchedMovieIds = service.observeReportedWatchedMovieIds()
     override val nextUpSeeds = combine(
         service.observeWatchedShowSeeds(),
         service.observeAllProgress().map { items ->
@@ -43,6 +44,8 @@ class TraktTrackingProgressProvider @Inject constructor(
     }
 
     override fun episodeProgress(contentId: String) = service.observeEpisodeProgress(contentId)
+
+    override fun loadedEpisodeProgress(contentId: String) = service.loadedEpisodeProgress(contentId)
 
     override fun airedEpisodeOrder(contentId: String) = service.observeAiredEpisodes(contentId)
 

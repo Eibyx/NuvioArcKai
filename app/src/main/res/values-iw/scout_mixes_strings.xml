@@ -35,6 +35,7 @@
     <string name="scout_mixes_remix">ערבוב מחדש</string>
     <string name="scout_mixes_unwatched_only">רק מה שלא נצפה</string>
     <string name="scout_mixes_keep_playing">המשך הפעלה</string>
+    <string name="scout_mixes_pick_sources">לבחור מקורות בשבילי</string>
     <string name="scout_mixes_edit">עריכת המיקס</string>
     <string name="scout_mixes_in_this_mix">במיקס הזה</string>
     <string name="scout_mixes_next_in">הבא ב%1$s</string>
@@ -58,4 +59,8 @@
     <string name="scout_mixes_delete_title">למחוק את %1$s?</string>
     <string name="scout_mixes_delete_detail">הסדרות והיסטוריית הצפייה שלך נשארות כפי שהן</string>
     <string name="scout_mixes_delete_confirm">מחיקה</string>
+    <string name="scout_mixes_menu_subtitle">פעולות מיקס</string>
+    <string name="scout_mixes_menu_open">פתיחת המיקס</string>
+    <string name="scout_mixes_menu_remove">הסרה מהמיקסים שלי</string>
+    <string name="scout_mixes_menu_hide">הסתרה עד השנה הבאה</string>
 </resources>

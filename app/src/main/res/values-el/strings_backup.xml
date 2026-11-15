@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Ονόματα και εικόνες</string>
     <string name="backup_part_settings">Ρυθμίσεις Arc</string>
     <string name="backup_part_settings_sub">Scout, μικρογραφίες, DNS, κουμπιά τηλεχειριστηρίου και άλλα</string>
+    <string name="backup_part_history">Βιβλιοθήκη και ιστορικό προβολής</string>
+    <string name="backup_part_history_sub">Αποθηκευμένοι τίτλοι, Συνέχεια παρακολούθησης και σημάνσεις προβολής</string>
+    <string name="backup_part_history_signed_in">Ο λογαριασμός σας Nuvio τα κρατά ήδη. Επαναφέρονται μόνο σε συσκευή χωρίς συνδεδεμένο λογαριασμό.</string>
+    <string name="backup_part_history_counts">Αποθηκευμένοι τίτλοι: %1$d. Προβλήθηκαν: %2$d. Σε εξέλιξη: %3$d.</string>
+    <string name="backup_supporter">Κατάσταση υποστηρικτή</string>
+    <string name="backup_supporter_yes">Ναι. Τα χρώματα και τα εικονίδια υποστηρικτή διατηρούνται.</string>
+    <string name="backup_supporter_no">Όχι</string>
     <string name="backup_part_secrets">Κωδικοί και κλειδιά</string>
     <string name="backup_part_secrets_saved">Κλειδωμένα με το PIN σας</string>
     <string name="backup_part_secrets_needs_pin">Χρειάζεται το PIN του αντιγράφου</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Αν συνδεθείτε στο Nuvio στη συνέχεια, οι συγχρονισμένες ρυθμίσεις σας μπορεί να αντικαταστήσουν αυτές που επαναφέρατε.</string>
     <string name="backup_restore_button">Επαναφορά</string>
     <string name="backup_pin_create_heading">Επιλέξτε PIN για κωδικούς και κλειδιά</string>
-    <string name="backup_pin_create_support">Τουλάχιστον 6 ψηφία. Το Arc δεν μπορεί να το ανακτήσει, αλλά όλα τα υπόλοιπα του αντιγράφου επανέρχονται και χωρίς αυτό.</string>
+    <string name="backup_pin_create_support">Από 6 έως 16 ψηφία. Ένα μεγαλύτερο PIN προστατεύει καλύτερα τα στοιχεία σύνδεσής σας αν κάποιος αντιγράψει το αρχείο. Το Arc δεν μπορεί να ανακτήσει το PIN, αλλά όλα τα υπόλοιπα του αντιγράφου επανέρχονται και χωρίς αυτό.</string>
     <string name="backup_pin_create_back">Πατήστε πίσω για αντίγραφο χωρίς κωδικούς</string>
     <string name="backup_pin_confirm_heading">Εισάγετε ξανά το PIN</string>
     <string name="backup_pin_confirm_support">Τα ίδια ψηφία, για σιγουριά.</string>

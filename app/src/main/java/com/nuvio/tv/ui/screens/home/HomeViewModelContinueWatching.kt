@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import com.nuvio.tv.data.repository.MetaCaller
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.joinAll
@@ -79,6 +80,7 @@ private data class ContinueWatchingSettingsSnapshot(
  * Drops cast, crew, trailers, streams, release dates, and other heavy fields
  * that are never read by continue-watching or badge evaluation.
  */
+@kotlinx.serialization.Serializable
 internal data class CwMetaSummary(
     val id: String,
     val name: String,
@@ -164,6 +166,7 @@ internal data class CwMetaSummary(
         )
 }
 
+@kotlinx.serialization.Serializable
 internal data class CwVideoSummary(
     val id: String,
     val title: String?,
@@ -349,6 +352,7 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                             hasLoadedRemoteProgress = hasLoadedRemoteProgress
                         )
                     }.debounce(CW_PROGRESS_DEBOUNCE_MS).holdWhilePlayerOpen().collectLatest { snapshot ->
+                        cwLastCycleStartedAtMs = System.currentTimeMillis()
                         coroutineScope {
                             val debug = CwDebugSession()
                             val clearVersion = cwEnrichmentCache.cacheCleared.value
@@ -356,8 +360,15 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                 debug.markPhase("filter-snapshot")
                                 val cycleStartMs = SystemClock.elapsedRealtime()
                                 val useTrackingProvider = watchProgressRepository.hasActiveTrackingProgressProvider()
-                                val items = snapshot.items
-                                val nextUpSeeds = snapshot.nextUpSeeds
+                                // Episodes last played in a Mix resume from the Mix page, not here.
+                                val mixPlayed = runCatching { episodeShuffleStore.mixPlayed(pipelineProfileId) }.getOrDefault(emptySet())
+                                val items = withoutMixPlays(snapshot.items, mixPlayed)
+                                val nextUpSeeds = if (mixPlayed.isEmpty()) snapshot.nextUpSeeds else withoutMixPlaySeeds(
+                                    snapshot.nextUpSeeds,
+                                    mixPlayed,
+                                    watchProgressRepository.watchedItems.first(),
+                                    snapshot.nextUpFromFurthestEpisode
+                                )
                                 val daysCap = snapshot.daysCap
                                 val dismissedNextUp = snapshot.dismissedNextUp
                                 val showUnairedNextUp = snapshot.showUnairedNextUp
@@ -416,6 +427,12 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                     nextUpDeferred.await() to inProgressDeferred.await()
                                 }
                                 currentCoroutineContext().ensureActive()
+                                if (cwNoNextUpSeedsProfileId != pipelineProfileId) {
+                                    val storedNoNextUp = runCatching { cwEnrichmentCache.getNoNextUpSeeds(pipelineProfileId) }.getOrDefault(emptyMap())
+                                    cwNoNextUpSeeds.clear()
+                                    cwNoNextUpSeeds.putAll(storedNoNextUp)
+                                    cwNoNextUpSeedsProfileId = pipelineProfileId
+                                }
                                 // Build enrichment lookup from cached snapshots (replaces old CwEnrichmentEntry)
                                 val cachedEnrichmentFromInProgress = cachedInProgress.associateBy { it.contentId }
                                 val cachedEnrichmentFromNextUp = cachedNextUp.associateBy { it.contentId }
@@ -424,6 +441,7 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                 // so that fresh builds use enriched titles/thumbnails from the start.
                                 if (cwEnrichedNextUpOverlay.isEmpty() && cachedNextUp.isNotEmpty()) {
                                     cachedNextUp.forEach { cached ->
+                                        cwDiskSeededNextUpOverlayIds += cached.contentId
                                         cwEnrichedNextUpOverlay[cached.contentId] = NextUpInfo(
                                             contentId = cached.contentId,
                                             contentType = cached.contentType,
@@ -461,14 +479,20 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                     if (liveInProgress.isNotEmpty()) {
                                         liveInProgress.forEach { progress ->
                                             val cached = cachedEnrichmentFromInProgress[progress.contentId]
+                                            // Episode details saved for another episode would show until enrichment
+                                            // replaces them, so they are only used for the same episode.
+                                            val sameEpisode = cached != null &&
+                                                cached.season == progress.season && cached.episode == progress.episode
                                             val displayProgress = if (cached != null && (cached.backdrop != null || cached.poster != null || cached.logo != null || cached.name.isNotBlank())) {
-                                                val sameEpisode = cached.season == progress.season && cached.episode == progress.episode
                                                 progress.copy(
                                                     backdrop = cached.backdrop ?: progress.backdrop,
                                                     poster = cached.poster ?: progress.poster,
                                                     logo = cached.logo ?: progress.logo,
                                                     name = cached.name.takeIf { it.isNotBlank() } ?: progress.name,
-                                                    episodeTitle = if (sameEpisode) (progress.episodeTitle ?: cached.episodeTitle) else progress.episodeTitle,
+                                                    // The last shown title is the enriched one. A title from remote
+                                                    // progress (e.g. Trakt or Simkl) is never replaced by it, so
+                                                    // preferring that one swapped the title on every launch.
+                                                    episodeTitle = if (sameEpisode) (cached.episodeTitle ?: progress.episodeTitle) else progress.episodeTitle,
                                                     videoId = if (sameEpisode) (progress.videoId.takeIf { it.isNotBlank() } ?: cached.videoId) else progress.videoId
                                                 )
                                             } else {
@@ -477,9 +501,9 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                             add(
                                                 ContinueWatchingItem.InProgress(
                                                     progress = displayProgress,
-                                                    episodeThumbnail = cached?.episodeThumbnail,
-                                                    episodeDescription = cached?.episodeDescription,
-                                                    episodeImdbRating = cached?.episodeImdbRating,
+                                                    episodeThumbnail = cached?.takeIf { sameEpisode }?.episodeThumbnail,
+                                                    episodeDescription = cached?.takeIf { sameEpisode }?.episodeDescription,
+                                                    episodeImdbRating = cached?.takeIf { sameEpisode }?.episodeImdbRating,
                                                     genres = cached?.genres ?: emptyList(),
                                                     releaseInfo = cached?.releaseInfo,
                                                     contentLanguage = cached?.contentLanguage
@@ -590,11 +614,23 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                         )
                                     )
                                 }
+                                // Keep the card of a series whose episode was just finished until its fresh
+                                // next-up replaces it. Dropping it here and adding it back below moved focus
+                                // to the neighbouring card.
+                                val awaitingNextUpItems = continueWatchingCardsAwaitingNextUp(
+                                    shownItems = _uiState.value.continueWatchingItems,
+                                    placedContentIds = inProgressOnly.mapTo(mutableSetOf()) { it.progress.contentId } +
+                                        cachedNextUpItems.map { it.info.contentId },
+                                    seededContentIds = activeSeedContentIds,
+                                    dismissedNextUpKeys = dismissedNextUp
+                                )
                                 if (inProgressOnly.isNotEmpty() || cachedNextUpItems.isNotEmpty()) {
                                     val initialItems = applyContinueWatchingEnrichmentOverlay(
                                         mergeContinueWatchingItems(
-                                            inProgressItems = inProgressOnly,
-                                            nextUpItems = cachedNextUpItems,
+                                            inProgressItems = inProgressOnly +
+                                                awaitingNextUpItems.filterIsInstance<ContinueWatchingItem.InProgress>(),
+                                            nextUpItems = cachedNextUpItems +
+                                                awaitingNextUpItems.filterIsInstance<ContinueWatchingItem.NextUp>(),
                                             mode = continueWatchingSortMode
                                         )
                                     )
@@ -685,10 +721,15 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                                 val retainedCached = cachedNextUpItems.filter {
                                                     it.info.contentId !in freshIds
                                                 }
+                                                val retainedAwaiting = awaitingNextUpItems.filter {
+                                                    it.contentId() !in freshIds
+                                                }
                                                 val partialItems = applyContinueWatchingEnrichmentOverlay(
                                                     mergeContinueWatchingItems(
-                                                        inProgressItems = inProgressOnly,
-                                                        nextUpItems = cachedPartialNextUp + retainedCached,
+                                                        inProgressItems = inProgressOnly +
+                                                            retainedAwaiting.filterIsInstance<ContinueWatchingItem.InProgress>(),
+                                                        nextUpItems = cachedPartialNextUp + retainedCached +
+                                                            retainedAwaiting.filterIsInstance<ContinueWatchingItem.NextUp>(),
                                                         mode = continueWatchingSortMode
                                                     )
                                                 )
@@ -893,10 +934,10 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                                 for (seed in uncachedSeeds) {
                                                     PlayerSessionTracker.isSessionOpen.first { open -> !open }
                                                     if (seedGapMs > 0L) delay(seedGapMs)
-                                                    cwProcessedOlderSeedContentIds += seed.contentId
                                                     // Re-check freshness — badge pipeline may have validated
                                                     // this series while we were processing earlier seeds.
                                                     if (fullyWatchedSeriesIds.isSeriesValidationFresh(seed.contentId)) {
+                                                        cwProcessedOlderSeedContentIds += seed.contentId
                                                         kotlinx.coroutines.yield()
                                                         continue
                                                     }
@@ -911,6 +952,7 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                                         )
                                                     }
                                                     if (item != null) {
+                                                        cwProcessedOlderSeedContentIds += seed.contentId
                                                         conclusivelyProcessedOlderContentIds += seed.contentId
                                                         if (
                                                             cutoffMs == null ||
@@ -958,9 +1000,6 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                                         }
                                                     } else {
                                                         val seedKey = "${seed.contentId}|${seed.season ?: 1}|${seed.episode ?: 1}"
-                                                        synchronized(cwNextUpResolutionCache) {
-                                                            cwNextUpResolutionCache[seedKey] = null
-                                                        }
                                                         // No next-up — mark as validated with smart deadline
                                                         // ONLY if meta was actually resolved (confirming no next episode).
                                                         // If meta was unavailable (network error), skip marking to avoid
@@ -970,7 +1009,18 @@ internal fun HomeViewModel.loadContinueWatchingPipeline() {
                                                                 ?: cwMetaCache["series:${seed.contentId}"]
                                                                 ?: cwMetaCache["tv:${seed.contentId}"]
                                                         }
-                                                        if (resolvedMeta != null) {
+                                                        if (resolvedMeta == null) {
+                                                            // The look-up left a "no next episode" entry; drop it so a later run asks again.
+                                                            synchronized(cwNextUpResolutionCache) {
+                                                                cwNextUpResolutionCache.entries.removeAll { (key, resolution) ->
+                                                                    resolution == null && key.startsWith("${seed.contentId}|")
+                                                                }
+                                                            }
+                                                        } else {
+                                                            cwProcessedOlderSeedContentIds += seed.contentId
+                                                            synchronized(cwNextUpResolutionCache) {
+                                                                cwNextUpResolutionCache[seedKey] = null
+                                                            }
                                                             conclusivelyProcessedOlderContentIds += seed.contentId
                                                             val resolvedItemsToRetain = if (cutoffMs != null) {
                                                                 discoveredNextUpItems.filter { resolvedItem ->
@@ -1434,7 +1484,10 @@ private suspend fun HomeViewModel.buildLightweightNextUpItems(
     onPartialUpdate: suspend (List<ContinueWatchingItem.NextUp>) -> Unit = {}
 ): List<ContinueWatchingItem.NextUp> = coroutineScope {
     // Move seed filtering/grouping/sorting off the main thread.
+    val noNextUpBefore = cwNoNextUpSeeds.toMap()
+    val skippedNoNextUpIds = mutableSetOf<String>()
     val (latestCompletedBySeries, inProgressIds) = withContext(Dispatchers.Default) {
+        val nowMs = System.currentTimeMillis()
         val latestCompletedByContent = allProgress
             .asSequence()
             .filter { isSeriesTypeCW(it.contentType) }
@@ -1498,7 +1551,15 @@ private suspend fun HomeViewModel.buildLightweightNextUpItems(
                 val inCache = synchronized(cwNextUpResolutionCache) {
                     cwNextUpResolutionCache.containsKey(cacheKey)
                 }
-                if (!inCache) return@filter true // cache miss — seed changed or first time
+                if (!inCache) {
+                    // An earlier launch found no episode after this seed, so it is not looked
+                    // up on every launch. The key holds the seed, so watching on is never skipped.
+                    if (isNoNextUpStillConfirmed(noNextUpBefore[cacheKey], nowMs)) {
+                        skippedNoNextUpIds += progress.contentId
+                        return@filter false
+                    }
+                    return@filter true // cache miss — seed changed or first time
+                }
                 val cachedValue = synchronized(cwNextUpResolutionCache) {
                     cwNextUpResolutionCache[cacheKey]
                 }
@@ -1544,17 +1605,26 @@ private suspend fun HomeViewModel.buildLightweightNextUpItems(
                     // remove from processedContentIds so this series is NOT
                     // treated as "rejected". The cached CW snapshot will keep
                     // it visible until the next successful meta resolution.
-                    val metaResolved = synchronized(cwMetaCache) {
+                    val seedMeta = synchronized(cwMetaCache) {
                         cwMetaCache["${progress.contentType}:${progress.contentId}"]
                             ?: cwMetaCache["series:${progress.contentId}"]
                             ?: cwMetaCache["tv:${progress.contentId}"]
-                    } != null
+                    }
+                    val metaResolved = seedMeta != null
                     if (!metaResolved) {
                         processedContentIds.remove(progress.contentId)
+                    } else {
+                        cwNoNextUpSeeds[buildNextUpSeedCacheKey(progress, showUnairedNextUp)] =
+                            noNextUpRecheckAt(
+                                nextReleaseMs = seedMeta?.earliestRevalidationMs(),
+                                nowMs = System.currentTimeMillis(),
+                                ended = isEndedSeriesStatus(seedMeta?.status)
+                            )
                     }
                     logNextUpDecision("drop contentId=${progress.contentId} name=${progress.name} reason=buildNextUpItem-null metaResolved=$metaResolved")
                     return@withPermit
                 }
+                cwNoNextUpSeeds.remove(buildNextUpSeedCacheKey(progress, showUnairedNextUp))
                 val fullyWatched = fullyWatchedSeriesIds.fullyWatchedSeriesIds.value
                 if (progress.contentId in fullyWatched) {
                     // See [fullyWatchedNextUpAction] — never drop when a next episode exists.
@@ -1593,9 +1663,23 @@ private suspend fun HomeViewModel.buildLightweightNextUpItems(
     jobs.joinAll()
 
     // Store which contentIds were evaluated so olderToInclude can skip fully-watched series.
+    // Seeds skipped as confirmed without a next episode count as evaluated, so the older series
+    // scan does not look them up instead.
     synchronized(cwLastProcessedNextUpContentIds) {
         cwLastProcessedNextUpContentIds.clear()
         cwLastProcessedNextUpContentIds.addAll(processedContentIds)
+        cwLastProcessedNextUpContentIds.addAll(skippedNoNextUpIds)
+    }
+    val persistNowMs = System.currentTimeMillis()
+    cwNoNextUpSeeds.entries.removeIf { it.value <= persistNowMs }
+    val noNextUpAfter = cwNoNextUpSeeds.toMap()
+    val noNextUpProfileId = cwNoNextUpSeedsProfileId
+    if (noNextUpAfter != noNextUpBefore && noNextUpProfileId != null &&
+        noNextUpProfileId == profileManager.activeProfileId.value
+    ) {
+        withContext(NonCancellable) {
+            runCatching { cwEnrichmentCache.saveNoNextUpSeeds(noNextUpAfter, noNextUpProfileId) }
+        }
     }
 
     nextUpByContent.values.toList()
@@ -1635,11 +1719,12 @@ private suspend fun HomeViewModel.enrichVisibleContinueWatchingItems(
                             }
                         }
                         is ContinueWatchingItem.NextUp -> {
-                            val overlay = cwEnrichedNextUpOverlay[item.info.contentId]
-                            if (overlay != null &&
-                                overlay.season == item.info.season &&
-                                overlay.episode == item.info.episode
-                            ) {
+                            val overlay = reusableNextUpOverlay(
+                                overlay = cwEnrichedNextUpOverlay[item.info.contentId],
+                                item = item.info,
+                                seededFromDisk = item.info.contentId in cwDiskSeededNextUpOverlayIds
+                            )
+                            if (overlay != null) {
                                 // Recalculate hasAired/isReleaseAlert from current time
                                 val freshHasAired = hasEpisodeAired(overlay.released, fallback = overlay.hasAired)
                                 if (freshHasAired != overlay.hasAired) {
@@ -1667,7 +1752,15 @@ private suspend fun HomeViewModel.enrichVisibleContinueWatchingItems(
                                     item.copy(info = overlay)
                                 }
                             } else {
-                                enrichNextUpItem(item, metaCache, debug)
+                                enrichNextUpItem(item, metaCache, debug).also { enriched ->
+                                    // Once enriched in this session the overlay can be reused, like
+                                    // one produced by an earlier cycle. Not when the meta is missing
+                                    // (the item comes back unchanged), so it is tried again.
+                                    if (enriched !== item) {
+                                        cwEnrichedNextUpOverlay[enriched.info.contentId] = enriched.info
+                                        cwDiskSeededNextUpOverlayIds -= enriched.info.contentId
+                                    }
+                                }
                             }
                         }
                     }
@@ -1706,6 +1799,7 @@ private suspend fun HomeViewModel.enrichVisibleContinueWatchingItems(
         when (item) {
             is ContinueWatchingItem.NextUp -> {
                 cwEnrichedNextUpOverlay[item.info.contentId] = item.info
+                cwDiskSeededNextUpOverlayIds -= item.info.contentId
             }
             is ContinueWatchingItem.InProgress -> {
                 cwEnrichedInProgressOverlay[item.progress.contentId] = item
@@ -2461,6 +2555,7 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
     debug: CwDebugSession? = null,
     refreshWhenDue: Boolean = false
 ): CwMetaSummary? {
+    if (metaCache === cwMetaCache) ensureCwMetaStoreLoaded()
     val startedAtMs = SystemClock.elapsedRealtime()
     val cacheKey = "${progress.contentType}:${progress.contentId}"
     val playerOpen = refreshWhenDue && PlayerSessionTracker.isSessionOpen.first()
@@ -2501,6 +2596,7 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
 
     val typeCandidates = cwMetaTypeCandidates(progress.contentType)
     val useAllAddons = externalMetaPrefetchEnabled
+    var keepInMemoryOnly = false
     val resolved = withContext(MetaCaller("cw")) {
         var summary: CwMetaSummary? = null
         var attempts = 0
@@ -2556,8 +2652,13 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
                     }
                     NetworkResult.Loading -> Unit
                 }
-                summary = ((result as? NetworkResult.Success<*>)?.data as? Meta)?.withCalendarDates(this@resolveMetaForProgress)?.toCwSummary()
-                if (summary != null) break
+                summary = ((result as? NetworkResult.Success<*>)?.data as? Meta)
+                    ?.takeUnless { cwMetaIsOtherTitle(it.id, progress.contentId) }
+                    ?.withCalendarDates(this@resolveMetaForProgress)?.toCwSummary()
+                if (summary != null) {
+                    keepInMemoryOnly = candidateId != progress.contentId
+                    break
+                }
             }
             if (summary != null) break
         }
@@ -2572,8 +2673,13 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
                             id = candidateId
                         ).first { it !is NetworkResult.Loading }
                     }
-                    summary = ((fallbackResult as? NetworkResult.Success<*>)?.data as? Meta)?.withCalendarDates(this@resolveMetaForProgress)?.toCwSummary()
-                    if (summary != null) break
+                    summary = ((fallbackResult as? NetworkResult.Success<*>)?.data as? Meta)
+                        ?.takeUnless { cwMetaIsOtherTitle(it.id, progress.contentId) }
+                        ?.withCalendarDates(this@resolveMetaForProgress)?.toCwSummary()
+                    if (summary != null) {
+                        keepInMemoryOnly = true
+                        break
+                    }
                 }
                 if (summary != null) break
             }
@@ -2594,10 +2700,20 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
             metaCache[cacheKey] = resolved
             cwMetaNegativeCacheTimestamps.remove(cacheKey)
             cwMetaStaleKeys -= cacheKey
-            cwMetaRefreshAtMs[cacheKey] = cwMetaRefreshDueAtMs(
+            val keepUntilMs = cwMetaKeepUntilMs(
+                isFilm = progress.contentType.equals("movie", ignoreCase = true),
+                ended = isEndedSeriesStatus(resolved.status),
                 nextEpisodeAirMs = resolved.earliestUpcomingEpisodeMs(Instant.ofEpochMilli(nowMs)),
                 nowMs = nowMs
             )
+            if (keepInMemoryOnly) {
+                cwMetaUnsavedKeys += cacheKey
+                cwMetaRefreshAtMs[cacheKey] = minOf(keepUntilMs, nowMs + CW_META_MAX_AGE_MS)
+            } else {
+                cwMetaUnsavedKeys -= cacheKey
+                cwMetaRefreshAtMs[cacheKey] = keepUntilMs
+            }
+            cwMetaKeepUntilMs[cacheKey] = keepUntilMs
         } else if (stale != null) {
             // Keep the older list when a refresh fails and try again after the usual back-off.
             metaCache[cacheKey] = stale
@@ -2608,6 +2724,7 @@ private suspend fun HomeViewModel.resolveMetaForProgress(
             cwMetaNegativeCacheTimestamps[cacheKey] = SystemClock.elapsedRealtime()
         }
     }
+    if (resolved != null && metaCache === cwMetaCache) scheduleCwMetaStoreSave()
     shuffleHomeRefresh.update { it.copy(metadata = it.metadata + 1) }
     return resolved ?: dueSummary
 }
@@ -2871,10 +2988,16 @@ private suspend fun HomeViewModel.applyContinueWatchingEnrichmentOverlay(
         val mapped = items.map { item ->
             when (item) {
                 is ContinueWatchingItem.NextUp -> {
-                    val overlay = cwEnrichedNextUpOverlay[item.info.contentId] ?: return@map item
+                    val overlay = cwEnrichedNextUpOverlay[item.info.contentId]
+                    if (overlay == null) {
+                        // A card that was in progress before it moved on keeps its series fields too.
+                        val inProgress = cwEnrichedInProgressOverlay[item.info.contentId] ?: return@map item
+                        return@map item.copy(info = item.info.withSeriesFieldsFrom(inProgress))
+                    }
                     if (overlay.season != item.info.season || overlay.episode != item.info.episode) {
-                        cwEnrichedNextUpOverlay.remove(item.info.contentId)
-                        return@map item
+                        // The card moved on to another episode. The overlay stays until that episode
+                        // is enriched, so every emission until then keeps the series fields.
+                        return@map item.copy(info = item.info.withSeriesFieldsFrom(overlay))
                     }
                     // Recalculate hasAired from current time so stale overlays
                     // don't keep episodes stuck in "upcoming".
@@ -3399,3 +3522,47 @@ internal fun HomeViewModel.removeContinueWatchingPipeline(
         )
     }
 }
+
+/**
+ * The next-up overlay that can stand in for enriching [item] again: one for the same episode that
+ * was enriched in this session. An entry restored from the disk snapshot only seeds the first
+ * render; reusing it would keep stale data for good, such as an episode description the add-on
+ * added after the snapshot was written.
+ */
+internal fun reusableNextUpOverlay(
+    overlay: NextUpInfo?,
+    item: NextUpInfo,
+    seededFromDisk: Boolean
+): NextUpInfo? = overlay?.takeIf {
+    !seededFromDisk && it.season == item.season && it.episode == item.episode
+}
+
+/**
+ * Keeps what a card showed for its series when the card moves on to another episode.
+ *
+ * The title, artwork, genres and title ratings belong to the series, so they stay from the card
+ * enriched earlier until the new episode is enriched. Without this the card showed the raw progress
+ * title (e.g. the Simkl one) between the two. Episode fields are left to the new episode.
+ */
+internal fun NextUpInfo.withSeriesFieldsFrom(source: NextUpInfo): NextUpInfo = copy(
+    name = source.name.takeIf { it.isNotBlank() } ?: name,
+    poster = source.poster ?: poster,
+    backdrop = source.backdrop ?: backdrop,
+    logo = source.logo ?: logo,
+    genres = source.genres.ifEmpty { genres },
+    releaseInfo = source.releaseInfo ?: releaseInfo,
+    contentLanguage = source.contentLanguage ?: contentLanguage,
+    mdbListRatings = source.mdbListRatings ?: mdbListRatings
+)
+
+/** [withSeriesFieldsFrom] for a card that was in progress, e.g. an episode marked watched mid-way. */
+internal fun NextUpInfo.withSeriesFieldsFrom(source: ContinueWatchingItem.InProgress): NextUpInfo = copy(
+    name = source.progress.name.takeIf { it.isNotBlank() } ?: name,
+    poster = source.progress.poster ?: poster,
+    backdrop = source.progress.backdrop ?: backdrop,
+    logo = source.progress.logo ?: logo,
+    genres = source.genres.ifEmpty { genres },
+    releaseInfo = source.releaseInfo ?: releaseInfo,
+    contentLanguage = source.contentLanguage ?: contentLanguage,
+    mdbListRatings = source.mdbListRatings ?: mdbListRatings
+)

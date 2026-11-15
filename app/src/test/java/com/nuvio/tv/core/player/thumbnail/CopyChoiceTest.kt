@@ -313,7 +313,7 @@ class CopyChoiceTest {
 
     @Test
     fun anotherReleaseWithItsBarsKeptFitsOneWithoutThem() {
-        // The Crown: the remux keeps its bars (480x270), the RARBG encode has them cut (480x240).
+        // The remux keeps its bars (480x270), the encode has them cut (480x240).
         val cut = CopyFit.plan(480, 270, 480, 240)!!
         assertEquals(480, cut.renderW)
         assertEquals(270, cut.renderH)
@@ -349,14 +349,9 @@ class CopyChoiceTest {
     }
 
     @Test
-    fun plainLinksUsenetAndCachedDebridLinksAreRead() {
+    fun plainLinksAndUsenetAreRead() {
         assertNull(CopyChoice.linkRejection("https://cdn.example.org/files/Film.2019.1080p.WEB.mkv", "Film 1080p"))
         assertNull(CopyChoice.linkRejection("http://192.168.1.10:3000/api/v1/usenet/stream/abc/Film.mkv", "[TB+] Film"))
-        assertNull(CopyChoice.linkRejection("https://torrentio.strem.fun/resolve/realdebrid/key/hash/1/Film.mkv", "[RD+] Film"))
-        assertNull(CopyChoice.linkRejection("https://aio.example.org/api/v1/playback/abc", "[TB\u26a1] Film 1080p"))
-        assertNull(CopyChoice.linkRejection("https://comet.example.org/cfg/playback/abc/0/Film.mkv", "[AD\u26a1] Comet"))
-        assertNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "TB+ cached"))
-        assertNull(CopyChoice.linkRejection("https://x.example.org/torbox/abc/Film.mkv", "Film", cached = true))
         assertEquals(CopyKind.RESOLVE, CopyChoice.linkKind("https://aio.example.org/api/v1/playback/abc", "[TB\u26a1] Film"))
         assertEquals(CopyKind.RESOLVE, CopyChoice.linkKind("https://x.example.org/Film.mkv", "[RD+] Film"))
         assertEquals(CopyKind.LINK, CopyChoice.linkKind("https://cdn.example.org/Film.mkv", "Film 1080p"))
@@ -364,15 +359,18 @@ class CopyChoiceTest {
     }
 
     @Test
-    fun debridLinksNotCachedOrWithoutACachedMarkAreLeftOut() {
-        assertNotNull(CopyChoice.linkRejection("https://torrentio.strem.fun/resolve/realdebrid/key/hash/1/Film.mkv", "[RD download] Film"))
+    fun addonDebridLinksAreNeverReadCachedOrNot() {
+        assertNotNull(CopyChoice.linkRejection("https://addon.example.com/resolve/realdebrid/key/hash/1/Film.mkv", "[RD+] Film"))
+        assertNotNull(CopyChoice.linkRejection("https://aio.example.org/api/v1/playback/abc", "[TB\u26a1] Film 1080p"))
+        assertNotNull(CopyChoice.linkRejection("https://comet.example.org/cfg/playback/abc/0/Film.mkv", "[AD\u26a1] Comet"))
+        assertNotNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "TB+ cached"))
+        assertNotNull(CopyChoice.linkRejection("https://addon.example.com/resolve/realdebrid/key/hash/1/Film.mkv", "[RD download] Film"))
         assertNotNull(CopyChoice.linkRejection("https://aio.example.org/api/v1/playback/abc", "[TB\u23f3] Film"))
         assertNotNull(CopyChoice.linkRejection("https://comet.example.org/cfg/playback/abc", "[TB\u2b07\ufe0f] Film"))
         assertNotNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "[RD] uncached Film"))
         assertNotNull(CopyChoice.linkRejection("https://aio.example.org/api/v1/debrid/playback/abc", "Film"))
         assertNotNull(CopyChoice.linkRejection("https://x.example.org/torbox/abc/Film.mkv", "Film"))
         assertNotNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "[PM] Film"))
-        assertNotNull(CopyChoice.linkRejection("https://x.example.org/Film.mkv", "[RD+] Film", cached = false))
     }
 
     @Test
@@ -398,7 +396,7 @@ class CopyChoiceTest {
     @Test
     fun aDebridLinkNamingItsTorrentGivesTheHash() {
         val hash = "0123456789abcdef0123456789abcdef01234567"
-        assertEquals(hash, CopyChoice.linkHash("https://torrentio.strem.fun/resolve/torbox/key/${hash.uppercase()}/null/1/F.mkv", "[TB+]"))
+        assertEquals(hash, CopyChoice.linkHash("https://addon.example.com/resolve/torbox/key/${hash.uppercase()}/null/1/F.mkv", "[TB+]"))
         assertNull(CopyChoice.linkHash("https://cdn.example.org/$hash/Film.mkv", "Film 1080p"))
         assertNull(CopyChoice.linkHash("https://aio.example.org/api/v1/playback/abc", "[TB\u26a1] Film"))
         assertNull(CopyChoice.linkHash(null, "[TB+]"))
@@ -526,10 +524,10 @@ class CopyChoiceTest {
     @Test
     fun aTorBoxResolveLinkIsBatchedAndRealDebridIsNot() {
         assertEquals(true, CopyChoice.resolveBatched("https://addon.example/torbox/KEY/abc/0/Film.mkv", "Comet 1080p"))
-        assertEquals(true, CopyChoice.resolveBatched("https://addon.example/resolve/x", "[TB+] Torrentio 1080p"))
+        assertEquals(true, CopyChoice.resolveBatched("https://addon.example/resolve/x", "[TB+] Tortoise 1080p"))
         assertEquals(false, CopyChoice.resolveBatched("https://addon.example/realdebrid/KEY/abc", "Comet"))
-        assertEquals(false, CopyChoice.resolveBatched("https://addon.example/resolve/x", "[RD+] Torrentio"))
-        assertNull(CopyChoice.resolveBatched("https://addon.example/resolve/x", "[AD+] Torrentio"))
+        assertEquals(false, CopyChoice.resolveBatched("https://addon.example/resolve/x", "[RD+] Tortoise"))
+        assertNull(CopyChoice.resolveBatched("https://addon.example/resolve/x", "[AD+] Tortoise"))
         val known = mapOf("tbResolve" to true, "rdResolve" to false)
         val ordered = CopyChoice.order(listOf(
             offer("rdResolve", kind = CopyKind.RESOLVE),

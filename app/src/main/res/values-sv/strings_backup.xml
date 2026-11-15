@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Namn och bilder</string>
     <string name="backup_part_settings">Arc-inställningar</string>
     <string name="backup_part_settings_sub">Scout, miniatyrer, DNS, fjärrkontrollknappar och mer</string>
+    <string name="backup_part_history">Bibliotek och tittarhistorik</string>
+    <string name="backup_part_history_sub">Sparade titlar, Fortsätt titta och sedd-markeringar</string>
+    <string name="backup_part_history_signed_in">Ditt Nuvio-konto sparar redan detta. Återställs bara på en box som inte är inloggad.</string>
+    <string name="backup_part_history_counts">Sparade titlar: %1$d. Sedda: %2$d. Påbörjade: %3$d.</string>
+    <string name="backup_supporter">Supporterstatus</string>
+    <string name="backup_supporter_yes">Ja. Supporterfärger och -ikoner behålls.</string>
+    <string name="backup_supporter_no">Nej</string>
     <string name="backup_part_secrets">Lösenord och nycklar</string>
     <string name="backup_part_secrets_saved">Låst med din PIN</string>
     <string name="backup_part_secrets_needs_pin">Kräver säkerhetskopians PIN</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Om du loggar in på Nuvio efteråt kan dina synkroniserade inställningar ersätta de återställda.</string>
     <string name="backup_restore_button">Återställ</string>
     <string name="backup_pin_create_heading">Välj en PIN för lösenord och nycklar</string>
-    <string name="backup_pin_create_support">Minst 6 siffror. Arc kan inte återskapa den, men allt annat i säkerhetskopian kan ändå återställas utan den.</string>
+    <string name="backup_pin_create_support">6 till 16 siffror. En längre PIN-kod skyddar dina inloggningar bättre om någon kopierar filen. Arc kan inte återskapa PIN-koden, men allt annat i säkerhetskopian kan ändå återställas utan den.</string>
     <string name="backup_pin_create_back">Tryck tillbaka för att säkerhetskopiera utan lösenord</string>
     <string name="backup_pin_confirm_heading">Ange PIN igen</string>
     <string name="backup_pin_confirm_support">Samma siffror, för säkerhets skull.</string>

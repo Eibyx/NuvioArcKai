@@ -2,6 +2,7 @@ package com.nuvio.tv.ui.screens.player
 
 import android.content.Context
 import android.util.Log
+import com.nuvio.tv.core.player.ImportedSubtitleFontStore
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -11,8 +12,8 @@ import java.util.concurrent.ConcurrentHashMap
  * In mpv 0.41 (the app's libmpv) every subtitle decoder builds its own libass library when it is
  * created (`sd_ass` init → `mp_ass_init` → `ass_set_fonts_dir`) and libass reads every font of that
  * directory into memory. A decoder is created by `sub-add` and whenever a track is selected again.
- * So the directory holds only the app's bundled fonts plus the fonts of the folder subtitle about
- * to be added, and it is rewritten before each `sub-add` (strategy "a").
+ * So the directory holds only the app's bundled and imported fonts plus the fonts of the folder
+ * subtitle about to be added, and it is rewritten before each `sub-add` (strategy "a").
  *
  * Files are hard links where the file system allows (no extra space), copies otherwise, and each
  * appears through a rename, so mpv never reads half a font.
@@ -23,8 +24,12 @@ internal object MpvLibraryFonts {
     private const val FOLDER_FONT_PREFIX = "kai-"
 
     private val fontsByPath = ConcurrentHashMap<String, List<Pair<String, File>>>()
-    /** Installed once per process: checking the bundled fonts reads about 4 MB. */
+    /**
+     * Installed once per process (checking the bundled fonts reads about 4 MB), and again when the
+     * fonts imported from a phone change, since Arc keeps those beside the bundled ones.
+     */
     @Volatile private var bundledDir: File? = null
+    @Volatile private var bundledImportedIds: Set<String>? = null
 
     fun register(subtitlePath: String, fonts: List<Pair<String, File>>) {
         if (fonts.isEmpty()) fontsByPath.remove(subtitlePath) else fontsByPath[subtitlePath] = fonts
@@ -43,7 +48,9 @@ internal object MpvLibraryFonts {
         val dir = activeDir(context)
         runCatching {
             check(dir.isDirectory || dir.mkdirs())
-            val bundledFonts = bundledDir ?: prepareMpvSubtitleFonts(context).also { bundledDir = it }
+            val importedIds = ImportedSubtitleFontStore.get(context).fonts.value.mapTo(HashSet()) { it.id }
+            val bundledFonts = bundledDir?.takeIf { bundledImportedIds == importedIds }
+                ?: prepareMpvSubtitleFonts(context).also { bundledDir = it; bundledImportedIds = importedIds }
             val bundled = bundledFonts.listFiles().orEmpty().filter { it.isFile && !it.name.endsWith(".tmp") }
             val wanted = LinkedHashMap<String, File>()
             bundled.forEach { wanted[it.name] = it }

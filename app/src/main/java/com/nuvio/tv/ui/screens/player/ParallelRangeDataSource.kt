@@ -11,7 +11,9 @@ import androidx.media3.datasource.HttpUtil
 import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import java.io.InterruptedIOException
+import okhttp3.Call
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -206,6 +208,10 @@ internal class ParallelRangeDataSource(
         internal fun releaseRetainedSession() = playbackResources.releaseRetainedSession()
         /** Frees the retained session when no playback instance still reads from it. */
         internal fun releaseRetainedSessionIfIdle() = playbackResources.releaseRetainedSessionIfIdle()
+        /** [releaseRetainedSession] for the main thread: the sessions are out of reach at once, a worker closes them. */
+        internal fun handOffRetainedSession() = playbackResources.handOffRetainedSession()
+        /** [releaseRetainedSessionIfIdle] for the main thread. */
+        internal fun handOffRetainedSessionIfIdle() = playbackResources.handOffRetainedSessionIfIdle()
         /** Drops retained pieces outside reader..reader+[keepAhead] and the idle buffers behind them. */
         internal fun trimRetainedSession(keepAhead: Int) = playbackResources.trimRetainedSession(keepAhead)
         internal fun drainIdleBuffers(chunkSize: Long) = playbackResources.drainIdleBuffers(chunkSize)
@@ -215,6 +221,36 @@ internal class ParallelRangeDataSource(
         internal fun otherPendingSession(uri: Uri): Boolean = playbackResources.otherPendingSession(uri)
         /** Drops a pre-started session for [uri] that is no longer wanted; one for another link stays. */
         internal fun dropPendingSession(uri: Uri) = playbackResources.dropPendingSession(uri)
+        /** For the memory snapshot, read without locks: bytes the playback pieces hold (about), their count, idle pooled bytes. */
+        internal fun heldForReport(): LongArray = playbackResources.heldForReport()
+
+        private const val WORKER_STACK_BYTES = 512L * 1024
+        private const val PLAYBACK_WORKER_KEEP_ALIVE_S = 15L
+
+        /** Playback download threads: room for the most downloads a stream may run (16) on a 32-bit process. */
+        internal fun playbackWorkerCount(is64Bit: Boolean): Int = if (is64Bit) 24 else 16
+
+        /** Downloads at once, the reader's piece included, while Android says memory is critical. */
+        internal const val CRITICAL_MEMORY_DEPTH = 2
+
+        @Volatile private var memoryCritical = false
+
+        internal val memoryCapped: Boolean get() = memoryCritical
+
+        /**
+         * Memory critical: playback runs at most [CRITICAL_MEMORY_DEPTH] downloads, and the pieces past the reader's
+         * next one are dropped with the idle buffers. False lifts the limit.
+         */
+        internal fun onMemoryCritical(critical: Boolean) {
+            if (critical == memoryCritical) return
+            memoryCritical = critical
+            if (!critical) {
+                Log.i(TAG, "MEMORY: critical pressure over, downloads back to their usual number")
+                return
+            }
+            val dropped = playbackResources.trimForPressure(keepAhead = CRITICAL_MEMORY_DEPTH - 1)
+            Log.w(TAG, "MEMORY: critical pressure, downloads limited to $CRITICAL_MEMORY_DEPTH, dropped $dropped pieces")
+        }
 
         // Most downloads an isolated test session runs at once.
         internal const val MAX_DIAGNOSTIC_DOWNLOADS = 32
@@ -284,16 +320,19 @@ internal class ParallelRangeDataSource(
             override fun initialValue(): ByteArray = ByteArray(READ_BUFFER_SIZE)
         }
 
-        // A single, shared, lazy cached thread pool with bounded max threads to prevent OOM/pthread_create failure
+        // Below its core size a pool starts a new thread for every task, idle ones or not, so the core is kept to the
+        // most downloads Arc runs at once plus a little room for clean-up work.
         val executorDelegate = lazy {
             val threadFactory = ThreadFactory { runnable ->
-                Thread(runnable, if (isolated) "parallel-test-worker" else "parallel-ds-worker").apply {
+                Thread(null, runnable, if (isolated) "parallel-test-worker" else "parallel-ds-worker", WORKER_STACK_BYTES).apply {
                     priority = Thread.NORM_PRIORITY
                     isDaemon = true
                 }
             }
+            val playbackWorkers = playbackWorkerCount(android.os.Process.is64Bit())
             ThreadPoolExecutor(
-                if (isolated) workerCount else 32, if (isolated) workerCount else 64, 60L, TimeUnit.SECONDS,
+                if (isolated) workerCount else playbackWorkers, if (isolated) workerCount else playbackWorkers,
+                if (isolated) 60L else PLAYBACK_WORKER_KEEP_ALIVE_S, TimeUnit.SECONDS,
                 java.util.concurrent.LinkedBlockingQueue<Runnable>(if (isolated) 64 else Int.MAX_VALUE),
                 threadFactory,
                 if (isolated) ThreadPoolExecutor.AbortPolicy() else ThreadPoolExecutor.DiscardPolicy()
@@ -305,6 +344,20 @@ internal class ParallelRangeDataSource(
         val activeInstances = java.util.concurrent.atomic.AtomicInteger(0)
         val globalBufferPool = ConcurrentHashMap<Long, ConcurrentLinkedDeque<PooledBuffer>>()
         val retiredChunkSizes: MutableSet<Long> = ConcurrentHashMap.newKeySet()
+
+        fun heldForReport(): LongArray {
+            var bytes = 0L
+            var pieces = 0L
+            for (session in listOfNotNull(currentChunkSession, pendingChunkSession)) {
+                val count = session.futures.size.toLong()
+                val held = session.heldBytes.get()
+                pieces += count
+                bytes += if (held > 0L) held else count * session.chunkSize
+            }
+            var idle = 0L
+            for ((size, pool) in globalBufferPool) idle += size * pool.size
+            return longArrayOf(bytes, pieces, idle)
+        }
 
         fun retireChunkSize(chunkSize: Long) {
             retiredChunkSizes.add(chunkSize)
@@ -462,6 +515,7 @@ internal class ParallelRangeDataSource(
             val futures = ConcurrentHashMap<Long, CompletableFuture<DownloadedChunk>>()
             val lastTouch = ConcurrentHashMap<Long, Long>()
             val abandoned = AtomicBoolean(false)
+            val steadySlow = SteadySlowSource()
             // Chunks already escalated by the reader-blocked path (once per chunk).
             val escalatedChunks: MutableSet<Long> = ConcurrentHashMap.newKeySet()
             // AIMD rate-limit state. rateLimitDepthCap is the
@@ -482,7 +536,14 @@ internal class ParallelRangeDataSource(
             @Volatile var depthStepIntervalMs: Long = RATE_LIMIT_DEPTH_STEP_BASE_MS
             val rateLimitEscalation = AtomicInteger(0)
             val rateGate = ParallelRangeRateGate({ SystemClock.uptimeMillis() })
-            val activeSources: MutableSet<DataSource> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+            // Requests of the downloads running now. A request belongs to the worker reading it; any other thread
+            // may only cancel it, never close its source.
+            val activeCalls: MutableSet<Call> = ConcurrentHashMap.newKeySet()
+
+            fun adoptCall(call: Call) {
+                activeCalls.add(call)
+                if (abandoned.get()) call.cancel()
+            }
             // Progressive reads: live views of downloads in
             // flight, keyed like futures. Entries are owned by the
             // download attempt that registered them (two-arg remove).
@@ -691,10 +752,9 @@ internal class ParallelRangeDataSource(
         fun teardownSessionLocked(session: ChunkSession, poolCap: Int) {
             session.abandoned.set(true)
             session.signalHeld()
-            session.activeSources.forEach { ds ->
-                try { ds.close() } catch (_: Exception) {}
+            session.activeCalls.forEach { call ->
+                try { call.cancel() } catch (_: Exception) {}
             }
-            session.activeSources.clear()
             val indices = session.futures.keys.toList()
             for (index in indices) {
                 evictFuture(session, index, poolCap)
@@ -826,6 +886,29 @@ internal class ParallelRangeDataSource(
             drainIdleBuffers(chunkSz)
         }
 
+        /**
+         * Drops the live session's pieces outside reader..reader+[keepAhead], keeping any piece read in the last
+         * [EVICTION_TOUCH_GUARD_MS], and frees every idle buffer. Returns the number of pieces dropped.
+         */
+        internal fun trimForPressure(keepAhead: Int): Int {
+            val dropped = synchronized(sessionLock) {
+                val session = currentChunkSession ?: return@synchronized 0
+                val reader = session.lastReadChunkIndex
+                if (reader < 0L) return@synchronized 0
+                val now = SystemClock.uptimeMillis()
+                synchronized(session) {
+                    val victims = session.futures.keys.filter {
+                        (it < reader || it > reader + keepAhead) &&
+                            !(it < reader && now - (session.lastTouch[it] ?: 0L) < EVICTION_TOUCH_GUARD_MS)
+                    }
+                    victims.forEach { evictFuture(session, it, poolCap = 0) }
+                    victims.size
+                }
+            }
+            clearGlobalPool()
+            return dropped
+        }
+
         internal fun releaseRetainedSession() {
             synchronized(sessionLock) {
                 currentChunkSession?.let { teardownSessionLocked(it, poolCap = 0) }
@@ -835,6 +918,42 @@ internal class ParallelRangeDataSource(
                 pendingChunkSession = null
             }
             clearGlobalPool()
+        }
+
+        internal fun handOffRetainedSessionIfIdle() {
+            closeOnWorker(synchronized(sessionLock) {
+                if (activeInstances.get() > 0) return
+                listOfNotNull(currentChunkSession).also { currentChunkSession = null }
+            })
+        }
+
+        internal fun handOffRetainedSession() {
+            closeOnWorker(synchronized(sessionLock) {
+                listOfNotNull(currentChunkSession, pendingChunkSession).also {
+                    currentChunkSession = null
+                    pendingChunkSession = null
+                }
+            })
+        }
+
+        // Freeing the pieces and cancelling their requests stays off the main thread.
+        private fun closeOnWorker(sessions: List<ChunkSession>) {
+            if (sessions.isEmpty()) {
+                clearGlobalPool()
+                return
+            }
+            sessions.forEach {
+                it.abandoned.set(true)
+                it.signalHeld()
+            }
+            sharedExecutor.execute {
+                try {
+                    sessions.forEach { teardownSessionLocked(it, poolCap = 0) }
+                    clearGlobalPool()
+                } catch (e: Exception) {
+                    Log.w(TAG, "Retained session release failed: ${e.message}")
+                }
+            }
         }
 
         /**
@@ -971,7 +1090,8 @@ internal class ParallelRangeDataSource(
     }
 
     private val resources = if (isolateSession) {
-        Resources(true, prefetchDepth(prefetchDepthChunks, parallelConnections).coerceIn(1, MAX_DIAGNOSTIC_DOWNLOADS))
+        Resources(true, prefetchDepth(prefetchDepthChunks, parallelConnections)
+            .coerceIn(1, minOf(MAX_DIAGNOSTIC_DOWNLOADS, playbackWorkerCount(android.os.Process.is64Bit()))))
     } else {
         playbackResources
     }
@@ -1837,6 +1957,8 @@ internal class ParallelRangeDataSource(
         // Reader-blocked escalation state for this wait.
         var escalatedThisWait = false
         var baselineWatermark = Int.MIN_VALUE
+        var lastWatermark = Int.MIN_VALUE
+        var watermarkMovedAt = waitT0
         while (true) {
             // Completion is the caller's business: its future.get() is then
             // instant, and a FAILED download completes here too, so its
@@ -1870,6 +1992,10 @@ internal class ParallelRangeDataSource(
             // Progressing-but-slow chunks (watermark moving) belong to the
             // body-stall watchdog and are never escalated here.
             val wmNow = inFlight?.watermark ?: -1
+            if (wmNow != lastWatermark) {
+                lastWatermark = wmNow
+                watermarkMovedAt = SystemClock.elapsedRealtime()
+            }
             // The reader may arrive before the body registers its watermark.
             // Adopt its first zero baseline so a stationary registered body
             // still gets the existing hedge; positive progress stays with the watchdog.
@@ -1887,7 +2013,9 @@ internal class ParallelRangeDataSource(
                 )
                 escalatedThisWait = true
             }
-            if (SystemClock.elapsedRealtime() - waitT0 >=
+            val slowButArriving = activeSession.steadySlow.known &&
+                SystemClock.elapsedRealtime() - watermarkMovedAt < SteadySlowSource.QUIET_MS
+            if (!slowButArriving && SystemClock.elapsedRealtime() - waitT0 >=
                 IN_FLIGHT_WAIT_CAP_MS.toLong() +
                     (if (escalatedThisWait) ESCALATE_POLL_EXTENSION_MS else 0L)
             ) {
@@ -1928,7 +2056,7 @@ internal class ParallelRangeDataSource(
         // recovers +1 per quiet probe interval (Resources.ChunkSession.currentAllowedDepth),
         // so a provider that 429s converges just under its actual request
         // budget instead of latching to a single connection.
-        val maxAhead = (session?.currentAllowedDepth(minOf(effectivePrefetchDepth, liveDepthLimit()))
+        val maxAhead = (session?.currentAllowedDepth(minOf(effectivePrefetchDepth, speedupDepthLimit()))
             ?.coerceAtMost(earnedAhead)
             ?: earnedAhead).coerceAtMost(liveDepthLimit())
 
@@ -1968,19 +2096,35 @@ internal class ParallelRangeDataSource(
         resources.drainIdleBuffers(activeSession.chunkSize)
     }
 
-    private fun liveDepthLimit(): Int = depthLimit?.invoke()?.coerceAtLeast(1) ?: Int.MAX_VALUE
+    private fun speedupDepthLimit(): Int = depthLimit?.invoke()?.coerceAtLeast(1) ?: Int.MAX_VALUE
+
+    private fun liveDepthLimit(): Int {
+        val speedup = speedupDepthLimit()
+        return if (memoryCritical && !isolateSession) minOf(speedup, CRITICAL_MEMORY_DEPTH) else speedup
+    }
+
+    private fun executeOrFail(future: CompletableFuture<DownloadedChunk>, task: () -> Unit) {
+        try {
+            resources.sharedExecutor.execute(task)
+        } catch (e: OutOfMemoryError) {
+            Log.w(TAG, "No thread for a piece download: ${e.message}")
+            future.completeExceptionally(IOException("No thread for the piece download", e))
+        } catch (e: java.util.concurrent.RejectedExecutionException) {
+            future.completeExceptionally(IOException("Piece download refused", e))
+        }
+    }
 
     private fun ensureChunkScheduled(chunkIndex: Long) {
         val activeSession = session ?: return
         // Make room under the memory-tiered cap before growing the map.
-        val cap = if (depthLimit == null) activeSession.chunkCap
-            else minOf(activeSession.chunkCap, liveDepthLimit() + 1)
+        val live = liveDepthLimit()
+        val cap = if (live == Int.MAX_VALUE) activeSession.chunkCap else minOf(activeSession.chunkCap, live + 1)
         resources.enforceSessionCap(activeSession, protectIndex = chunkIndex, poolCap = maxPoolSize, cap = cap)
         activeSession.futures.computeIfAbsent(chunkIndex) {
             val future = CompletableFuture<DownloadedChunk>()
             activeSession.touch(chunkIndex)
             Log.d(TAG, "Scheduling chunk $chunkIndex")
-            resources.sharedExecutor.execute {
+            executeOrFail(future) {
                 try {
                     if (!future.isCancelled && !activeSession.abandoned.get()) {
                         val result = downloadChunk(activeSession, chunkIndex, future)
@@ -2077,7 +2221,8 @@ internal class ParallelRangeDataSource(
         chunkIndex: Long,
         future: CompletableFuture<*>,
         allowStallRestart: Boolean = true,
-        startedAtMs: Long = activeSession.rateGate.now()
+        startedAtMs: Long = activeSession.rateGate.now(),
+        restartedAfterRateBps: Long = -1L
     ): DownloadedChunk {
         val sessionLength = activeSession.totalLength
         val start = chunkIndex * chunkSize
@@ -2089,13 +2234,17 @@ internal class ParallelRangeDataSource(
 
         val ds = upstreamFactory.createDataSource()
         transferListeners.forEach { ds.addTransferListener(it) }
-        activeSession.activeSources.add(ds)
+        val calls = ArrayList<Call>(1)
         val slot = runCatching { ConnectionLedger.app.playback(activeSession.requestTarget().toString()) }.getOrNull()
         if (dropStaleConnections != null && requestMeter?.takeStale(STALE_IDLE_MS) == true) {
             runCatching { dropStaleConnections?.invoke() }
             Log.i(TAG, "POOL: idle ${STALE_IDLE_MS / 1000} s or more, pooled connections dropped before the next piece")
         }
         requestMeter?.started()
+        PieceCallFactory.begin { call ->
+            calls.add(call)
+            activeSession.adoptCall(call)
+        }
         try {
             val uri = activeSession.requestTarget()
             val spec = DataSpec.Builder()
@@ -2115,7 +2264,9 @@ internal class ParallelRangeDataSource(
             // requested range is exact, so a chunk that comes back short must
             // fail (and retry) rather than be cached as if complete.
             val expectedBytes = if (sessionLength > 0L) end - start else -1L
-            val chunk = readIntoChunk(activeSession, chunkIndex, ds, future, expectedBytes, allowStallRestart)
+            val chunk = readIntoChunk(
+                activeSession, chunkIndex, ds, future, expectedBytes, allowStallRestart, restartedAfterRateBps
+            )
             Log.d(TAG, "Successfully downloaded chunk $chunkIndex, size=${chunk.size} bytes")
             reportPiece(sent, chunk, ds.uri)
             return chunk
@@ -2123,10 +2274,11 @@ internal class ParallelRangeDataSource(
             slot?.failed(e)
             throw e
         } finally {
+            PieceCallFactory.end()
             requestMeter?.ended()
             slot?.close()
-            activeSession.activeSources.remove(ds)
             try { ds.close() } catch (_: Exception) {}
+            calls.forEach { activeSession.activeCalls.remove(it) }
         }
     }
 
@@ -2259,7 +2411,9 @@ internal class ParallelRangeDataSource(
             Log.w(TAG, "HEDGE_RESTART chunk=$chunkIndex attempt=${attempt + 1}/$HEDGE_MAX_RESTARTS " +
                 "prevRateBps=${lastStall.rateBps} atWatermark=${lastStall.watermark}")
             try {
-                return downloadChunkOnce(activeSession, chunkIndex, future)
+                return downloadChunkOnce(
+                    activeSession, chunkIndex, future, restartedAfterRateBps = lastStall.rateBps
+                )
             } catch (e: Exception) {
                 if (activeSession.abandoned.get() || future.isDone) throw IOException("Session abandoned or cancelled")
                 if (e !is StalledChunkException) throw e
@@ -2445,7 +2599,8 @@ internal class ParallelRangeDataSource(
         ds: DataSource,
         future: CompletableFuture<*>,
         expectedBytes: Long,
-        allowStallRestart: Boolean = true
+        allowStallRestart: Boolean = true,
+        restartedAfterRateBps: Long = -1L
     ): DownloadedChunk {
         val buffer = acquireBuffer(activeSession)
         val segmented = buffer as? SegmentedBuffer
@@ -2553,13 +2708,20 @@ internal class ParallelRangeDataSource(
                     val hedgeWindowBytes = totalRead - hedgeLastCheckBytes
                     val hedgeRateBps = if (hedgeWindowMs > 0L)
                         hedgeWindowBytes.toLong() * 1000L / hedgeWindowMs else Long.MAX_VALUE
-                    val hedgeStalled = hedgeRateBps < hedgeStallRateBps
+                    var hedgeStalled = hedgeRateBps < activeSession.steadySlow.stallRateBps(hedgeStallRateBps)
+                    if (hedgeStalled && restartedAfterRateBps >= 0L && !activeSession.steadySlow.known &&
+                        activeSession.steadySlow.noteAfterRestart(restartedAfterRateBps, hedgeRateBps)
+                    ) {
+                        hedgeStalled = false
+                        Log.w(TAG, "HEDGE_SLOW_SOURCE chunk=$chunkIndex rateBps=$hedgeRateBps " +
+                            "prevRateBps=$restartedAfterRateBps")
+                    }
                     if (hedgeStalled) hedgeConsecutiveStalled++ else hedgeConsecutiveStalled = 0
                     Log.w(TAG, "HEDGE_SAMPLE chunk=$chunkIndex watermark=$totalRead " +
                         "windowBytes=$hedgeWindowBytes windowMs=$hedgeWindowMs " +
                         "rateBps=$hedgeRateBps stalled=$hedgeStalled " +
                         "consec=$hedgeConsecutiveStalled/$hedgeWindowsRequired " +
-                        "usenet=$hedgeIsUsenet clamp=$resources.hudClampLatched " +
+                        "usenet=$hedgeIsUsenet clamp=${resources.hudClampLatched} " +
                         "restartable=$allowStallRestart")
                     if (hedgeConsecutiveStalled >= hedgeWindowsRequired &&
                         allowStallRestart && !resources.hudClampLatched) {
@@ -3214,5 +3376,21 @@ internal object PrefetchWindowStore {
             }
             entry.bootstrapData
         }
+    }
+}
+
+/**
+ * Hands each request a piece download makes on its own thread to that download, so tearing a session down from any
+ * thread can cancel the request. The reader then fails and closes its own source.
+ */
+internal class PieceCallFactory(private val delegate: Call.Factory) : Call.Factory {
+    override fun newCall(request: Request): Call = delegate.newCall(request).also { call -> sink.get()?.invoke(call) }
+
+    companion object {
+        private val sink = ThreadLocal<((Call) -> Unit)?>()
+
+        fun begin(onCall: (Call) -> Unit) = sink.set(onCall)
+
+        fun end() = sink.remove()
     }
 }

@@ -31,6 +31,7 @@
     <string name="scout_mixes_remix">Campur ulang</string>
     <string name="scout_mixes_unwatched_only">Hanya belum ditonton</string>
     <string name="scout_mixes_keep_playing">Terus putar</string>
+    <string name="scout_mixes_pick_sources">Pilihkan sumber untuk saya</string>
     <string name="scout_mixes_edit">Edit campuran</string>
     <string name="scout_mixes_in_this_mix">Di campuran ini</string>
     <string name="scout_mixes_next_in">Berikutnya di %1$s</string>
@@ -52,4 +53,8 @@
     <string name="scout_mixes_delete_title">Hapus %1$s?</string>
     <string name="scout_mixes_delete_detail">Serial dan riwayat tontonan Anda tetap seperti semula</string>
     <string name="scout_mixes_delete_confirm">Hapus</string>
+    <string name="scout_mixes_menu_subtitle">Tindakan campuran</string>
+    <string name="scout_mixes_menu_open">Buka campuran</string>
+    <string name="scout_mixes_menu_remove">Hapus dari campuran saya</string>
+    <string name="scout_mixes_menu_hide">Sembunyikan sampai tahun depan</string>
 </resources>

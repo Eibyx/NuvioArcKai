@@ -33,6 +33,7 @@
     <string name="scout_mixes_remix">Bland igen</string>
     <string name="scout_mixes_unwatched_only">Kun usete</string>
     <string name="scout_mixes_keep_playing">Fortsæt afspilning</string>
+    <string name="scout_mixes_pick_sources">Vælg kilder for mig</string>
     <string name="scout_mixes_edit">Rediger mix</string>
     <string name="scout_mixes_in_this_mix">I dette mix</string>
     <string name="scout_mixes_next_in">Næste i %1$s</string>
@@ -55,4 +56,8 @@
     <string name="scout_mixes_delete_title">Slet %1$s?</string>
     <string name="scout_mixes_delete_detail">Dine serier og din historik forbliver, som de er</string>
     <string name="scout_mixes_delete_confirm">Slet</string>
+    <string name="scout_mixes_menu_subtitle">Handlinger for mix</string>
+    <string name="scout_mixes_menu_open">Åbn mix</string>
+    <string name="scout_mixes_menu_remove">Fjern fra mine mix</string>
+    <string name="scout_mixes_menu_hide">Skjul til næste år</string>
 </resources>

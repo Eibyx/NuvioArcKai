@@ -195,6 +195,7 @@ internal sealed interface ProfilePinOverlayState {
     data class VerifyCurrentForChange(override val profile: UserProfile) : ProfilePinOverlayState
     data class VerifyCurrentForRemove(override val profile: UserProfile) : ProfilePinOverlayState
     data class VerifyCurrentForDelete(override val profile: UserProfile) : ProfilePinOverlayState
+    data class Ask(override val profile: UserProfile, val heading: String, val support: String) : ProfilePinOverlayState
 }
 
 private enum class ProfilePinEntryStage {
@@ -247,6 +248,12 @@ fun ProfileSelectionScreen(
     var suppressOptionsDialogFirstKeyUp by remember { mutableStateOf(true) }
     var profileToDelete by remember { mutableStateOf<UserProfile?>(null) }
     var profileToEdit by remember { mutableStateOf<UserProfile?>(null) }
+    val ratingLimits by viewModel.profileRatingLimits.collectAsState()
+    var pendingRatingLimit by remember { mutableStateOf<Triple<UserProfile, UserProfile, com.nuvio.tv.core.ratinglimit.RatingLimit?>?>(null) }
+    var pendingAddProfile by remember { mutableStateOf(false) }
+    val pinAsks by viewModel.pinAsks.collectAsState()
+    var pendingPinAsk by remember { mutableStateOf(false) }
+    var pinAskFor by remember { mutableStateOf<UserProfile?>(null) }
     var settingsCopyTarget by remember { mutableStateOf<UserProfile?>(null) }
     var settingsCopyError by remember { mutableStateOf<String?>(null) }
     var pinOverlayState by remember { mutableStateOf<ProfilePinOverlayState?>(null) }
@@ -376,7 +383,7 @@ fun ProfileSelectionScreen(
                             suppressOptionsDialogFirstKeyUp = false
                             longPressedProfile = profile
                         } else {
-                            if (profilePinEnabled[profile.id] == true) {
+                            if ((pinAsks[profile.id] ?: com.nuvio.tv.core.profile.PinAsk.EVERY_TIME).toOpen(profilePinEnabled[profile.id] == true)) {
                                 pinOverlayError = null
                                 pinOverlayState = ProfilePinOverlayState.Unlock(profile)
                             } else {
@@ -389,7 +396,20 @@ fun ProfileSelectionScreen(
                         suppressOptionsDialogFirstKeyUp = true
                         longPressedProfile = profile
                     },
-                    onAddProfileClick = { showCreateProfile = true },
+                    onAddProfileClick = {
+                        val owner = profiles.firstOrNull { it.isPrimary }
+                        if (owner != null && ratingLimits.isNotEmpty() && profilePinEnabled[owner.id] == true) {
+                            pendingAddProfile = true
+                            pinOverlayError = null
+                            pinOverlayState = ProfilePinOverlayState.Ask(
+                                profile = owner,
+                                heading = context.getString(R.string.rating_limit_add_heading, owner.name),
+                                support = context.getString(R.string.rating_limit_add_support)
+                            )
+                        } else {
+                            showCreateProfile = true
+                        }
+                    },
                     onManage = {
                         if (screenMode == ProfileSelectionMode.Management) onBackPress?.invoke()
                         else v2Management = !v2Management
@@ -405,9 +425,51 @@ fun ProfileSelectionScreen(
                     onDismiss = {
                         pinOverlayState = null
                         pinOverlayError = null
+                        pendingRatingLimit?.let { profileToEdit = it.first }
+                        pendingRatingLimit = null
+                        pendingAddProfile = false
+                        pendingPinAsk = false
                     },
                     onSubmit = { pin ->
                         when (activePinOverlay) {
+                            is ProfilePinOverlayState.Ask -> {
+                                viewModel.verifyProfilePin(activePinOverlay.profile.id, pin) { result ->
+                                    result.onSuccess { verify ->
+                                        val pending = pendingRatingLimit
+                                        if (verify.unlocked && pendingPinAsk) {
+                                            pinOverlayError = null
+                                            pinOverlayState = null
+                                            pendingPinAsk = false
+                                            pinAskFor = activePinOverlay.profile
+                                        } else if (verify.unlocked && pendingAddProfile) {
+                                            pinOverlayError = null
+                                            pinOverlayState = null
+                                            pendingAddProfile = false
+                                            showCreateProfile = true
+                                        } else if (verify.unlocked && pending != null) {
+                                            pinOverlayError = null
+                                            pinOverlayState = null
+                                            pendingRatingLimit = null
+                                            viewModel.setRatingLimit(pending.first.id, pending.third)
+                                            viewModel.updateProfile(pending.second)
+                                            profileActionMessage = context.getString(
+                                                R.string.rating_limit_saved,
+                                                pending.first.name,
+                                                pending.third?.label ?: context.getString(R.string.rating_limit_none)
+                                            )
+                                        } else {
+                                            pinOverlayError = if (verify.retryAfterSeconds > 0) {
+                                                context.getString(R.string.profile_pin_locked, verify.retryAfterSeconds)
+                                            } else {
+                                                context.getString(R.string.profile_pin_incorrect)
+                                            }
+                                        }
+                                    }.onFailure {
+                                        pinOverlayError = context.getString(R.string.profile_pin_verify_error)
+                                    }
+                                }
+                            }
+
                             is ProfilePinOverlayState.Set -> {
                                 viewModel.setProfilePin(
                                     activePinOverlay.profile.id,
@@ -416,6 +478,7 @@ fun ProfileSelectionScreen(
                                 ) { result ->
                                     when (result) {
                                         is SetProfilePinResult.Success -> {
+                                            if (activePinOverlay.currentPin == null) viewModel.forgetPinAsk(activePinOverlay.profile.id)
                                             pinOverlayState = null
                                             pinOverlayError = null
                                             profileActionMessage = context.getString(R.string.profile_pin_saved_for_profile, activePinOverlay.profile.name)
@@ -487,6 +550,7 @@ fun ProfileSelectionScreen(
                                     if (success) {
                                         pinOverlayError = null
                                         pinOverlayState = null
+                                        viewModel.forgetPinAsk(activePinOverlay.profile.id)
                                         profileActionMessage = context.getString(R.string.profile_pin_lock_removed_for_profile, activePinOverlay.profile.name)
                                     } else {
                                         pinOverlayError = context.getString(R.string.profile_pin_incorrect)
@@ -573,9 +637,41 @@ fun ProfileSelectionScreen(
                 isSaving = isSaving,
                 avatarUrlResolver = { avatarId -> viewModel.getAvatarImageUrl(avatarId) },
                 onDismiss = { profileToEdit = null },
-                onSaveProfile = { updated ->
-                    viewModel.updateProfile(updated)
-                    profileToEdit = null
+                ratingLimit = ratingLimits[profile.id],
+                ratingLimitOwner = profiles.firstOrNull { it.isPrimary }?.name?.takeIf { !profile.isPrimary },
+                onSaveProfile = { updated, limit ->
+                    val owner = profiles.firstOrNull { it.isPrimary }
+                    when {
+                        limit == ratingLimits[profile.id] || owner == null -> {
+                            viewModel.updateProfile(updated)
+                            profileToEdit = null
+                        }
+                        profilePinEnabled[owner.id] != true && limit == null -> {
+                            viewModel.setRatingLimit(profile.id, null)
+                            viewModel.updateProfile(updated)
+                            profileToEdit = null
+                            profileActionMessage = context.getString(
+                                R.string.rating_limit_saved, profile.name, context.getString(R.string.rating_limit_none)
+                            )
+                        }
+                        profilePinEnabled[owner.id] != true -> {
+                            profileActionMessage = context.getString(R.string.rating_limit_needs_pin, owner.name)
+                        }
+                        else -> {
+                            pendingRatingLimit = Triple(profile, updated, limit)
+                            profileToEdit = null
+                            pinOverlayError = null
+                            pinOverlayState = ProfilePinOverlayState.Ask(
+                                profile = owner,
+                                heading = context.getString(R.string.rating_limit_change_heading, owner.name),
+                                support = context.getString(
+                                    R.string.rating_limit_change_support,
+                                    profile.name,
+                                    limit?.label ?: context.getString(R.string.rating_limit_none)
+                                )
+                            )
+                        }
+                    }
                 }
             )
         }
@@ -693,6 +789,27 @@ fun ProfileSelectionScreen(
                             contentColor = NuvioTheme.colors.TextPrimary
                         )
                     )
+                    ProfileDialogButton(
+                        label = stringResource(
+                            R.string.profile_pin_ask_label,
+                            pinAskName(pinAsks[profile.id] ?: com.nuvio.tv.core.profile.PinAsk.EVERY_TIME)
+                        ),
+                        onClick = {
+                            longPressedProfile = null
+                            pinOverlayError = null
+                            pendingPinAsk = true
+                            pinOverlayState = ProfilePinOverlayState.Ask(
+                                profile = profile,
+                                heading = context.getString(R.string.profile_pin_ask_verify, profile.name),
+                                support = context.getString(R.string.profile_pin_overlay_unlock_support)
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.colors(
+                            containerColor = NuvioTheme.colors.BackgroundCard,
+                            contentColor = NuvioTheme.colors.TextPrimary
+                        )
+                    )
                 }
 
                 if (!profile.isPrimary) {
@@ -715,6 +832,19 @@ fun ProfileSelectionScreen(
                     )
                 }
             }
+        }
+
+        pinAskFor?.let { profile ->
+            PinAskDialog(
+                profile = profile,
+                selected = pinAsks[profile.id] ?: com.nuvio.tv.core.profile.PinAsk.EVERY_TIME,
+                onDismiss = { pinAskFor = null },
+                onSelected = { ask ->
+                    pinAskFor = null
+                    viewModel.setPinAsk(profile.id, ask)
+                    profileActionMessage = context.getString(R.string.profile_pin_ask_saved, profile.name, context.getString(pinAskNameRes(ask)))
+                }
+            )
         }
 
         settingsCopyTarget?.let { targetProfile ->
@@ -780,6 +910,50 @@ fun ProfileSelectionScreen(
                     )
                 )
             }
+        }
+    }
+}
+
+private fun pinAskNameRes(ask: com.nuvio.tv.core.profile.PinAsk): Int = when (ask) {
+    com.nuvio.tv.core.profile.PinAsk.EVERY_TIME -> R.string.profile_pin_ask_every
+    com.nuvio.tv.core.profile.PinAsk.NOT_AT_START -> R.string.profile_pin_ask_not_start
+    com.nuvio.tv.core.profile.PinAsk.LIMITS_ONLY -> R.string.profile_pin_ask_limits
+}
+
+@Composable
+private fun pinAskName(ask: com.nuvio.tv.core.profile.PinAsk): String = stringResource(pinAskNameRes(ask))
+
+@Composable
+private fun PinAskDialog(
+    profile: UserProfile,
+    selected: com.nuvio.tv.core.profile.PinAsk,
+    onDismiss: () -> Unit,
+    onSelected: (com.nuvio.tv.core.profile.PinAsk) -> Unit
+) {
+    val firstFocus = remember(profile.id) { FocusRequester() }
+    LaunchedEffect(profile.id) {
+        repeat(2) { withFrameNanos { } }
+        runCatching { firstFocus.requestFocus() }
+    }
+    NuvioDialog(
+        onDismiss = onDismiss,
+        title = stringResource(R.string.profile_pin_ask_heading, profile.name),
+        width = 560.dp,
+        solidWithoutBlur = true
+    ) {
+        com.nuvio.tv.core.profile.PinAsk.choicesFor(profile.isPrimary).forEach { ask ->
+            com.nuvio.tv.ui.components.ChoiceOption(
+                title = pinAskName(ask),
+                subtitle = when (ask) {
+                    com.nuvio.tv.core.profile.PinAsk.EVERY_TIME -> stringResource(R.string.profile_pin_ask_every_sub)
+                    com.nuvio.tv.core.profile.PinAsk.NOT_AT_START -> stringResource(R.string.profile_pin_ask_not_start_sub, profile.name)
+                    com.nuvio.tv.core.profile.PinAsk.LIMITS_ONLY -> stringResource(R.string.profile_pin_ask_limits_sub, profile.name)
+                },
+                note = if (ask == com.nuvio.tv.core.profile.PinAsk.LIMITS_ONLY) stringResource(R.string.profile_pin_ask_limits_warn, profile.name) else null,
+                isSelected = ask == selected,
+                onClick = { onSelected(ask) },
+                modifier = if (ask == selected) Modifier.focusRequester(firstFocus) else Modifier
+            )
         }
     }
 }
@@ -1723,9 +1897,12 @@ private fun EditProfileOverlay(
     isSaving: Boolean,
     avatarUrlResolver: (String?) -> String?,
     onDismiss: () -> Unit,
-    onSaveProfile: (UserProfile) -> Unit
+    ratingLimit: com.nuvio.tv.core.ratinglimit.RatingLimit?,
+    ratingLimitOwner: String?,
+    onSaveProfile: (UserProfile, com.nuvio.tv.core.ratinglimit.RatingLimit?) -> Unit
 ) {
     BackHandler(onBack = onDismiss)
+    var selectedRatingLimit by remember(profile.id, ratingLimit) { mutableStateOf(ratingLimit) }
 
     var profileName by remember { mutableStateOf(profile.name) }
     var selectedColorHex by remember { mutableStateOf(profile.avatarColorHex) }
@@ -1832,7 +2009,8 @@ private fun EditProfileOverlay(
                                 avatarUrl = if (hasChangedAvatarSelection) null else profile.avatarUrl,
                                 profileBackgroundId = selectedBackgroundId,
                                 profileBackgroundUrl = selectedBackgroundUrl
-                            )
+                            ),
+                            selectedRatingLimit
                         )
                     }
                 )
@@ -1908,7 +2086,8 @@ private fun EditProfileOverlay(
                         selectedTab = selectedEditorTab,
                         showBackgroundTab = hasProfileBackgroundAccess,
                         onTabSelected = { selectedEditorTab = it },
-                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        showRatingLimitTab = ratingLimitOwner != null
                     )
 
                     when (selectedEditorTab) {
@@ -2034,6 +2213,14 @@ private fun EditProfileOverlay(
                                         selectedBackgroundUrl = customUrl
                                     }
                                 }
+                            )
+                        }
+
+                        ProfileEditorTab.RatingLimit -> {
+                            com.nuvio.tv.ui.components.RatingLimitPicker(
+                                selected = selectedRatingLimit,
+                                ownerName = ratingLimitOwner.orEmpty(),
+                                onSelected = { selectedRatingLimit = it }
                             )
                         }
                     }
@@ -2209,6 +2396,7 @@ internal fun ProfilePinOverlay(
         contentAlignment = Alignment.Center
     ) {
         val headingText = when {
+            state is ProfilePinOverlayState.Ask -> state.heading
             state is ProfilePinOverlayState.Unlock -> stringResource(R.string.profile_pin_overlay_unlock_heading, state.profile.name)
             state is ProfilePinOverlayState.VerifyCurrentForChange -> stringResource(R.string.profile_pin_overlay_change_verify_heading, state.profile.name)
             state is ProfilePinOverlayState.VerifyCurrentForRemove -> stringResource(R.string.profile_pin_overlay_remove_verify_heading, state.profile.name)
@@ -2220,6 +2408,7 @@ internal fun ProfilePinOverlay(
             !resolvedErrorMessage.isNullOrEmpty() -> resolvedErrorMessage
             isWorking && isSingleEntryMode -> stringResource(R.string.profile_pin_verifying)
             isWorking -> stringResource(R.string.action_saving)
+            state is ProfilePinOverlayState.Ask -> state.support
             state is ProfilePinOverlayState.Unlock -> stringResource(R.string.profile_pin_overlay_unlock_support)
             state is ProfilePinOverlayState.VerifyCurrentForChange -> stringResource(R.string.profile_pin_overlay_change_verify_support)
             state is ProfilePinOverlayState.VerifyCurrentForRemove -> stringResource(R.string.profile_pin_overlay_remove_verify_support)
@@ -2287,6 +2476,7 @@ internal fun ProfilePinOverlay(
             )
 
             if (state is ProfilePinOverlayState.Unlock ||
+                state is ProfilePinOverlayState.Ask ||
                 state is ProfilePinOverlayState.VerifyCurrentForChange ||
                 state is ProfilePinOverlayState.VerifyCurrentForRemove ||
                 state is ProfilePinOverlayState.VerifyCurrentForDelete

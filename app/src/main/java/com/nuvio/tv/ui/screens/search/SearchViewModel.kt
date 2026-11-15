@@ -311,6 +311,8 @@ class SearchViewModel @Inject constructor(
     }
 
     private fun onQueryChanged(query: String) {
+        if (query == _uiState.value.query) return
+
         _uiState.update {
             val trimmedInput = query.trim()
             // Narrow the strip to what still matches before anything is fetched, so a letter
@@ -859,7 +861,13 @@ class SearchViewModel @Inject constructor(
                 when (result) {
                     is NetworkResult.Success -> {
                         if (!isCurrentSearch(generation, query)) return@collect
-                        catalogsMap[key] = result.data
+                        val ratingLimits = com.nuvio.tv.core.ratinglimit.ratingLimitGateOrNull(context)
+                        val limit = ratingLimits?.let { gate -> kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { gate.activeLimit() } }
+                        val row = if (limit == null || ratingLimits == null) result.data else result.data.copy(
+                            items = ratingLimits.keepFitting(limit, result.data.items) { it.id to it.apiType }
+                        )
+                        if (!isCurrentSearch(generation, query)) return@collect
+                        catalogsMap[key] = row
                         answeredKeys += key
                         if (feedSuggestions) {
                             offerSuggestions(catalogIndex, result.data.items.map { it.name }, query)

@@ -57,12 +57,19 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
     @Inject lateinit var siloArtworkRefresher: com.nuvio.tv.data.mediaserver.silo.SiloArtworkRefresher
     @Inject lateinit var plexArtworkSigner: com.nuvio.tv.data.mediaserver.plex.PlexArtworkSigner
     @Inject lateinit var reportOutbox: com.nuvio.tv.data.repository.ReportOutbox
+    @Inject lateinit var reportStatusChecker: com.nuvio.tv.data.repository.ReportStatusChecker
+    @Inject lateinit var screensaverController: com.nuvio.tv.core.player.ScreensaverController
 
     companion object {
         private const val CACHE_TAG = "NuvioCache"
         private const val IMAGE_CACHE_DIR = "image_cache"
         private const val HTTP_CACHE_DIR = "http_cache"
         private const val HTTP_CACHE_VALIDATED_DIR = "http_cache_validated"
+
+        private val START_PREFERENCES = listOf(
+            "server_configuration", "floppy_auth", "mdblist_auth", "wetrakr_auth", "media_servers",
+            "member_access_snapshot", "member_catalogs", "backup_restore", "app_locale"
+        )
 
         /** Long enough that the walk cannot contend with cold start. */
         private const val CACHE_READOUT_DELAY_MS = 15_000L
@@ -113,14 +120,35 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
         super.unregisterActivityLifecycleCallbacks(guardedLifecycleCallbacks.remove(callback) ?: callback)
     }
 
+    override fun attachBaseContext(base: Context) {
+        com.nuvio.tv.core.util.ArcDispatchers.configure(base)
+        super.attachBaseContext(base)
+    }
+
+    // Files read on the screen thread while the app is set up: opened here first so they load in parallel.
+    private fun warmStartPreferences() {
+        Thread({
+            START_PREFERENCES.forEach { name -> runCatching { getSharedPreferences(name, Context.MODE_PRIVATE) } }
+        }, "arc-prefs-warm").start()
+    }
+
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     override fun onCreate() {
         com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("app_create")
+        warmStartPreferences()
         com.nuvio.tv.core.network.ArcDns.init(this)
         // NuvioArcKai: physical-RAM tier for cloud storage limits; read before any injected singleton needs it.
         com.nuvio.tv.core.device.DeviceMemoryTier.init(this)
+        (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).let { am ->
+            val info = ActivityManager.MemoryInfo().also(am::getMemoryInfo)
+            com.nuvio.tv.core.image.HomeLoadLevel.init(info.totalMem, am.isLowRamDevice, Runtime.getRuntime().availableProcessors())
+        }
         super.onCreate()
         com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("app_injected")
+        com.nuvio.tv.data.repository.ArcCrashFile.install(this) { screensaverController.playbackActive.value }
+        com.nuvio.tv.data.repository.ArcBuildLog.start(this)
+        com.nuvio.tv.data.repository.ArcMainWatchdog.start(this)
+        com.nuvio.tv.data.repository.ArcHeartbeat.start(this) { screensaverController.playbackActive.value }
         PluginRuntimeHooks.onApplicationCreate(this)
         androidTvChannelSyncService.start()
         // Hydrate the AFR fps cache from disk (background load) so cold
@@ -128,6 +156,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
         com.nuvio.tv.core.player.FrameRateUtils.initFrameRateCachePersistence(this)
         serverUserStateProjection.start()
         reportOutbox.start()
+        reportStatusChecker.start()
         // Load locale synchronously so it's available before Activity.attachBaseContext.
         // SharedPreferences reads are fast (cached in memory after first access).
         val tag = getSharedPreferences("app_locale", Context.MODE_PRIVATE)
@@ -149,6 +178,12 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                 .map { it.autoSpeedupEnabled }
                 .distinctUntilChanged()
                 .collect { com.nuvio.tv.core.network.PlaybackSocketFactory.windowEnabled = it }
+        }
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+            playerSettingsDataStore.playerSettings
+                .map { it.afrAllowLowRates }
+                .distinctUntilChanged()
+                .collect { com.nuvio.tv.core.player.FrameRateUtils.allowLowRates = it }
         }
 
         // Expire stored seek thumbnails even when nothing is played.
@@ -297,7 +332,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
                         // unchanged disk entry and the strategy serves the stale copy again (and
                         // re-fetches the body every 10-minute cooldown). Server cache rules plus the
                         // interceptor above keep the foreground conditional-GET path that does update
-                        // the disk entry; saved copies from the big artwork hosts count as fresh for a week.
+                        // the disk entry; every saved copy counts as fresh for a week.
                         cacheStrategy = { com.nuvio.tv.core.image.imageCacheStrategy },
                     ))
                 )

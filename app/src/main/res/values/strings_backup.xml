@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Names and pictures</string>
     <string name="backup_part_settings">Arc settings</string>
     <string name="backup_part_settings_sub">Scout, thumbnails, DNS, remote buttons and more</string>
+    <string name="backup_part_history">Library and watch history</string>
+    <string name="backup_part_history_sub">Saved titles, Continue watching and watched marks</string>
+    <string name="backup_part_history_signed_in">Your Nuvio account already keeps these. Restored only on a box that is not signed in.</string>
+    <string name="backup_part_history_counts">Saved titles: %1$d. Watched: %2$d. In progress: %3$d.</string>
+    <string name="backup_supporter">Supporter status</string>
+    <string name="backup_supporter_yes">Yes. Supporter colours and icons are kept.</string>
+    <string name="backup_supporter_no">No</string>
     <string name="backup_part_secrets">Passwords and keys</string>
     <string name="backup_part_secrets_saved">Locked with your PIN</string>
     <string name="backup_part_secrets_needs_pin">Needs the backup PIN</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">If you sign in to Nuvio afterwards, your synced settings may replace the restored ones.</string>
     <string name="backup_restore_button">Restore</string>
     <string name="backup_pin_create_heading">Choose a PIN for passwords and keys</string>
-    <string name="backup_pin_create_support">At least 6 digits. Arc cannot recover it, but everything else in the backup still restores without it.</string>
+    <string name="backup_pin_create_support">6 to 16 digits. A longer PIN keeps your sign-ins safer if someone copies the file. Arc cannot recover the PIN, but everything else in the backup still restores without it.</string>
     <string name="backup_pin_create_back">Press back to back up without passwords</string>
     <string name="backup_pin_confirm_heading">Enter the PIN again</string>
     <string name="backup_pin_confirm_support">The same digits, to make sure.</string>

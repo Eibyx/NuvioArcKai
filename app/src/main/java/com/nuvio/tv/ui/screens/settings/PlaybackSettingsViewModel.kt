@@ -323,6 +323,18 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setResolutionMatchingEnabled(enabled)
     }
 
+    suspend fun setAfrSettleDelaySeconds(seconds: Int) {
+        playerSettingsDataStore.setAfrSettleDelaySeconds(seconds)
+    }
+
+    suspend fun setAfrAllowSeamlessSwitch(enabled: Boolean) {
+        playerSettingsDataStore.setAfrAllowSeamlessSwitch(enabled)
+    }
+
+    suspend fun setAfrAllowLowRates(enabled: Boolean) {
+        playerSettingsDataStore.setAfrAllowLowRates(enabled)
+    }
+
     suspend fun disableAfrAndResolution() {
         playerSettingsDataStore.setFrameRateMatchingMode(FrameRateMatchingMode.OFF)
         playerSettingsDataStore.setResolutionMatchingEnabled(false)
@@ -399,6 +411,10 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setAddonSubtitlesEnabled(enabled)
     }
 
+    suspend fun setPreferAddonSubtitles(enabled: Boolean) {
+        playerSettingsDataStore.setPreferAddonSubtitles(enabled)
+    }
+
     suspend fun setSubtitleShowOnlyPreferredLanguages(enabled: Boolean) {
         playerSettingsDataStore.setSubtitleShowOnlyPreferredLanguages(enabled)
     }
@@ -433,6 +449,8 @@ class PlaybackSettingsViewModel @Inject constructor(
     suspend fun setSubtitleShadowEnabled(enabled: Boolean) { playerSettingsDataStore.setSubtitleShadowEnabled(enabled) }
 
     suspend fun setSubtitleShadowOpacity(opacity: Int) { playerSettingsDataStore.setSubtitleShadowOpacity(opacity) }
+    suspend fun setSubtitleShadowSize(size: Int) { playerSettingsDataStore.setSubtitleShadowSize(size) }
+    suspend fun setSubtitleImportedFont(id: String) { playerSettingsDataStore.setSubtitleImportedFont(id) }
 
     suspend fun setSubtitleOutlineColor(color: Int) {
         playerSettingsDataStore.setSubtitleOutlineColor(color)
@@ -663,6 +681,18 @@ class PlaybackSettingsViewModel @Inject constructor(
 
     suspend fun setStreamAutoPlayNextEpisodeFallbackEnabled(enabled: Boolean) {
         playerSettingsDataStore.setStreamAutoPlayNextEpisodeFallbackEnabled(enabled)
+    }
+
+    suspend fun setStreamAutoPlayFallbackOnFailure(enabled: Boolean) {
+        playerSettingsDataStore.setStreamAutoPlayFallbackOnFailure(enabled)
+    }
+
+    suspend fun setStreamAutoPlayFallbackMaxSources(count: Int) {
+        playerSettingsDataStore.setStreamAutoPlayFallbackMaxSources(count)
+    }
+
+    suspend fun setStreamAutoPlayFallbackStartupTimeoutSeconds(seconds: Int) {
+        playerSettingsDataStore.setStreamAutoPlayFallbackStartupTimeoutSeconds(seconds)
     }
 
     suspend fun setStreamAutoPlayPreferBingeGroupForNextEpisode(enabled: Boolean) {

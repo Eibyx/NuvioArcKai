@@ -1,10 +1,14 @@
 package com.nuvio.tv.core.calendar
 
+import com.nuvio.tv.core.util.isEpisodeReleaseAired
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Clock
 import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 class CalendarDateRulesTest {
 
@@ -58,6 +62,22 @@ class CalendarDateRulesTest {
         assertEquals(at("2026-11-13T01:00:00Z"), record.entries.single().airInstantMs)
     }
 
+    @Test fun `a TVmaze time a week from the others is another episode and never replaces them`() {
+        val record = show(
+            CalendarSource.TVMAZE to listOf(episode(CalendarSource.TVMAZE, instant = "2026-11-05T01:00:00Z")),
+            CalendarSource.TRAKT to listOf(episode(CalendarSource.TRAKT, instant = "2026-11-12T01:00:00Z"))
+        ).copy(sourceFetchedAtMs = mapOf(CalendarSource.TRAKT to 1L, CalendarSource.TVMAZE to 2L))
+        assertEquals(at("2026-11-12T01:00:00Z"), record.entries.single().airInstantMs)
+    }
+
+    @Test fun `a TVmaze time on the same day as the others still counts when read last`() {
+        val record = show(
+            CalendarSource.TVMAZE to listOf(episode(CalendarSource.TVMAZE, instant = "2026-11-12T02:00:00Z")),
+            CalendarSource.TRAKT to listOf(episode(CalendarSource.TRAKT, instant = "2026-11-12T01:00:00Z"))
+        ).copy(sourceFetchedAtMs = mapOf(CalendarSource.TRAKT to 1L, CalendarSource.TVMAZE to 2L))
+        assertEquals(at("2026-11-12T02:00:00Z"), record.entries.single().airInstantMs)
+    }
+
     @Test fun `a streaming date later than the others is not trusted over them`() {
         val record = show(
             CalendarSource.TVMAZE to listOf(episode(CalendarSource.TVMAZE, date = "2026-11-08")),
@@ -74,6 +94,28 @@ class CalendarDateRulesTest {
             anime = true
         )
         assertEquals(listOf(7), record.entries.map { it.episode })
+    }
+
+    @Test fun `anime TVmaze lists without a time takes the time found for that episode on the same day`() {
+        val record = show(
+            CalendarSource.TVMAZE to listOf(episode(CalendarSource.TVMAZE, date = "2026-11-14", number = 7)),
+            CalendarSource.TRAKT_NEXT to listOf(episode(CalendarSource.TRAKT_NEXT, instant = "2026-11-14T14:30:00Z", number = 7)),
+            anime = true
+        )
+        val entry = record.entries.single()
+        assertEquals(7, entry.episode)
+        assertEquals(at("2026-11-14T14:30:00Z"), entry.airInstantMs)
+    }
+
+    @Test fun `anime keeps TVmaze's date when the other source has that number on another day`() {
+        val record = show(
+            CalendarSource.TVMAZE to listOf(episode(CalendarSource.TVMAZE, date = "2026-11-14", number = 7)),
+            CalendarSource.TRAKT to listOf(episode(CalendarSource.TRAKT, instant = "2026-11-21T14:30:00Z", number = 7)),
+            anime = true
+        )
+        val entry = record.entries.single()
+        assertEquals("2026-11-14", entry.airDate)
+        assertNull(entry.airInstantMs)
     }
 
     @Test fun `anime TVmaze does not know keeps the other sources`() {
@@ -110,10 +152,32 @@ class CalendarDateRulesTest {
     }
 
     @Test fun `a Calendar date up to three days earlier replaces the add-on's`() {
-        assertEquals("2026-11-06", calendarEarlierRelease("2026-11-08", episode(CalendarSource.TVMAZE, date = "2026-11-06")))
+        assertEquals(
+            "2026-11-06T00:00:00Z",
+            calendarEarlierRelease("2026-11-08", episode(CalendarSource.TVMAZE, date = "2026-11-06"), ZoneOffset.UTC)
+        )
         assertEquals(
             "2026-11-06T01:00:00Z",
             calendarEarlierRelease("2026-11-09T00:00:00.000Z", episode(CalendarSource.TRAKT, instant = "2026-11-06T01:00:00Z"))
+        )
+    }
+
+    @Test fun `a plain Calendar date starts at midnight on the box, not the evening before`() {
+        val central = ZoneId.of("America/Chicago")
+        val released = calendarEarlierRelease("2026-11-09", episode(CalendarSource.TVMAZE, date = "2026-11-07"), central)
+        assertEquals("2026-11-07T06:00:00Z", released)
+        val eveningBefore = Clock.fixed(Instant.parse("2026-11-07T05:00:00Z"), central)
+        assertEquals(false, isEpisodeReleaseAired(released, eveningBefore))
+        val morningOf = Clock.fixed(Instant.parse("2026-11-07T14:00:00Z"), central)
+        assertEquals(true, isEpisodeReleaseAired(released, morningOf))
+    }
+
+    @Test fun `a plain Calendar date on the add-on's own day never moves it earlier`() {
+        val sydney = ZoneId.of("Australia/Sydney")
+        assertNull(calendarEarlierRelease("2026-11-08", episode(CalendarSource.TVMAZE, date = "2026-11-08"), sydney))
+        assertEquals(
+            "2026-11-06T13:00:00Z",
+            calendarEarlierRelease("2026-11-08", episode(CalendarSource.TVMAZE, date = "2026-11-07"), sydney)
         )
     }
 

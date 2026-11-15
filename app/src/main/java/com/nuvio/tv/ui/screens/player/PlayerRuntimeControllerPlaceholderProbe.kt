@@ -62,3 +62,22 @@ internal fun PlayerRuntimeController.probePlaceholderStream(player: ExoPlayer): 
 
     return verdict
 }
+
+/** Main thread. The size rule run on the first response, before the player reaches READY. */
+internal fun PlayerRuntimeController.onFirstMediaLength(url: String, contentLengthBytes: Long) {
+    if (url != currentStreamUrl || com.nuvio.tv.core.formatcheck.FormatCheckSession.active) return
+    val verdict = PlaceholderStreamPolicy.rejectOnFirstLength(
+        contentLengthBytes = contentLengthBytes,
+        expectedRuntimeMs = expectedRuntimeMinutes?.let { it * 60_000L },
+        alreadyDecided = placeholderProbeDone || placeholderRejectedForCurrentStream ||
+            hasRenderedFirstFrame || !_uiState.value.error.isNullOrBlank(),
+        filmOrEpisode = isFilmOrEpisode(contentType, currentSeason, currentEpisode),
+        listedBytes = currentVideoSize
+    ) ?: return
+    placeholderProbeDone = true
+    Log.i(
+        TAG,
+        "PLACEHOLDER_PROBE verdict=REJECT_ON_FIRST_LENGTH(${verdict.detail}) contentLength=$contentLengthBytes"
+    )
+    rejectPlaceholderStream(verdict)
+}

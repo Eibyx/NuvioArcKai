@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Tên và ảnh</string>
     <string name="backup_part_settings">Cài đặt Arc</string>
     <string name="backup_part_settings_sub">Scout, ảnh thu nhỏ, DNS, nút điều khiển và hơn nữa</string>
+    <string name="backup_part_history">Thư viện và lịch sử xem</string>
+    <string name="backup_part_history_sub">Tựa phim đã lưu, Tiếp tục xem và dấu đã xem</string>
+    <string name="backup_part_history_signed_in">Tài khoản Nuvio của bạn đã lưu những mục này. Chỉ khôi phục trên thiết bị chưa đăng nhập.</string>
+    <string name="backup_part_history_counts">Đã lưu: %1$d. Đã xem: %2$d. Đang xem: %3$d.</string>
+    <string name="backup_supporter">Trạng thái người ủng hộ</string>
+    <string name="backup_supporter_yes">Có. Màu và biểu tượng người ủng hộ được giữ lại.</string>
+    <string name="backup_supporter_no">Không</string>
     <string name="backup_part_secrets">Mật khẩu và khóa</string>
     <string name="backup_part_secrets_saved">Đã khóa bằng mã PIN của bạn</string>
     <string name="backup_part_secrets_needs_pin">Cần mã PIN sao lưu</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Nếu sau đó bạn đăng nhập vào Nuvio, các cài đặt đã đồng bộ có thể thay thế các cài đặt vừa khôi phục.</string>
     <string name="backup_restore_button">Khôi phục</string>
     <string name="backup_pin_create_heading">Chọn mã PIN cho mật khẩu và khóa</string>
-    <string name="backup_pin_create_support">Ít nhất 6 chữ số. Arc không thể lấy lại mã này, nhưng mọi thứ khác trong bản sao lưu vẫn khôi phục được mà không cần nó.</string>
+    <string name="backup_pin_create_support">Từ 6 đến 16 chữ số. Mã PIN dài hơn giúp bảo vệ thông tin đăng nhập của bạn tốt hơn nếu ai đó sao chép tệp. Arc không thể lấy lại mã này, nhưng mọi thứ khác trong bản sao lưu vẫn khôi phục được mà không cần nó.</string>
     <string name="backup_pin_create_back">Nhấn quay lại để sao lưu không kèm mật khẩu</string>
     <string name="backup_pin_confirm_heading">Nhập lại mã PIN</string>
     <string name="backup_pin_confirm_support">Nhập lại các chữ số đó để chắc chắn.</string>

@@ -197,6 +197,8 @@ data class PlayerUiState(
     val playerBadgeFilters: List<CompiledStreamBadgeFilter> = emptyList(),
     val showPlayerBadges: Boolean = false,
     val error: String? = null,
+    val errorCard: PlayerErrorCard? = null,
+    val errorCardBeforeSources: PlayerErrorCard? = null,
     val showSwitchToMpvErrorAction: Boolean = false,
     val playbackIssueReportStatus: PlaybackIssueReportStatus = PlaybackIssueReportStatus.Idle,
     val playbackIssueReportId: String? = null,
@@ -211,6 +213,7 @@ data class PlayerUiState(
     val reportPanelRecordingMarks: Int = 0,
     val reportPanelFileName: String? = null,
     val reportPanelSource: String? = null,
+    val reportPanelCheck: PlayerErrorCard? = null,
     val reportPillTick: Int = 0,
     val reportNoSpaceTick: Int = 0,
     val pendingSeekPosition: Long? = null, // For resuming from saved progress
@@ -247,6 +250,7 @@ data class PlayerUiState(
     val libassRenderMode: LibassRenderMode = LibassRenderMode.DEFAULT,
     val displayModeInfo: DisplayModeInfo? = null,
     val showDisplayModeInfo: Boolean = false,
+    val qmsHint: com.nuvio.tv.core.player.DisplayRefreshMeter.Reading? = null,
     // Aspect ratio / resize mode
     val resizeMode: Int = AspectRatioFrameLayout.RESIZE_MODE_FIT,
     val aspectMode: AspectMode = AspectMode.ORIGINAL,
@@ -420,6 +424,7 @@ sealed class PlayerEvent {
     data class OnEpisodeAddonFilterSelected(val addonName: String?) : PlayerEvent()
     data class OnEpisodeStreamSelected(val stream: Stream) : PlayerEvent()
     data object OnShowSourcesPanel : PlayerEvent()
+    data object OnErrorOtherSources : PlayerEvent()
     data object OnDismissSourcesPanel : PlayerEvent()
     data object OnReloadSourceStreams : PlayerEvent()
     data class OnSourceAddonFilterSelected(val addonName: String?) : PlayerEvent()
@@ -435,6 +440,8 @@ sealed class PlayerEvent {
     data object OnParentalGuideHide : PlayerEvent()
     data class OnShowDisplayModeInfo(val info: DisplayModeInfo) : PlayerEvent()
     data object OnHideDisplayModeInfo : PlayerEvent()
+    data object OnQmsHintTurnOff : PlayerEvent()
+    data object OnQmsHintKeep : PlayerEvent()
     data object OnDismissPauseOverlay : PlayerEvent()
     data object OnToggleDetails : PlayerEvent()
     data object OnCloseDetails : PlayerEvent()
@@ -455,6 +462,8 @@ sealed class PlayerEvent {
     data class OnSetSubtitleOutlineSize(val size: SubtitleOutlineSize) : PlayerEvent()
     data class OnSetSubtitleShadowEnabled(val enabled: Boolean) : PlayerEvent()
     data class OnSetSubtitleShadowOpacity(val opacity: Int) : PlayerEvent()
+    data class OnSetSubtitleShadowSize(val size: Int) : PlayerEvent()
+    data class OnSetSubtitleImportedFont(val id: String) : PlayerEvent()
     data class OnSetSubtitleOutlineColor(val color: Int) : PlayerEvent()
     data class OnSetSubtitleVerticalOffset(val offset: Int) : PlayerEvent()
     data object OnResetSubtitleDefaults : PlayerEvent()
@@ -479,7 +488,9 @@ data class DisplayModeInfo(
     val width: Int,
     val height: Int,
     val refreshRate: Float,
-    val statusMessage: String? = null
+    val statusMessage: String? = null,
+    val measuredHz: Float? = null,
+    val seamless: Boolean = false
 )
 
 enum class FrameRateSource {

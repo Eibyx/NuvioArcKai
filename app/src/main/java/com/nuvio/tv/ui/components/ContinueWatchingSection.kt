@@ -4,7 +4,7 @@ import com.nuvio.tv.ui.screens.home.rowFocusRing
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import com.nuvio.tv.ui.screens.home.shuffleFocusKey
+import com.nuvio.tv.ui.screens.home.continueWatchingItemKey
 
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.BorderStroke
@@ -55,9 +55,7 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.gestures.BringIntoViewSpec
@@ -255,14 +253,7 @@ fun ContinueWatchingSection(
         ) {
             itemsIndexed(
                 items = items,
-                key = { _, progress ->
-                    progress.shuffleFocusKey ?: when (progress) {
-                        is ContinueWatchingItem.InProgress ->
-                            "cw_${progress.progress.contentId}_${progress.progress.videoId}_${progress.progress.season ?: -1}_${progress.progress.episode ?: -1}"
-                        is ContinueWatchingItem.NextUp ->
-                            "nextup_${progress.info.contentId}_${progress.info.videoId}_${progress.info.season}_${progress.info.episode}"
-                    }
-                }
+                key = { _, progress -> continueWatchingItemKey(progress) }
             ) { index, progress ->
                 val requester = focusRequesters.getOrPut(index) { FocusRequester() }
                 val focusModifier = Modifier.focusRequester(requester)
@@ -516,7 +507,11 @@ fun ContinueWatchingCard(
     val useShortLabels = isPosterStyle || isWideStyle
     val effectiveNextUpLabel = if (useShortLabels) strNextUpShort else strNextUp
     val effectiveNewEpisodeLabel = if (useShortLabels) strNewEpisodeShort else strNewEpisode
-    val nextUpBadgeText = nextUp?.let { info ->
+    val epochDay = java.time.LocalDate.now().toEpochDay()
+    val nextUpBadgeText = remember(
+        nextUp, useShortLabels, isPosterStyle, episodesLeft != null, epochDay,
+        strNewSeason, effectiveNewEpisodeLabel, effectiveNextUpLabel, strUpcoming
+    ) { nextUp?.let { info ->
         if (info.badgeLabel != null) {
             info.badgeLabel
         } else if (info.isReleaseAlert) {
@@ -535,7 +530,7 @@ fun ContinueWatchingCard(
         } else {
             effectiveNextUpLabel
         }
-    }
+    } }
     val remainingText = progress?.let {
         remember(it.position, it.duration, it.progressPercent) {
             formatContinueWatchingProgressLabel(
@@ -563,18 +558,16 @@ fun ContinueWatchingCard(
             else -> firstNonBlank(progress?.backdrop, progress?.poster)
         }
     }
-    var usesFallbackImage by remember { mutableStateOf(false) }
-    // Reset fallback state when the item changes
-    LaunchedEffect(imageModel) { usesFallbackImage = false }
+    var usesFallbackImage by remember(imageModel) { mutableStateOf(false) }
 
     val effectiveImageModel = if (usesFallbackImage) fallbackImageModel else imageModel
     val titleText = remember(progress, nextUp) { progress?.name ?: nextUp?.name.orEmpty() }
     val context = LocalContext.current
-    val strAirsDateForEpisode = computeAirDateBadgeText(context, nextUp?.released, nextUp?.airDateLabel)
-    val episodeTitle = remember(progress, nextUp, context, strAirsDateForEpisode) {
+    val episodeTitle = remember(progress, nextUp, context, epochDay) {
         when {
             progress != null -> progress.episodeTitle?.localizeEpisodeTitle(context)
-            nextUp != null && !nextUp.hasAired -> nextUp.episodeTitle?.localizeEpisodeTitle(context) ?: strAirsDateForEpisode
+            nextUp != null && !nextUp.hasAired -> nextUp.episodeTitle?.localizeEpisodeTitle(context)
+                ?: computeAirDateBadgeText(context, nextUp.released, nextUp.airDateLabel)
             else -> nextUp?.episodeTitle?.localizeEpisodeTitle(context)
         }
     }
@@ -603,10 +596,9 @@ fun ContinueWatchingCard(
     }
 
     // Hold the title still until focus has settled, then let it scroll if it overflows.
-    var titleMarqueeActive by remember { mutableStateOf(false) }
-    LaunchedEffect(isFocused, titleText) {
-        titleMarqueeActive = false
-        if (isFocused) {
+    var titleMarqueeActive by remember(isFocused, titleText) { mutableStateOf(false) }
+    if (isFocused) {
+        LaunchedEffect(titleText) {
             delay(TITLE_MARQUEE_DELAY_MS)
             titleMarqueeActive = true
         }
@@ -696,10 +688,8 @@ fun ContinueWatchingCard(
         focusedBorder = if (isV2 || textBelowArtwork) {
             Border.None
         } else {
-            Border(
-                border = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs),
-                shape = cwCardShape
-            )
+            val ring = NuvioTheme.focusRing.border(NuvioTheme.spacing.xxs)
+            remember(ring, cwCardShape) { Border(border = ring, shape = cwCardShape) }
         }
     ) {
         if (isWideStyle) {
@@ -783,36 +773,35 @@ fun ContinueWatchingCard(
                     AsyncImage(
                         model = imageRequest,
                         contentDescription = null,
+                        // The box above clips to the same shape. The gradient keeps text on the artwork legible.
                         modifier = Modifier
                             .fillMaxSize()
-                            .graphicsLayer {
-                                compositingStrategy =
-                                    CompositingStrategy.Offscreen
-                            }
-                            .clip(cwClipShape)
-
-                            // Gradient overlay for text legibility, only needed when text sits on the artwork.
-                            .drawWithContent {
-                                drawContent()
-                                if (textBelowArtwork) return@drawWithContent
-
-                                val startYPos = size.height * 0.45f
-                                val gradient = Brush.verticalGradient(
-                                    colorStops = arrayOf(
-                                        0.0f to Color.Transparent,
-                                        0.6f to bgColor.copy(alpha = 0.7f),
-                                        1.0f to bgColor.copy(alpha = 0.95f)
-                                    ),
-                                    startY = startYPos,
-                                    endY = size.height
-                                )
-
-                                drawRect(
-                                    brush = gradient,
-                                    topLeft = Offset(-2f, startYPos),
-                                    size = Size(size.width + 4f, (size.height - startYPos) + 4f)
-                                )
-                            },
+                            .then(
+                                if (textBelowArtwork) {
+                                    Modifier
+                                } else {
+                                    Modifier.drawWithCache {
+                                        val startYPos = size.height * 0.45f
+                                        val gradient = Brush.verticalGradient(
+                                            colorStops = arrayOf(
+                                                0.0f to Color.Transparent,
+                                                0.6f to bgColor.copy(alpha = 0.7f),
+                                                1.0f to bgColor.copy(alpha = 0.95f)
+                                            ),
+                                            startY = startYPos,
+                                            endY = size.height
+                                        )
+                                        onDrawWithContent {
+                                            drawContent()
+                                            drawRect(
+                                                brush = gradient,
+                                                topLeft = Offset(-2f, startYPos),
+                                                size = Size(size.width + 4f, (size.height - startYPos) + 4f)
+                                            )
+                                        }
+                                    }
+                                }
+                            ),
                         placeholder = backgroundPainter,
                         error = backgroundPainter,
                         fallback = backgroundPainter,

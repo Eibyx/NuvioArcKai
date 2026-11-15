@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Puanlar</string>
     <string name="scout_row_picked">Sizin için seçildi</string>
     <string name="scout_row_picked_sub">Filmler ve diziler, günde bir kez yenilenir</string>
+    <string name="scout_row_genre">Türe göre satırlar</string>
+    <string name="scout_row_genre_sub">Sevdiğin türlere göre gruplanmış öneriler</string>
     <string name="scout_row_because">… izlediğiniz için</string>
     <string name="scout_row_because_sub">Son bitirdiklerinizi takip eder</string>
     <string name="scout_row_gems">Gizli hazineler</string>
     <string name="scout_row_gems_sub">Az kişinin izlediği, yüksek puanlı içerikler</string>
     <string name="scout_row_tiles">Scout kutuları</string>
     <string name="scout_row_tiles_sub">Şaşırt beni, ruh halleri, on yıllar</string>
+    <string name="scout_row_mixes">Karışımlar</string>
+    <string name="scout_row_mixes_sub">Kaydettiğin karışımlar ve mevsimin bayram karışımı</string>
     <string name="scout_ratings_enabled">İçerikleri puanla</string>
     <string name="scout_ratings_enabled_sub">Puanla düğmesini, uzun basma menüsündeki başparmakları ve film sonrası soruyu gösterir</string>
     <string name="scout_ratings_off_note">Puanla düğmesini, menüdeki başparmakları ve film sonrası soruyu gizler. Puanlarınız sayılmaya devam eder.</string>
     <string name="scout_ask_enabled">Film sonrası nasıl olduğunu sor</string>
     <string name="scout_ask_enabled_sub">Oynatıcıdan çıkarken bana göre değil, beğendim veya bayıldım</string>
+    <string name="scout_send_ratings">Puanlarımı takip servislerine gönder</string>
+    <string name="scout_send_ratings_sub">Bana göre değil, Beğendim ve Bayıldım; Trakt, Simkl, MDBList ve WeTrakr\'a 10 üzerinden 3, 7 ve 10 olarak gider. Bir takip servisinde kendiniz verdiğiniz puan asla değiştirilmez. Simkl yalnızca izlediğiniz içerikleri alır.</string>
+    <string name="scout_send_ratings_none">Bu profilde oturum açmış bir takip servisi yok, bu yüzden henüz hiçbir şey gönderilmiyor.</string>
+    <string name="scout_use_ratings">Takip servisi puanlarımı kullan</string>
+    <string name="scout_use_ratings_sub">Takip servislerinde verdiğiniz puanlar burada başparmağa dönüşür: 9 veya 10 Bayıldım, 6-8 Beğendim, 1-4 Bana göre değil. Arc\'ta bastığınız başparmak her zaman önceliklidir.</string>
+    <string name="scout_thumb_from">Kaynak: %1$s</string>
     <string name="scout_your_thumbs">Başparmaklarınız</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="other">%1$d içerik puanlandı. Değiştirmek veya geri almak için açın</item>
@@ -80,4 +90,6 @@
     <string name="scout_leave_out">Hariç tut</string>
     <string name="scout_leave_out_sub">Hiç görmek istemediğiniz türler</string>
     <string name="scout_leave_out_none">Yok</string>
+    <string name="scout_menu_visible">Scout\'u menüde göster</string>
+    <string name="scout_menu_visible_sub">Ana sayfadaki Scout satırlarının kendi anahtarları var</string>
 </resources>

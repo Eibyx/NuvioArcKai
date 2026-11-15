@@ -1,13 +1,14 @@
 package com.nuvio.tv.core.image
 
 import coil3.memory.MemoryCache
+import com.nuvio.tv.data.repository.OpenFilesGuard
 
 /** Keep full-size heroes from evicting hundreds of small posters during a long browse.
  * Both LRUs share the existing total budget; no extra bitmap references are retained here.
  */
 class ArtworkMemoryCache(
     bytes: Long,
-    private val undatedLimitMs: Long = MIN_IMAGE_FRESHNESS_MS,
+    private val undatedLimitMs: Long = IMAGE_FRESHNESS_FLOOR_MS,
     private val now: () -> Long = { android.os.SystemClock.elapsedRealtime() },
 ) : MemoryCache {
     private val lock = Any()
@@ -36,6 +37,8 @@ class ArtworkMemoryCache(
         }
     }
     override fun set(key: MemoryCache.Key, value: MemoryCache.Value) = synchronized(lock) {
+        // Each cached picture can hold an open handle: with too many open, half of the posters are let go.
+        if (OpenFilesGuard.isHigh()) small.trimToSize(small.size / 2)
         // Art from hosts that may change it under the same address goes back to the disk rules after a while.
         val entry = if (imageHost(key.key) != null && !isImmutableArtworkUrl(key.key)) {
             MemoryCache.Value(value.image, value.extras + (STORED_AT to now()))

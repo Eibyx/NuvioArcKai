@@ -44,6 +44,50 @@ internal object MpvStartupWatchdogPolicy {
         val counters: Counters,
     )
 
+    /**
+     * Until the first frame, the MPV progress tick is the only first-frame check and start-up
+     * watchdog, so a pause must not stop it.
+     */
+    fun progressTickMayStop(hasRenderedFirstFrame: Boolean): Boolean = hasRenderedFirstFrame
+
+    /** OK before the first frame keeps the start going, as ExoPlayer does while it buffers. */
+    fun playPauseShouldPause(isPlaying: Boolean, hasRenderedFirstFrame: Boolean): Boolean =
+        isPlaying && hasRenderedFirstFrame
+
+    /**
+     * Coming back to an MPV start that never showed a frame: restart the tick. A start still before
+     * its media load starts the tick itself once the load is queued.
+     */
+    fun restartTickOnResume(hasRenderedFirstFrame: Boolean, hasStream: Boolean, mpvLoaded: Boolean): Boolean =
+        !hasRenderedFirstFrame && hasStream && mpvLoaded
+
+    /** A watch party owns play and pause, so only a solo start is unpaused on resume. */
+    fun unpauseOnResume(hasRenderedFirstFrame: Boolean, inParty: Boolean): Boolean =
+        !hasRenderedFirstFrame && !inParty
+
+    /**
+     * The player's own pause state decides, not the manual-pause flag: a retry rebuilt with
+     * startPaused still plays on MPV and must stay watched. Before the view has loaded its media
+     * there is no libmpv instance to ask, and asking one ends the app.
+     */
+    fun watchdogEnabled(
+        hasError: Boolean,
+        releasing: Boolean,
+        failoverTriggered: Boolean,
+        recoveryArmed: Boolean,
+        hasStream: Boolean,
+        inBackground: Boolean,
+        playerPaused: Boolean,
+        mpvLoaded: Boolean,
+    ): Boolean = !hasError &&
+        !releasing &&
+        !failoverTriggered &&
+        !recoveryArmed &&
+        hasStream &&
+        !inBackground &&
+        !playerPaused &&
+        mpvLoaded
+
     fun cacheIsProgressing(previousSec: Double, currentSec: Double): Boolean {
         return currentSec > previousSec + MIN_CACHE_GROWTH_SEC
     }

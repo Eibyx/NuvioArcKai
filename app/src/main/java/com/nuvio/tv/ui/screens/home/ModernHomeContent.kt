@@ -179,9 +179,12 @@ fun ModernHomeContent(
     onMarkContinueWatchingWatched: (ContinueWatchingItem) -> Unit = {},
     isCatalogItemWatched: (MetaPreview) -> Boolean = { false },
     onCatalogItemLongPress: (MetaPreview, String) -> Unit = { _, _ -> },
+    onFolderLongPress: (collectionId: String, folderId: String) -> Unit = { _, _ -> },
     onNavigateToFolderDetail: (String, String) -> Unit = { _, _ -> },
+    onNavigateToCatalogSeeAll: (String, String, String) -> Unit = { _, _, _ -> },
     onItemFocus: (MetaPreview) -> Unit = {},
     onPreloadAdjacentItem: (MetaPreview) -> Unit = {},
+    onPreloadAdjacentRowItem: (MetaPreview) -> Unit = {},
     onSaveFocusState: (Int, Int, String?, Map<String, String>, Map<String, Int>, Map<String, String>, Int, Int) -> Unit,
     onSaveRowScrollOffsets: (Map<String, Int>) -> Unit = {},
     onFocusedRowKeyChanged: (String?) -> Unit = {},
@@ -675,6 +678,15 @@ fun ModernHomeContent(
             }
     }
 
+    val latestRowsForPreload by rememberUpdatedState(carouselRows.list)
+    val latestOnPreloadAdjacentRowItem by rememberUpdatedState(onPreloadAdjacentRowItem)
+    LaunchedEffect(Unit) {
+        snapshotFlow { settledHeroSelection.value?.rowKey }.distinctUntilChanged().collect { rowKey ->
+            if (rowKey == null) return@collect
+            adjacentRowPreviews(latestRowsForPreload, rowKey, focusedItemByRow).forEach(latestOnPreloadAdjacentRowItem)
+        }
+    }
+
     val latestCarouselRows by rememberUpdatedState(carouselRows)
     val latestVerticalRowListState by rememberUpdatedState(verticalRowListState)
     val latestRowIndexByKey = rememberUpdatedState(rowIndexByKey)
@@ -1057,13 +1069,6 @@ fun ModernHomeContent(
                 }.coerceAtLeast(1)
             }
 
-            val preparedHeroScene = rememberPreparedHeroScene(liveHeroSceneState, heroMediaWidthPx, heroMediaHeightPx)
-            val heroSceneStateLambda = remember(preparedHeroScene) { { preparedHeroScene.value } }
-            LaunchedEffect(artworkAccent, preparedHeroScene) {
-                snapshotFlow { preparedHeroScene.value.artwork.ownerKey to preparedHeroScene.value.heroBackdrop }
-                    .collect { (owner, url) -> artworkAccent?.select(owner.orEmpty(), url) }
-            }
-
             val isFullScreenState = remember(liveHeroSceneState) {
                 derivedStateOf { liveHeroSceneState.value.fullScreenBackdrop }
             }
@@ -1095,17 +1100,6 @@ fun ModernHomeContent(
                 }
             }
             val onFirstFrameRenderedLambda = remember { { heroTrailerFirstFrameRendered = true } }
-
-            ModernHeroSection(
-                heroSceneState = heroSceneStateLambda,
-                isFullScreen = isFullScreenLambda,
-                heroMediaWidthPx = heroMediaWidthPx,
-                heroMediaHeightPx = heroMediaHeightPx,
-                trailerBottomLimit = screenHeight - rowsViewportHeight - 8.dp,
-                modifier = heroMediaModifier,
-                onTrailerEnded = onTrailerEndedLambda,
-                onFirstFrameRendered = onFirstFrameRenderedLambda
-            )
 
             // Fade content rows when ANY hero media (catalog trailer or collection
             // hero video) is playing in fullscreen — not just catalog trailers.
@@ -1139,24 +1133,27 @@ fun ModernHomeContent(
                 heroDescriptionScalePercent <= 100 -> 4
                 else -> 2
             }
-            HeroTitleBlock(
-                previewProvider = { heroSceneStateLambda().preview },
-                enrichmentActive = { false },
-                preparedLogo = heroSceneStateLambda().preparedLogo,
+            val heroTrailerShowing = remember {
+                { !isRapidHorizontalNav.value && shouldPlayTrailerLambda() && heroTrailerRenderedLambda() }
+            }
+            ModernHomeHero(
+                liveScene = liveHeroSceneState,
+                heroMediaWidthPx = heroMediaWidthPx,
+                heroMediaHeightPx = heroMediaHeightPx,
+                artworkAccent = artworkAccent,
+                isFullScreen = isFullScreenLambda,
+                trailerBottomLimit = screenHeight - rowsViewportHeight - 8.dp,
+                mediaModifier = heroMediaModifier,
+                onTrailerEnded = onTrailerEndedLambda,
+                onFirstFrameRendered = onFirstFrameRenderedLambda,
                 portraitMode = !useLandscapePosters,
                 showImdbRatings = uiState.homeImdbRatingsVisibility.showRatings,
                 mdbListShowOnHero = uiState.mdbListShowOnHero,
                 mdbListRatingOrder = uiState.mdbListRatingOrder,
-                trailerPlaying = {
-                    if (isRapidHorizontalNav.value) false
-                    else {
-                        val state = heroSceneStateLambda()
-                        !state.featheredTrailer && state.fullScreenBackdrop && shouldPlayTrailerLambda() && heroTrailerRenderedLambda()
-                    }
-                },
+                trailerShowing = heroTrailerShowing,
                 descriptionMaxLines = heroDescriptionMaxLines,
                 descriptionAutoScrollEnabled = uiState.heroDescriptionAutoScrollEnabled,
-                modifier = heroMetadataModifier
+                titleModifier = heroMetadataModifier
             )
 
             val latestOnFocusedRowKeyChanged by rememberUpdatedState(onFocusedRowKeyChanged)
@@ -1232,6 +1229,7 @@ fun ModernHomeContent(
                 onRowItemFocusedInternal = onRowItemFocusedInternalLambda,
                 onNavigateToDetail = onNavigateToDetail,
                 onNavigateToFolderDetail = onNavigateToFolderDetail,
+                onNavigateToCatalogSeeAll = onNavigateToCatalogSeeAll,
                 onLoadMoreCatalog = onLoadMoreCatalog,
                 onServerArtworkWindow = onServerArtworkWindow,
                 onContinueWatchingClick = onContinueWatchingClick,
@@ -1243,6 +1241,7 @@ fun ModernHomeContent(
                 onExpandedCatalogFocusKeyChange = onExpandedCatalogFocusKeyChangeLambda,
                 isCatalogItemWatched = isCatalogItemWatched,
                 onCatalogItemLongPress = onCatalogItemLongPress,
+                onFolderLongPress = onFolderLongPress,
                 enrichedPreviews = stableEnrichedPreviews,
                 trailerPreviewUrls = stableTrailerPreviewUrls,
                 trailerPreviewAudioUrls = stableTrailerPreviewAudioUrls,
@@ -1369,6 +1368,65 @@ private fun Modifier.menuOpenRowEdge(rowStartPadding: androidx.compose.ui.unit.D
             right = if (rtl) size.width - edge else size.width
         ) { this@drawWithContent.drawContent() }
     }
+}
+
+/**
+ * The hero picture and its title block. The prepared scene is read here, so the steps of a hero
+ * change rebuild these two and not the rows under them.
+ */
+@Composable
+private fun ModernHomeHero(
+    liveScene: androidx.compose.runtime.State<ModernHeroSceneState>,
+    heroMediaWidthPx: Int,
+    heroMediaHeightPx: Int,
+    artworkAccent: com.nuvio.tv.ui.v2.appearance.ArtworkAccentState?,
+    isFullScreen: () -> Boolean,
+    trailerBottomLimit: androidx.compose.ui.unit.Dp,
+    mediaModifier: Modifier,
+    onTrailerEnded: () -> Unit,
+    onFirstFrameRendered: () -> Unit,
+    portraitMode: Boolean,
+    showImdbRatings: Boolean,
+    mdbListShowOnHero: Boolean,
+    mdbListRatingOrder: List<String>,
+    trailerShowing: () -> Boolean,
+    descriptionMaxLines: Int,
+    descriptionAutoScrollEnabled: Boolean,
+    titleModifier: Modifier
+) {
+    val preparedHeroScene = rememberPreparedHeroScene(liveScene, heroMediaWidthPx, heroMediaHeightPx)
+    val heroSceneState = remember(preparedHeroScene) { { preparedHeroScene.value } }
+    LaunchedEffect(artworkAccent, preparedHeroScene) {
+        snapshotFlow { preparedHeroScene.value.artwork.ownerKey to preparedHeroScene.value.heroBackdrop }
+            .collect { (owner, url) -> artworkAccent?.select(owner.orEmpty(), url) }
+    }
+    ModernHeroSection(
+        heroSceneState = heroSceneState,
+        isFullScreen = isFullScreen,
+        heroMediaWidthPx = heroMediaWidthPx,
+        heroMediaHeightPx = heroMediaHeightPx,
+        trailerBottomLimit = trailerBottomLimit,
+        modifier = mediaModifier,
+        onTrailerEnded = onTrailerEnded,
+        onFirstFrameRendered = onFirstFrameRendered
+    )
+    HeroTitleBlock(
+        previewProvider = { heroSceneState().preview },
+        enrichmentActive = { false },
+        preparedLogo = heroSceneState().preparedLogo,
+        logoPending = heroSceneState().logoPending,
+        portraitMode = portraitMode,
+        showImdbRatings = showImdbRatings,
+        mdbListShowOnHero = mdbListShowOnHero,
+        mdbListRatingOrder = mdbListRatingOrder,
+        trailerPlaying = {
+            val state = heroSceneState()
+            trailerShowing() && !state.featheredTrailer && state.fullScreenBackdrop
+        },
+        descriptionMaxLines = descriptionMaxLines,
+        descriptionAutoScrollEnabled = descriptionAutoScrollEnabled,
+        modifier = titleModifier
+    )
 }
 
 @Composable

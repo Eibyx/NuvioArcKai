@@ -13,41 +13,48 @@ import com.nuvio.tv.data.local.InternalPlayerEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
-// Absolute ceiling on the whole track-AFR step (mode switch wait + settle
-// hold). Timer-released, never event-gated, so it cannot deadlock startup.
-// 8 s covers the worst case (~4 s mode-switch wait + 2 s settle hold)
-// with margin; 7 s could clip a slow HDMI mode change mid-settle.
-private const val TRACK_AFR_ABSOLUTE_DEADLINE_MS = 8_000L
+// Absolute ceiling on the whole track-AFR step: the mode switch wait (up to 4 s), the settle wait
+// (AfrSettle cap) and a margin. Timer-released, so it cannot deadlock startup.
+private const val TRACK_AFR_SWITCH_WAIT_MS = 4_000L
+private const val TRACK_AFR_MARGIN_MS = 1_000L
 
-// Settle hold after a real display-mode switch, mirroring
-// AFR_EXO_SETTLE_HOLD_MS on the preflight path: don't start the A/V pipeline
-// inside the mode transition.
-private const val TRACK_AFR_SETTLE_HOLD_MS = 2_000L
+internal fun trackAfrDeadlineMs(userDelayMs: Long): Long =
+    TRACK_AFR_SWITCH_WAIT_MS + com.nuvio.tv.core.player.AfrSettle.capMs(userDelayMs) + TRACK_AFR_MARGIN_MS
 
-// How long playback waits to learn the rate of an MKV that declares none.
+// How long playback waits to learn the rate of an MKV or TS that declares none.
 private const val UNDECLARED_RATE_PROBE_TIMEOUT_MS = 6_000L
-
-/** MKV stores the rate only as an optional DefaultDuration, and the H.264 header can't stand in for it. */
-internal fun needsProbeForUndeclaredRate(frameRate: Float, containerMimeType: String?): Boolean =
-    frameRate <= 0f &&
-        (containerMimeType == MimeTypes.VIDEO_MATROSKA || containerMimeType == MimeTypes.VIDEO_WEBM)
+// The playback stream's own sample times usually arrive first; the separate probe opens a second connection.
+private const val UNDECLARED_RATE_TIMING_HEAD_START_MS = 2_500L
 
 /**
- * The file declares no frame rate, so the track format alone can't drive the switch. Runs the same probe as the MPV
- * path with playback held, then hands the result to [maybeRunTrackFormatAfr], which also saves it for the next play.
- * Without a result in time, playback just starts.
+ * MKV stores the rate only as an optional DefaultDuration, and the H.264 header can't stand in for it. Media3's TS
+ * reader never fills in a rate, so broadcast recordings always arrive without one.
+ */
+internal fun needsProbeForUndeclaredRate(frameRate: Float, containerMimeType: String?): Boolean =
+    frameRate <= 0f &&
+        (containerMimeType == MimeTypes.VIDEO_MATROSKA || containerMimeType == MimeTypes.VIDEO_WEBM ||
+            containerMimeType == MimeTypes.VIDEO_MP2T)
+
+/**
+ * The file declares no frame rate, so the track format alone can't drive the switch. With playback held it takes the
+ * rate from the playback stream's own sample times, and only if those are slow also runs the same probe as the MPV
+ * path; the first answer goes to [maybeRunTrackFormatAfr], which also saves it for the next play. Without a result in
+ * time, playback just starts.
  */
 internal fun PlayerRuntimeController.maybeRunTrackAfrForUndeclaredRate(format: Format) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
     if (currentInternalPlayerEngine != InternalPlayerEngine.EXOPLAYER) return
     if (!needsProbeForUndeclaredRate(format.frameRate, format.containerMimeType)) return
+    // A live TS gives its sample times in real time, so the wait would hold every channel start back.
+    if (format.containerMimeType == MimeTypes.VIDEO_MP2T && (_exoPlayer?.duration ?: C.TIME_UNSET) == C.TIME_UNSET) return
     if (trackAfrAttemptedForCurrentStream || afrModeAppliedPreStart) return
     if (_uiState.value.frameRateMatchingMode == FrameRateMatchingMode.OFF || com.nuvio.tv.core.formatcheck.FormatCheckSession.active) return
     if (_uiState.value.afrProbeRunning) return
@@ -69,22 +76,38 @@ internal fun PlayerRuntimeController.maybeRunTrackAfrForUndeclaredRate(format: F
     scope.launch {
         var switchStarted = false
         try {
-            val probe = scope.async(Dispatchers.IO) {
-                runCatching {
-                    FrameRateUtils.detectFrameRateWithOkHttpProbe(
-                        context = context,
-                        sourceUrl = url,
-                        headers = headers,
-                        mimeType = mimeType,
-                        filename = filename,
-                        isCancelled = { afrTrackGeneration != startGeneration }
-                    )
-                }.getOrNull()
+            val timed = withTimeoutOrNull(UNDECLARED_RATE_TIMING_HEAD_START_MS) {
+                mkvTimedFrameRate.filterNotNull().first()
             }
-            // Awaited rather than run inside the timeout: a blocked native read would hold the timeout up too.
-            val detection = withTimeoutOrNull(UNDECLARED_RATE_PROBE_TIMEOUT_MS) { probe.await() }
-            probe.cancel()
-            Log.i(PlayerRuntimeController.TAG, "AFR undeclared rate: probe fps=${detection?.raw}")
+            val detection = if (timed != null) {
+                Log.i(PlayerRuntimeController.TAG, "AFR undeclared rate: sample times fps=$timed")
+                timedFrameRateDetection(timed, format)
+            } else {
+                val probe = scope.async(Dispatchers.IO) {
+                    runCatching {
+                        FrameRateUtils.detectFrameRateWithOkHttpProbe(
+                            context = context,
+                            sourceUrl = url,
+                            headers = headers,
+                            mimeType = mimeType,
+                            filename = filename,
+                            isCancelled = { afrTrackGeneration != startGeneration }
+                        )
+                    }.getOrNull()
+                }
+                val timing = scope.async { mkvTimedFrameRate.filterNotNull().first() }
+                // Awaited rather than run inside the timeout: a blocked native read would hold the timeout up too.
+                val first = withTimeoutOrNull(UNDECLARED_RATE_PROBE_TIMEOUT_MS - UNDECLARED_RATE_TIMING_HEAD_START_MS) {
+                    select<FrameRateUtils.FrameRateDetection?> {
+                        probe.onAwait { it ?: timedFrameRateDetection(timing.await(), format) }
+                        timing.onAwait { timedFrameRateDetection(it, format) }
+                    }
+                }
+                probe.cancel()
+                timing.cancel()
+                Log.i(PlayerRuntimeController.TAG, "AFR undeclared rate: probe or sample times fps=${first?.raw}")
+                first
+            }
             if (detection != null && afrTrackGeneration == startGeneration) {
                 withContext(Dispatchers.Main) {
                     trackAfrAttemptedForCurrentStream = false
@@ -192,14 +215,31 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
         return
     }
 
+    // Decide first: when the display already shows the best mode there is nothing to hold or quiesce.
+    // Unknown settings or an unreadable display hold as before.
+    val settingsNow = lastAppliedPlayerSettings
+    val needsSwitch = settingsNow?.let {
+        FrameRateUtils.wouldSwitchDisplayMode(
+            activity = activity,
+            frameRate = FrameRateUtils.refineFrameRateForDisplay(
+                activity, FrameRateUtils.snapToStandardRate(rawFps), FrameRateUtils.prefers23976(rawFps)
+            ),
+            videoWidth = format.width.takeIf { w -> w > 0 },
+            videoHeight = format.height.takeIf { h -> h > 0 },
+            resolutionMatchingEnabled = it.resolutionMatchingEnabled,
+            allowSeamlessSwitch = it.afrAllowSeamlessSwitch
+        )
+    } ?: true
+    val userDelayMs = (settingsNow?.afrSettleDelaySeconds ?: 0) * 1000L
+
     trackAfrAttemptedForCurrentStream = true
-    afrTrackSwitchInFlight = true
+    afrTrackSwitchInFlight = needsSwitch
     // Engage the gate for real: playWhenReady is true from player build on
     // the normal path, so without this the player auto-starts at STATE_READY
     // and the stand-down at the start sites gates nothing. The guards above
     // ensure playback is not already running; setting an already-false value
     // is a no-op on the paused/startPaused flows.
-    _exoPlayer?.playWhenReady = false
+    if (needsSwitch) _exoPlayer?.playWhenReady = false
     // Stamp this attempt with the current stream's generation; the
     // finally block stands down if a per-stream reset happened meanwhile.
     val startGeneration = afrTrackGeneration
@@ -212,10 +252,10 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
 
     scope.launch {
         try {
-            withTimeoutOrNull(TRACK_AFR_ABSOLUTE_DEADLINE_MS) {
+            withTimeoutOrNull(trackAfrDeadlineMs(userDelayMs)) {
                 val playerSettings = playerSettingsDataStore.playerSettings.first()
                 val snapped = FrameRateUtils.snapToStandardRate(rawFps)
-                val prefer23976TrackBias = rawFps in 23.95f..23.999f
+                val prefer23976TrackBias = FrameRateUtils.prefers23976(rawFps)
                 val targetFrameRate = FrameRateUtils.refineFrameRateForDisplay(
                     activity = activity,
                     detectedFps = snapped,
@@ -263,7 +303,7 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
                 // Skip under an already-audio-disabled stream (don't fight the
                 // existing state machine) and under tunneling (the tunnel
                 // clock is the audio track).
-                if (!isAudioDisabledForCurrentPlayback && !playerSettings.effectiveTunnelingEnabled) {
+                if (needsSwitch && !isAudioDisabledForCurrentPlayback && !playerSettings.effectiveTunnelingEnabled) {
                     withContext(Dispatchers.Main) {
                         _exoPlayer?.let { p ->
                             p.trackSelectionParameters = p.trackSelectionParameters
@@ -281,7 +321,8 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
                     frameRate = targetFrameRate,
                     videoWidth = format.width.takeIf { it > 0 },
                     videoHeight = format.height.takeIf { it > 0 },
-                    resolutionMatchingEnabled = playerSettings.resolutionMatchingEnabled
+                    resolutionMatchingEnabled = playerSettings.resolutionMatchingEnabled,
+                    allowSeamlessSwitch = playerSettings.afrAllowSeamlessSwitch
                 )
 
                 if (result != null) {
@@ -299,11 +340,12 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
                     }
                     if (switchedDisplayMode) {
                         displayModeSwitched = true
-                        Log.d(
-                            PlayerRuntimeController.TAG,
-                            "Track AFR: display mode switched; holding playback start ${TRACK_AFR_SETTLE_HOLD_MS}ms"
+                        Log.d(PlayerRuntimeController.TAG, "Track AFR: display mode switched; holding playback until the TV settles")
+                        com.nuvio.tv.core.player.AfrSettle.awaitSettled(
+                            context,
+                            FrameRateUtils.lastSwitchRequestedAtElapsed,
+                            playerSettings.afrSettleDelaySeconds * 1000L
                         )
-                        delay(TRACK_AFR_SETTLE_HOLD_MS)
                         val sinceSwitchMs = if (switchStartElapsedMs > 0L) {
                             android.os.SystemClock.elapsedRealtime() - switchStartElapsedMs
                         } else {
@@ -319,7 +361,7 @@ internal fun PlayerRuntimeController.maybeRunTrackFormatAfr(rawFps: Float, forma
                 }
             } ?: Log.w(
                 PlayerRuntimeController.TAG,
-                "Track AFR exceeded absolute deadline (${TRACK_AFR_ABSOLUTE_DEADLINE_MS}ms); releasing start gate"
+                "Track AFR exceeded absolute deadline (${trackAfrDeadlineMs(userDelayMs)}ms); releasing start gate"
             )
         } finally {
             // Act only if this coroutine still belongs to the current

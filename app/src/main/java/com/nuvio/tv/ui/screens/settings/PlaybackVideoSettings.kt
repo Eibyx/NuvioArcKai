@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,12 +40,15 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.R
 import com.nuvio.tv.core.player.DisplayCapabilities
+import com.nuvio.tv.core.player.amlfel.AmlFelSupport
 import com.nuvio.tv.data.local.Dv7HandlingMode
 import com.nuvio.tv.data.local.FrameRateMatchingMode
 import com.nuvio.tv.data.local.MpvHardwareDecodeMode
 import com.nuvio.tv.data.local.PlayerPreference
 import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.ui.theme.NuvioTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 internal fun PlaybackVideoSection(
@@ -98,6 +102,31 @@ internal fun PlaybackVideoSection(
         titleTrailingIconTint = NuvioTheme.colors.Warning,
         enabled = enabled
     )
+    if (settings.frameRateMatchingMode != FrameRateMatchingMode.OFF && displayCapabilities.offersSeamlessRates) {
+        SettingsToggleRow(
+            title = stringResource(R.string.playback_afr_seamless_switch),
+            subtitle = stringResource(R.string.playback_afr_seamless_switch_sub),
+            checked = settings.afrAllowSeamlessSwitch,
+            onToggle = { onUpdate { setAfrAllowSeamlessSwitch(!settings.afrAllowSeamlessSwitch) } },
+            enabled = enabled
+        )
+    }
+    if (settings.frameRateMatchingMode != FrameRateMatchingMode.OFF) {
+        SettingsActionRow(
+            title = stringResource(R.string.playback_afr_settle_delay),
+            subtitle = stringResource(R.string.playback_afr_settle_delay_sub),
+            value = afrSettleDelayLabel(settings.afrSettleDelaySeconds),
+            enabled = enabled,
+            onClick = { onOpenDialog(PlaybackDialog.AFR_SETTLE_DELAY) }
+        )
+        SettingsToggleRow(
+            title = stringResource(R.string.playback_afr_allow_low_rates),
+            subtitle = stringResource(R.string.playback_afr_allow_low_rates_sub),
+            checked = settings.afrAllowLowRates,
+            onToggle = { onUpdate { setAfrAllowLowRates(!settings.afrAllowLowRates) } },
+            enabled = enabled
+        )
+    }
     AfrCapabilityWarningCard(
         snapshot = displayCapabilities,
         afrModeOn = settings.frameRateMatchingMode != FrameRateMatchingMode.OFF,
@@ -114,7 +143,7 @@ internal fun PlaybackVideoSection(
         SettingsActionRow(
             title = stringResource(R.string.dv7_handling_title),
             subtitle = null,
-            value = dv7HandlingModeLabel(settings.dv7HandlingMode),
+            value = dv7HandlingModeLabel(dv7ModeShown(settings.dv7HandlingMode, rememberNativeFelUsable())),
             enabled = enabled,
             onClick = { onOpenDialog(PlaybackDialog.DV7_HANDLING_MODE) }
         )
@@ -195,6 +224,21 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+/** Native FEL only works on the AM9 FEL kernel. Elsewhere a saved choice plays as Auto, so it shows as Auto and stays saved. */
+internal fun dv7ModeShown(saved: Dv7HandlingMode, nativeFelUsable: Boolean?): Dv7HandlingMode =
+    if (saved == Dv7HandlingMode.NATIVE_FEL && nativeFelUsable == false) Dv7HandlingMode.AUTO else saved
+
+internal fun dv7ModeChoices(nativeFelUsable: Boolean?): List<Dv7HandlingMode> =
+    Dv7HandlingMode.entries.filter { it != Dv7HandlingMode.NATIVE_FEL || nativeFelUsable == true }
+
+@Composable
+private fun rememberNativeFelUsable(): Boolean? {
+    val usable by produceState(initialValue = AmlFelSupport.nativeFelUsableCached()) {
+        if (value == null) value = withContext(Dispatchers.IO) { AmlFelSupport.nativeFelUsableOnce() }
+    }
+    return usable
 }
 
 @Composable
@@ -318,8 +362,17 @@ internal fun VideoSettingsDialogs(
             },
             onDismiss = onDismiss
         )
+        PlaybackDialog.AFR_SETTLE_DELAY -> AfrSettleDelayDialog(
+            selectedSeconds = settings.afrSettleDelaySeconds,
+            onSelected = { seconds ->
+                onUpdate { setAfrSettleDelaySeconds(seconds) }
+                onDismiss()
+            },
+            onDismiss = onDismiss
+        )
         PlaybackDialog.DV7_HANDLING_MODE -> Dv7HandlingModeDialog(
             selectedMode = settings.dv7HandlingMode,
+            nativeFelUsable = rememberNativeFelUsable(),
             onModeSelected = { mode ->
                 onUpdate { setDv7HandlingMode(mode) }
                 onDismiss()
@@ -373,12 +426,45 @@ private fun FrameRateMatchingDialog(
     )
 }
 
+private val AFR_SETTLE_DELAY_CHOICES = listOf(0, 3, 4, 5, 6, 8, 10)
+
+@Composable
+private fun afrSettleDelayLabel(seconds: Int): String =
+    if (seconds <= 0) stringResource(R.string.playback_afr_settle_delay_auto)
+    else stringResource(R.string.playback_afr_settle_delay_seconds, seconds)
+
+@Composable
+private fun AfrSettleDelayDialog(
+    selectedSeconds: Int,
+    onSelected: (Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val options = AFR_SETTLE_DELAY_CHOICES.map { seconds ->
+        SettingsPickerOption(
+            seconds,
+            afrSettleDelayLabel(seconds),
+            if (seconds == 0) stringResource(R.string.playback_afr_settle_delay_auto_sub) else null
+        )
+    }
+    SettingsSingleChoiceDialog(
+        title = stringResource(R.string.playback_afr_settle_delay),
+        options = options,
+        selectedValue = if (selectedSeconds in AFR_SETTLE_DELAY_CHOICES) selectedSeconds else 0,
+        onOptionSelected = onSelected,
+        onDismiss = onDismiss,
+        width = 460.dp,
+        maxHeight = 420.dp
+    )
+}
+
 @Composable
 private fun Dv7HandlingModeDialog(
     selectedMode: Dv7HandlingMode,
+    nativeFelUsable: Boolean?,
     onModeSelected: (Dv7HandlingMode) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val choices = dv7ModeChoices(nativeFelUsable)
     val options = listOf(
         SettingsPickerOption(
             Dv7HandlingMode.AUTO,
@@ -410,13 +496,13 @@ private fun Dv7HandlingModeDialog(
             stringResource(R.string.dv7_mode_native_fel),
             stringResource(R.string.dv7_mode_native_fel_desc)
         )
-    )
+    ).filter { it.value in choices }
 
     SettingsSingleChoiceDialog(
         title = stringResource(R.string.dv7_handling_title),
         subtitle = stringResource(R.string.dv7_handling_dialog_subtitle),
         options = options,
-        selectedValue = selectedMode,
+        selectedValue = dv7ModeShown(selectedMode, nativeFelUsable),
         onOptionSelected = onModeSelected,
         onDismiss = onDismiss,
         width = 460.dp,

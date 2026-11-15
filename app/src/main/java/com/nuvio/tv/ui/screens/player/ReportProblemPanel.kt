@@ -38,6 +38,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.tv.material3.MaterialTheme
 import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.R
+import com.nuvio.tv.data.repository.SentReportsStore
 import com.nuvio.tv.core.qr.QrCodeGenerator
 import com.nuvio.tv.core.report.recordingClock
 import com.nuvio.tv.data.repository.PlaybackIssueViewerChoices
@@ -80,7 +82,7 @@ internal enum class ReportWhen(val key: String, @StringRes val label: Int) {
     fun next(): ReportWhen = entries[(ordinal + 1) % entries.size]
 }
 
-private enum class ReportStep { What, Ready }
+private enum class ReportStep { Check, What, Ready }
 
 /** "HTTP 429" is the relay's daily limit, the one failure a viewer can do something about. */
 internal fun isReportLimitError(error: String?): Boolean = error?.contains("HTTP 429") == true
@@ -101,13 +103,24 @@ internal fun ReportProblemPanel(
     recordingMarks: Int = 0,
     onRecord: (() -> Unit)? = null,
     fileName: String? = null,
-    source: String? = null
+    source: String? = null,
+    check: PlayerErrorCard? = null,
+    onTryOtherSource: (() -> Unit)? = null
 ) {
     if (status == PlaybackIssueReportStatus.Saved || (status == PlaybackIssueReportStatus.Sent && !reportId.isNullOrBlank())) {
         ReportSentDialog(reportId.takeUnless { status == PlaybackIssueReportStatus.Saved }, followUrl, started, onClose)
         return
     }
-    var step by remember { mutableStateOf(if (afterRecording) ReportStep.Ready else ReportStep.What) }
+    val showCheck = check != null && !afterRecording && onTryOtherSource != null
+    var step by remember {
+        mutableStateOf(
+            when {
+                afterRecording -> ReportStep.Ready
+                showCheck -> ReportStep.Check
+                else -> ReportStep.What
+            }
+        )
+    }
     var backFromReady by remember { mutableStateOf(false) }
     val ticked = remember { mutableStateListOf<ReportProblem>().apply { if (!started) add(ReportProblem.WontStart) } }
     var happened by remember { mutableStateOf(ReportWhen.Now) }
@@ -132,6 +145,12 @@ internal fun ReportProblemPanel(
     ) {
         ReportEyebrow()
         when (step) {
+            ReportStep.Check -> WhatArcFoundStep(
+                card = check!!,
+                onTryOtherSource = { onTryOtherSource?.invoke() },
+                onSendAnyway = { step = ReportStep.What },
+                onCancel = onClose
+            )
             ReportStep.What -> WhatHappenedStep(
                 hint = keptMinutes?.let { pluralStringResource(R.plurals.report_panel_what_hint_kept, it, it) }
                     ?: stringResource(R.string.report_panel_what_hint),
@@ -169,7 +188,8 @@ internal fun ReportProblemPanel(
                                 problems = ticked.map { it.key },
                                 whenHappened = happened.key.takeIf { started },
                                 note = note.takeIf { it.isNotBlank() },
-                                includeLog = true
+                                includeLog = true,
+                                checkShown = check?.cause?.key?.takeIf { showCheck }
                             )
                         )
                     }
@@ -188,6 +208,52 @@ internal fun ReportProblemPanel(
             },
             onDismiss = { noteOpen = false }
         )
+    }
+}
+
+@Composable
+private fun ColumnScope.WhatArcFoundStep(
+    card: PlayerErrorCard,
+    onTryOtherSource: () -> Unit,
+    onSendAnyway: () -> Unit,
+    onCancel: () -> Unit
+) {
+    val tryRow = remember { FocusRequester() }
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        runCatching { tryRow.requestFocus() }
+    }
+    val hint = when {
+        card.sendAllowed -> stringResource(R.string.report_check_hint)
+        card.cause == PlayerErrorCause.ProviderNotice -> stringResource(R.string.report_check_blocked_hint_notice)
+        else -> stringResource(R.string.report_check_blocked_hint)
+    }
+    ReportHeading(stringResource(R.string.report_check_title), hint)
+    Column(
+        modifier = Modifier.padding(vertical = NuvioTheme.spacing.sm),
+        verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)
+    ) {
+        ReportFact(
+            title = card.title,
+            detail = listOfNotNull(card.message, card.facts).joinToString("\n"),
+            detailLines = REPORT_CHECK_DETAIL_LINES
+        )
+        SettingsActionRow(
+            title = stringResource(R.string.report_check_try_source),
+            subtitle = if (card.cause == PlayerErrorCause.ProviderNotice) stringResource(R.string.report_check_try_source_notice) else null,
+            trailingIcon = null,
+            jumpAnchor = false,
+            onClick = onTryOtherSource,
+            modifier = Modifier.focusRequester(tryRow)
+        )
+    }
+    SettingsDialogActionRow {
+        if (card.sendAllowed) {
+            SettingsDialogActionButton(text = stringResource(R.string.action_cancel), onClick = onCancel)
+            SettingsDialogActionButton(text = stringResource(R.string.report_check_send_anyway), onClick = onSendAnyway)
+        } else {
+            SettingsDialogActionButton(text = stringResource(R.string.action_close), onClick = onCancel)
+        }
     }
 }
 
@@ -289,7 +355,9 @@ internal fun ColumnScope.ReadyToSendStep(
     playbackRowHint: String = stringResource(R.string.report_item_playback_hint),
     showLogRow: Boolean = true,
     logTitle: String = stringResource(R.string.report_item_log),
-    logHint: String = stringResource(R.string.report_item_log_hint)
+    logHint: String = stringResource(R.string.report_item_log_hint),
+    logIncluded: Boolean = true,
+    onToggleLog: (() -> Unit)? = null
 ) {
     val sendButton = remember { FocusRequester() }
     val noteRow = remember { FocusRequester() }
@@ -317,7 +385,17 @@ internal fun ColumnScope.ReadyToSendStep(
             }
             if (showLogRow) {
                 item(key = "log") {
-                    ReportFact(logTitle, logHint)
+                    if (onToggleLog != null) {
+                        SettingsActionRow(
+                            title = logTitle,
+                            subtitle = logHint,
+                            trailingIcon = if (logIncluded) Icons.Default.Check else null,
+                            jumpAnchor = false,
+                            onClick = onToggleLog
+                        )
+                    } else {
+                        ReportFact(logTitle, logHint)
+                    }
                 }
             }
             if (titleLabel != null) {
@@ -338,6 +416,13 @@ internal fun ColumnScope.ReadyToSendStep(
     }
     Text(
         text = stringResource(R.string.report_never_sent),
+        style = MaterialTheme.typography.bodySmall,
+        color = NuvioTheme.extendedColors.textSecondary
+    )
+    val context = LocalContext.current
+    val following = remember { SentReportsStore.checkEnabledNow(context) }
+    Text(
+        text = stringResource(if (following) R.string.report_ready_follow else R.string.report_ready_follow_off),
         style = MaterialTheme.typography.bodySmall,
         color = NuvioTheme.extendedColors.textSecondary
     )
@@ -393,7 +478,7 @@ internal fun ReportHeading(title: String, hint: String? = null) {
 }
 
 @Composable
-private fun ReportFact(title: String, detail: String) {
+private fun ReportFact(title: String, detail: String, detailLines: Int = 2) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -411,7 +496,7 @@ private fun ReportFact(title: String, detail: String) {
             text = detail,
             style = MaterialTheme.typography.bodySmall,
             color = NuvioTheme.extendedColors.textSecondary,
-            maxLines = 2,
+            maxLines = detailLines,
             overflow = TextOverflow.Ellipsis
         )
     }
@@ -511,5 +596,6 @@ internal fun ReportSentDialog(code: String?, followUrl: String?, started: Boolea
 }
 
 private const val REPORT_NOTE_MAX = 1000
+private const val REPORT_CHECK_DETAIL_LINES = 7
 private const val REPORT_QR_PIXELS = 360
 private val REPORT_QR_SIZE = 150.dp

@@ -288,6 +288,8 @@ internal data class DolbyVisionConversionConfig(
     val nativeProfile7: Boolean = false,
     /** AUTO converting profile 7 the way manual Convert to DV8.1 does (mode 2, fallback to 1). */
     val autoMode2: Boolean = false,
+    /** The box has a Profile 5 Dolby Vision decoder: MKV HEVC tracks whose first RPU says Profile 5 are relabelled. */
+    val relabelUnlabelledP5: Boolean = false,
     val stats: DolbyVisionStatsSession = DolbyVisionConversionStats.session
 ) {
     /** Mode-2 default with per-RPU fallback to mode 1 (not for a forced mode). */
@@ -554,7 +556,7 @@ private class NativeOptimizedVideoTrackOutput(
         val rewriteSamples = converting && !(profile == 5 && !config.convertDv5Rpu)
         val shouldStripDovi = stripDvRpu && strippedCodecs != null && strippedCodecs != format.codecs
         
-        shouldProcess = rewriteSamples || shouldStripDovi || stripHdr10PlusSei
+        shouldProcess = carriesHevc(format) && (rewriteSamples || shouldStripDovi || stripHdr10PlusSei)
         codecs = outFormat.codecs
         delegate.format(outFormat)
     }
@@ -727,6 +729,14 @@ private class NativeOptimizedVideoTrackOutput(
             val m = Regex("^(?:dvhe|dvav|dvh1|dva1)\\.(\\d+)\\.")
                 .find(codecs.trim().lowercase()) ?: return null
             return m.groupValues[1].toIntOrNull()
+        }
+
+        // The sample rewrite reads every NAL as HEVC.
+        fun carriesHevc(format: Format): Boolean = when (format.sampleMimeType) {
+            MimeTypes.VIDEO_H265 -> true
+            MimeTypes.VIDEO_DOLBY_VISION ->
+                Regex("^(?:dvhe|dvh1)\\.").containsMatchIn(format.codecs.orEmpty().trim().lowercase())
+            else -> false
         }
 
         fun rewriteDvCodecString(codecs: String?): String? {

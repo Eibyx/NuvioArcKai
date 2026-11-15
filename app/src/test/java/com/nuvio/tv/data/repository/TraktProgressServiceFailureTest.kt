@@ -115,6 +115,7 @@ class TraktProgressServiceFailureTest {
 
         val authService = mockk<TraktAuthService>()
         every { authService.isCircuitClosed() } returns true
+        coEvery { authService.getCurrentAuthState() } returns TraktAuthState(accessToken = "access", refreshToken = "refresh")
         coEvery { authService.executeAuthorizedRequest<Any?>(any()) } coAnswers {
             firstArg<suspend (String) -> Response<Any?>>().invoke("Bearer test")
         }
@@ -146,7 +147,11 @@ class TraktProgressServiceFailureTest {
                 every { state } returns MutableStateFlow(auth)
                 coEvery { getCurrentState(any<Int>()) } returns auth
             },
-            savedWatchedMovies = TraktSavedWatchedMovies(FakeTraktWatchedMoviesStorage())
+            savedWatchedMovies = TraktSavedWatchedMovies(FakeTraktWatchedMoviesStorage()),
+            appVisibility = com.nuvio.tv.core.calendar.CalendarAppVisibility(),
+            screensaverController = io.mockk.mockk(relaxed = true) {
+                io.mockk.every { playbackActive } returns kotlinx.coroutines.flow.MutableStateFlow(false)
+            }
         )
     }
 

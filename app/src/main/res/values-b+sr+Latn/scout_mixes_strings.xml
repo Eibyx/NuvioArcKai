@@ -35,6 +35,7 @@
     <string name="scout_mixes_remix">Ponovo izmešaj</string>
     <string name="scout_mixes_unwatched_only">Samo neodgledano</string>
     <string name="scout_mixes_keep_playing">Nastavi puštanje</string>
+    <string name="scout_mixes_pick_sources">Biraj izvore umesto mene</string>
     <string name="scout_mixes_edit">Uredi miks</string>
     <string name="scout_mixes_in_this_mix">U ovom miksu</string>
     <string name="scout_mixes_next_in">Sledeće u miksu %1$s</string>
@@ -58,4 +59,8 @@
     <string name="scout_mixes_delete_title">Obrisati %1$s?</string>
     <string name="scout_mixes_delete_detail">Vaše serije i istorija gledanja ostaju kakve jesu</string>
     <string name="scout_mixes_delete_confirm">Obriši</string>
+    <string name="scout_mixes_menu_subtitle">Radnje za miks</string>
+    <string name="scout_mixes_menu_open">Otvori miks</string>
+    <string name="scout_mixes_menu_remove">Ukloni iz mojih miksova</string>
+    <string name="scout_mixes_menu_hide">Sakrij do sledeće godine</string>
 </resources>

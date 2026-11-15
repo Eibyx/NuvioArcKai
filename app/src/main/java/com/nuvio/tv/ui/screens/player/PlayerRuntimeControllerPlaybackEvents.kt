@@ -4,6 +4,7 @@ import com.nuvio.tv.core.player.dvmkv.DtsStreamType
 import com.nuvio.tv.core.util.TtffTrace
 import android.net.Uri
 import android.util.Log
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.SeekParameters
 import com.nuvio.tv.R
@@ -637,6 +638,13 @@ internal fun PlayerRuntimeController.startProgressUpdates() {
                             Log.d("ExoMemory", "Off-heap OS ahead: $footprintMb MB, active: $activeMb MB")
                         }
                     }
+                } else if (bufferMemoryKeeper != null) {
+                    // A paused film keeps loading until its buffer is full, so the box's memory is watched then too.
+                    val now = System.currentTimeMillis()
+                    if (now - lastBufferLogTimeMs >= 10_000) {
+                        lastBufferLogTimeMs = now
+                        bufferMemoryKeeper?.onTick(playing = false)
+                    }
                 }
             }
             reportServerPlayback()
@@ -703,9 +711,64 @@ internal fun PlayerRuntimeController.checkExoPlaybackOverrun(
     player.pause()
 }
 
+internal const val SOURCE_END_ERROR_WINDOW_MS = 2_000L
+
+/**
+ * A load or parse error within the last couple of seconds of a known duration: the
+ * film has been played out and only the tail of the file failed, typically a link that
+ * expired during a long pause.
+ */
+internal fun isSourceErrorAtEnd(
+    errorCode: Int,
+    positionMs: Long,
+    durationMs: Long,
+    isLive: Boolean
+): Boolean {
+    if (isLive || durationMs <= 0L) return false
+    if (errorCode < PlaybackException.ERROR_CODE_IO_UNSPECIFIED ||
+        errorCode >= PlaybackException.ERROR_CODE_DECODER_INIT_FAILED
+    ) {
+        return false
+    }
+    return positionMs >= durationMs - SOURCE_END_ERROR_WINDOW_MS
+}
+
+/** Ends the episode the way STATE_ENDED does when the source fails right at its end. */
+internal fun PlayerRuntimeController.finishOnSourceErrorAtEnd(
+    player: androidx.media3.exoplayer.ExoPlayer,
+    error: PlaybackException
+): Boolean {
+    if (!endDetectionArmed || !hasRenderedFirstFrame) return false
+    val positionMs = player.currentPosition
+    val durationMs = maxOf(player.duration, lastKnownDuration)
+    if (!isSourceErrorAtEnd(error.errorCode, positionMs, durationMs, player.isCurrentMediaItemLive)) return false
+    if (isPlaceholderPlayback() || !shouldTreatAsNaturalPlaybackCompletion(
+            hasRenderedFirstFrame = hasRenderedFirstFrame,
+            hasFatalError = !_uiState.value.error.isNullOrBlank(),
+            durationMs = durationMs
+        )
+    ) {
+        return false
+    }
+    exoSourceEndReached = true
+    Log.i(
+        PlayerRuntimeController.TAG,
+        "EXO_SOURCE_END: ${error.errorCodeName} at positionMs=$positionMs durationMs=$durationMs; " +
+            "finishing naturally host=${currentStreamUrl.safeHost()}"
+    )
+    errorRetryJob?.cancel()
+    _uiState.update { it.copy(playbackEnded = true, isBuffering = false) }
+    handleNaturalPlaybackEnded()
+    return true
+}
+
 internal fun PlayerRuntimeController.stopProgressUpdates() {
     progressJob?.cancel()
     progressJob = null
+}
+
+internal fun PlayerRuntimeController.stopMpvProgressUpdatesForPause() {
+    if (MpvStartupWatchdogPolicy.progressTickMayStop(hasRenderedFirstFrame)) stopProgressUpdates()
 }
 
 internal fun PlayerRuntimeController.startWatchProgressSaving() {
@@ -734,7 +797,7 @@ private fun PlayerRuntimeController.reportProvider(iptvSource: Boolean): String?
     )
 }
 
-private fun PlayerRuntimeController.reportSourceLine(): String? {
+internal fun PlayerRuntimeController.reportSourceLine(): String? {
     val iptv = LivePlaybackUiPolicy.isLiveContentType(contentType) || ReportText.isIptvLink(currentStreamUrl)
     return reportSourceNote(reportProvider(iptv), currentStreamDescription.takeUnless { iptv || isServerStream })
 }
@@ -797,6 +860,7 @@ internal fun PlayerRuntimeController.openReportPanel(afterRecording: Boolean = f
             reportPanelRecordingMarks = recorded?.marks ?: 0,
             reportPanelFileName = reportFileName(),
             reportPanelSource = reportSourceLine(),
+            reportPanelCheck = if (afterRecording) null else it.errorCard.matching(it.error),
             reportPanelTitle = title.takeUnless { LivePlaybackUiPolicy.isLiveContentType(contentType) }
                 ?.takeIf { name -> name.isNotBlank() }
                 ?.plus(episode),
@@ -840,10 +904,10 @@ internal fun PlayerRuntimeController.submitPlaybackIssueReport(choices: Playback
         )
     val audioTrack = state.audioTracks.reportTrackLabel(state.selectedAudioTrackIndex)
     val subtitleTrack = state.subtitleTracks.reportTrackLabel(state.selectedSubtitleTrackIndex)
-    val reportReason = PlayerStartupLoadingPolicy.loadingStallReportReason(
-        showLoadingOverlay = state.showLoadingOverlay,
+    val reportReason = PlayerStartupLoadingPolicy.reportReason(
         hasRenderedFirstFrame = hasRenderedFirstFrame,
         error = state.error,
+        wasPlaying = reportPanelResumeOnClose || hasActivePlayIntent(),
     )
     val loadingInput = buildPlaybackIssueLoadingInput(reportReason)
     val playbackAnalyticsInput = playbackAnalyticsDiagnostics.snapshot(
@@ -910,6 +974,9 @@ internal fun PlayerRuntimeController.submitPlaybackIssueReport(choices: Playback
         sourceDetail = currentStreamDescription.takeUnless { iptvSource || isServerStream }
     )
 
+    val filmFps = _exoPlayer?.videoFormat?.frameRate?.takeIf { it > 0f }
+    val measuredHz = com.nuvio.tv.core.player.DisplayRefreshMeter.latest?.takeIf { it.reliable }?.measuredHz
+    val arcMatching = currentPlayerSettingsForReport.frameRateMatchingMode.name
     val requestVersion = playbackIssueReportRequestVersion.incrementAndGet()
     _uiState.update {
         it.copy(
@@ -924,7 +991,8 @@ internal fun PlayerRuntimeController.submitPlaybackIssueReport(choices: Playback
             playbackIssueReportRepository.submit(
                 input.copy(
                     network = PlaybackReportFacts.network(appContext),
-                    box = PlaybackReportFacts.box(appContext)
+                    box = PlaybackReportFacts.box(appContext),
+                    display = PlaybackReportFacts.display(appContext, filmFps, arcMatching, measuredHz)
                 )
             )
         }
@@ -1112,7 +1180,7 @@ internal fun PlayerRuntimeController.getEffectiveDuration(position: Long): Long 
     val isEnded = if (isUsingMpvEngine()) {
         position >= (effectiveDuration - 500L)
     } else {
-        _exoPlayer?.playbackState == Player.STATE_ENDED || exoEndOverrunHandled
+        _exoPlayer?.playbackState == Player.STATE_ENDED || exoEndOverrunHandled || exoSourceEndReached
     }
     if (!isEnded && effectiveDuration < position) return 0L
 
@@ -1225,8 +1293,11 @@ internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, d
 
     val progress = currentWatchProgress(parentContentId, parentContentType, position, duration, System.currentTimeMillis())
         .copy(progressPercent = fallbackPercent)
+    val inMix = episodeShufflePlayback.inMix(profileId, contentId, currentVideoId)
+    val plan = watchProgressSavePlan(progress.isCompleted(), hasMarkedCurrentEpisodeCompleted)
+    if (plan == WatchProgressSavePlan.MARK_COMPLETED) hasMarkedCurrentEpisodeCompleted = true
 
-    scope.launch(kotlinx.coroutines.NonCancellable) {
+    scope.launch(NonCancellable + watchProgressSaveDispatcher) {
         try {
             val effectiveContentId = watchProgressRepository.normalizeParentContentId(
                 parentContentId = progress.contentId,
@@ -1234,9 +1305,11 @@ internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, d
                 profileId = profileId
             )
             val normalizedProgress = progress.copy(contentId = effectiveContentId)
-            if (normalizedProgress.isCompleted()) {
-                if (!hasMarkedCurrentEpisodeCompleted) {
-                    hasMarkedCurrentEpisodeCompleted = true
+            runCatching {
+                episodeShufflePlayback.noteMixPlay(profileId, normalizedProgress, inMix)
+            }
+            if (plan == WatchProgressSavePlan.MARK_COMPLETED || plan == WatchProgressSavePlan.ALREADY_COMPLETED) {
+                if (plan == WatchProgressSavePlan.MARK_COMPLETED) {
                     watchProgressRepository.markAsCompleted(
                         normalizedProgress,
                         profileId = profileId,
@@ -1244,7 +1317,7 @@ internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, d
                     )
                 }
                 runCatching { tvRecommendationManager.onProgressRemoved(normalizedProgress.contentId) }
-            } else if (!hasMarkedCurrentEpisodeCompleted) {
+            } else if (plan == WatchProgressSavePlan.SAVE_IN_PROGRESS) {
                 // Only save in-progress when the episode has not already been
                 // marked as completed during this playback session.  After
                 // natural playback completion the player can report stale
@@ -1263,6 +1336,18 @@ internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, d
         }
     }
 }
+
+private val watchProgressSaveDispatcher = Dispatchers.IO.limitedParallelism(1)
+
+internal enum class WatchProgressSavePlan { MARK_COMPLETED, ALREADY_COMPLETED, SAVE_IN_PROGRESS, SKIP }
+
+internal fun watchProgressSavePlan(completed: Boolean, alreadyMarkedCompleted: Boolean): WatchProgressSavePlan =
+    when {
+        completed && !alreadyMarkedCompleted -> WatchProgressSavePlan.MARK_COMPLETED
+        completed -> WatchProgressSavePlan.ALREADY_COMPLETED
+        !alreadyMarkedCompleted -> WatchProgressSavePlan.SAVE_IN_PROGRESS
+        else -> WatchProgressSavePlan.SKIP
+    }
 
 private fun PlayerRuntimeController.saveCloudLibraryProgress(
     position: Long,
@@ -1672,6 +1757,7 @@ internal fun PlayerRuntimeController.scheduleHideSubtitleDelayOverlay() {
 }
 
 internal fun PlayerRuntimeController.schedulePauseOverlay() {
+    maybeShowQmsHint()
     if (pauseDetails.holdsOverlay(_uiState.value.showPauseOverlay)) return
     pauseOverlayJob?.cancel()
 
@@ -1871,14 +1957,19 @@ fun PlayerRuntimeController.onEvent(
             dropPausedThumbnail()
             var pausedNow = false
             if (isUsingMpvEngine()) {
-                val playing = isPlaybackCurrentlyPlaying()
+                val playing = MpvStartupWatchdogPolicy.playPauseShouldPause(
+                    isPlaying = isPlaybackCurrentlyPlaying(),
+                    hasRenderedFirstFrame = hasRenderedFirstFrame
+                )
                 if (playing) {
                     userPausedManually = true
                     pausedNow = true
                     setPlaybackPaused(true)
-                    stopProgressUpdates()
+                    stopMpvProgressUpdatesForPause()
                     stopWatchProgressSaving()
                     emitPauseScrobbleForCurrentProgress()
+                    // Same as Exo's pause: a paused player left alone can be killed by the system.
+                    saveWatchProgress()
                     schedulePauseOverlay()
                 } else {
                     userPausedManually = false
@@ -2365,8 +2456,12 @@ fun PlayerRuntimeController.onEvent(
         PlayerEvent.OnShowSourcesPanel -> {
             showSourcesPanel()
         }
+        PlayerEvent.OnErrorOtherSources -> {
+            openSourcesFromErrorCard()
+        }
         PlayerEvent.OnDismissSourcesPanel -> {
             dismissSourcesPanel()
+            restoreErrorCardAfterSources()
         }
         PlayerEvent.OnReloadSourceStreams -> {
             loadSourceStreams(forceRefresh = true)
@@ -2375,6 +2470,7 @@ fun PlayerRuntimeController.onEvent(
             filterSourceStreamsByAddon(event.addonName)
         }
         is PlayerEvent.OnSourceStreamSelected -> {
+            _uiState.update { it.copy(errorCardBeforeSources = null) }
             switchToSourceStream(event.stream)
         }
         PlayerEvent.OnDismissTransientOverlay -> {
@@ -2466,6 +2562,8 @@ fun PlayerRuntimeController.onEvent(
         PlayerEvent.OnHideDisplayModeInfo -> {
             _uiState.update { it.copy(showDisplayModeInfo = false) }
         }
+        PlayerEvent.OnQmsHintTurnOff -> qmsHintAnswered(turnOff = true)
+        PlayerEvent.OnQmsHintKeep -> qmsHintAnswered(turnOff = false)
         PlayerEvent.OnDismissPauseOverlay -> {
             cancelPauseOverlay()
         }
@@ -2525,6 +2623,12 @@ fun PlayerRuntimeController.onEvent(
         }
         is PlayerEvent.OnSetSubtitleShadowOpacity -> {
             scope.launch { playerSettingsDataStore.setSubtitleShadowOpacity(event.opacity) }
+        }
+        is PlayerEvent.OnSetSubtitleShadowSize -> {
+            scope.launch { playerSettingsDataStore.setSubtitleShadowSize(event.size) }
+        }
+        is PlayerEvent.OnSetSubtitleImportedFont -> {
+            scope.launch { playerSettingsDataStore.setSubtitleImportedFont(event.id) }
         }
         is PlayerEvent.OnSetSubtitleOutlineColor -> {
             scope.launch { playerSettingsDataStore.setSubtitleOutlineColor(event.color) }

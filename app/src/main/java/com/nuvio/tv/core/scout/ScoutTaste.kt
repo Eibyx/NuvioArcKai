@@ -5,8 +5,11 @@ import android.util.Log
 import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.tmdb.TmdbService
+import com.nuvio.tv.core.util.ArcDispatchers
 import com.nuvio.tv.data.local.ScoutStore
 import com.nuvio.tv.data.remote.api.TmdbApi
+import com.nuvio.tv.domain.model.SCOUT_IMPORTED_TASTE_TITLES
+import com.nuvio.tv.domain.model.limitImported
 import com.nuvio.tv.domain.model.ScoutPick
 import com.nuvio.tv.domain.model.ScoutPool
 import com.nuvio.tv.domain.model.ScoutProfile
@@ -200,6 +203,15 @@ fun scoutTasteSummary(
     )
 }
 
+fun scoutCountryWeights(titles: List<ScoutTasteTitle>, ratings: Map<String, ScoutRatingEntry>): Map<String, Double> {
+    val countries = HashMap<String, Double>()
+    titles.forEach { title ->
+        val weight = scoutTasteWeight(ratings[title.contentId]?.rating)
+        if (weight > 0) title.countries.distinct().forEach { countries.merge(it, weight, Double::plus) }
+    }
+    return countries
+}
+
 /** The latest finished titles, plus everything rated on top. */
 fun scoutTasteTargets(watched: List<WatchedItem>, ratings: Collection<ScoutRatingEntry>): List<Pair<String, Boolean>> {
     val seen = watched.filter { it.contentId.isNotBlank() }.groupBy { it.contentId }
@@ -207,7 +219,7 @@ fun scoutTasteTargets(watched: List<WatchedItem>, ratings: Collection<ScoutRatin
         .sortedByDescending { it.watchedAt }
         .take(SCOUT_TASTE_TITLES)
         .map { it.contentId to (it.contentType.trim().lowercase() != "movie") }
-    val rated = ratings.sortedByDescending { it.ratedAt }
+    val rated = ratings.limitImported(SCOUT_IMPORTED_TASTE_TITLES).sortedByDescending { it.ratedAt }
         .map { it.title.id to (it.title.type.trim().lowercase() != "movie") }
     val ids = HashSet<String>()
     return (seen + rated).filter { ids.add(it.first) }
@@ -275,9 +287,9 @@ class ScoutTasteRepository @Inject constructor(
     }
 
     /** For the daily rebuild: the given titles, looked up only if they are not known yet. */
-    suspend fun fill(wanted: List<Pair<String, Boolean>>, now: Long): Map<String, ScoutTasteTitle> = lock.withLock {
-        withContext(Dispatchers.IO) {
-            val target = file(profileManager.activeProfileId.value)
+    suspend fun fill(wanted: List<Pair<String, Boolean>>, now: Long, profileId: Int = profileManager.activeProfileId.value): Map<String, ScoutTasteTitle> = lock.withLock {
+        withContext(ArcDispatchers.background) {
+            val target = file(profileId)
             val known = runCatching { adapter.fromJson(target.readText()).orEmpty() }.getOrDefault(emptyList())
                 .associateBy { it.contentId }.toMutableMap()
             val missing = wanted.filter { known[it.first].needsLookUp(now) }
@@ -288,6 +300,16 @@ class ScoutTasteRepository @Inject constructor(
             if (missing.isNotEmpty()) save(target, known.values.toList())
             wanted.mapNotNull { (id, _) -> known[id]?.takeIf { it.fetchedAt > 0 }?.let { id to it } }.toMap()
         }
+    }
+
+    /** How much each country's shows count in what the profile watched, from facts already on the box. No lookups. */
+    suspend fun countryWeights(): Map<String, Double> = withContext(Dispatchers.IO) {
+        val known = runCatching { adapter.fromJson(file(profileManager.activeProfileId.value).readText()).orEmpty() }
+            .getOrDefault(emptyList())
+        if (known.isEmpty()) return@withContext emptyMap()
+        val ratings = store.current().ratings
+        val wanted = scoutTasteTargets(watchProgress.tasteHistory.first(), ratings.values).map { it.first }.toSet()
+        scoutCountryWeights(known.filter { it.contentId in wanted }, ratings)
     }
 
     private fun save(target: File, titles: List<ScoutTasteTitle>) {

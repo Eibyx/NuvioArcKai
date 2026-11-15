@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Avaliações</string>
     <string name="scout_row_picked">Escolhidos para você</string>
     <string name="scout_row_picked_sub">Filmes e séries, atualizados uma vez por dia</string>
+    <string name="scout_row_genre">Fileiras por gênero</string>
+    <string name="scout_row_genre_sub">Sugestões agrupadas pelos gêneros que você curte</string>
     <string name="scout_row_because">Porque você assistiu…</string>
     <string name="scout_row_because_sub">Segue o que você terminou por último</string>
     <string name="scout_row_gems">Pérolas escondidas</string>
     <string name="scout_row_gems_sub">Títulos bem avaliados que pouca gente viu</string>
     <string name="scout_row_tiles">Mosaicos Scout</string>
     <string name="scout_row_tiles_sub">Me surpreenda, climas, décadas</string>
+    <string name="scout_row_mixes">Mixes</string>
+    <string name="scout_row_mixes_sub">Seus mixes salvos e o mix da data comemorativa</string>
     <string name="scout_ratings_enabled">Avaliar títulos</string>
     <string name="scout_ratings_enabled_sub">Mostra o botão Avaliar, os polegares no menu de pressionar e segurar e a pergunta depois de um filme</string>
     <string name="scout_ratings_off_note">Oculta o botão Avaliar, os polegares no menu e a pergunta depois de um filme. Suas avaliações continuam valendo.</string>
     <string name="scout_ask_enabled">Perguntar como foi depois de um filme</string>
     <string name="scout_ask_enabled_sub">Não é para mim, gostei ou amei ao sair do player</string>
+    <string name="scout_send_ratings">Enviar minhas avaliações aos trackers</string>
+    <string name="scout_send_ratings_sub">Não é para mim, Gostei e Amei vão para Trakt, Simkl, MDBList e WeTrakr como 3, 7 e 10 de 10. Uma avaliação que você mesmo deu em um tracker nunca é alterada. O Simkl só recebe títulos que você assistiu.</string>
+    <string name="scout_send_ratings_none">Nenhum tracker está conectado neste perfil, então nada é enviado ainda.</string>
+    <string name="scout_use_ratings">Usar minhas avaliações dos trackers</string>
+    <string name="scout_use_ratings_sub">As avaliações que você deu nos seus trackers viram polegares aqui: 9 ou 10 é Amei, 6 a 8 Gostei, 1 a 4 Não é para mim. Um polegar que você marca no Arc sempre prevalece.</string>
+    <string name="scout_thumb_from">De %1$s</string>
     <string name="scout_your_thumbs">Seus polegares</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="one">%1$d título avaliado. Abra para mudar ou desfazer</item>
@@ -82,4 +92,6 @@
     <string name="scout_leave_out">Excluir</string>
     <string name="scout_leave_out_sub">Gêneros que você nunca quer ver</string>
     <string name="scout_leave_out_none">Nenhum</string>
+    <string name="scout_menu_visible">Mostrar o Scout no menu</string>
+    <string name="scout_menu_visible_sub">As fileiras do Scout no Início têm seus próprios botões</string>
 </resources>

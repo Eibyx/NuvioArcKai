@@ -31,6 +31,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -176,6 +177,38 @@ class HomeWatchedTitlesPipelineTest {
 
         assertEquals(restructured.items, vm.catalogsMap.getValue(row.legacyKey()).items)
         assertNull(vm.watchedTitles.refillPages[row.legacyKey()])
+    }
+
+    @Test
+    fun `mark as watched works for an anime-type title and its tick is observed`() = runTest {
+        val vm = newViewModel()
+        val item = movie("kitsu:1").copy(type = ContentType.UNKNOWN, rawType = "anime")
+
+        vm.togglePosterSeriesWatched(item)
+        assertTrue("anime|kitsu:1" in vm._uiState.value.movieWatchedPending)
+        assertEquals(true, vm._uiState.value.movieWatchedStatus["anime|kitsu:1"])
+
+        vm.reconcilePosterStatusObserversPipeline(listOf(row("anime", hasMore = false, items = listOf(item))))
+        assertNotNull(vm.seriesWatchedObserverJob)
+    }
+
+    @Test
+    fun `the same shows in a new batch keep the running watched observer`() = runTest {
+        val vm = newViewModel()
+        val item = movie("kitsu:2").copy(type = ContentType.UNKNOWN, rawType = "anime")
+        val rows = listOf(row("anime", hasMore = false, items = listOf(item)))
+
+        vm.reconcilePosterStatusObserversPipeline(rows)
+        val first = vm.seriesWatchedObserverJob
+        vm.reconcilePosterStatusObserversPipeline(rows)
+
+        assertTrue(first === vm.seriesWatchedObserverJob)
+        assertTrue("anime|kitsu:2" in vm.lastSeriesWatchedItemKeys)
+
+        vm.reconcilePosterStatusObserversPipeline(
+            rows + row("more", hasMore = false, items = listOf(movie("kitsu:3").copy(type = ContentType.UNKNOWN, rawType = "anime")))
+        )
+        assertFalse(first === vm.seriesWatchedObserverJob)
     }
 
     private fun refreshingViewModel(current: CatalogRow, refreshed: CatalogRow): HomeViewModel {

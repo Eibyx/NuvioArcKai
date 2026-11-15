@@ -37,6 +37,7 @@
     <string name="scout_mixes_remix">Перемішати</string>
     <string name="scout_mixes_unwatched_only">Лише непереглянуті</string>
     <string name="scout_mixes_keep_playing">Продовжувати показ</string>
+    <string name="scout_mixes_pick_sources">Вибирати джерела за мене</string>
     <string name="scout_mixes_edit">Змінити мікс</string>
     <string name="scout_mixes_in_this_mix">У цьому міксі</string>
     <string name="scout_mixes_next_in">Далі в міксі %1$s</string>
@@ -61,4 +62,8 @@
     <string name="scout_mixes_delete_title">Видалити %1$s?</string>
     <string name="scout_mixes_delete_detail">Ваші серіали та історія перегляду залишаться без змін</string>
     <string name="scout_mixes_delete_confirm">Видалити</string>
+    <string name="scout_mixes_menu_subtitle">Дії з міксом</string>
+    <string name="scout_mixes_menu_open">Відкрити мікс</string>
+    <string name="scout_mixes_menu_remove">Видалити з моїх міксів</string>
+    <string name="scout_mixes_menu_hide">Сховати до наступного року</string>
 </resources>

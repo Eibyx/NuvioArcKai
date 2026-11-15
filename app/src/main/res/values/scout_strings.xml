@@ -13,17 +13,27 @@
     <string name="scout_settings_ratings">Ratings</string>
     <string name="scout_row_picked">Picked for you</string>
     <string name="scout_row_picked_sub">Movies and series, refreshed once a day</string>
+    <string name="scout_row_genre">Rows by genre</string>
+    <string name="scout_row_genre_sub">Picks grouped by the genres you like</string>
     <string name="scout_row_because">Because you watched…</string>
     <string name="scout_row_because_sub">Follows the last things you finished</string>
     <string name="scout_row_gems">Hidden gems</string>
     <string name="scout_row_gems_sub">Well rated titles few people have seen</string>
     <string name="scout_row_tiles">Scout tiles</string>
     <string name="scout_row_tiles_sub">Surprise me, moods, decades</string>
+    <string name="scout_row_mixes">Mixes</string>
+    <string name="scout_row_mixes_sub">Your saved mixes and the holiday mix in season</string>
     <string name="scout_ratings_enabled">Rate titles</string>
     <string name="scout_ratings_enabled_sub">Shows the Rate button, the thumbs in the long-press menu and the question after a film</string>
     <string name="scout_ratings_off_note">Hides the Rate button, the thumbs in the menu and the question after a film. Your ratings still count.</string>
     <string name="scout_ask_enabled">Ask how it was after a film</string>
     <string name="scout_ask_enabled_sub">Not for me, like or love when you leave the player</string>
+    <string name="scout_send_ratings">Send my ratings to trackers</string>
+    <string name="scout_send_ratings_sub">Not for me, like and love go to Trakt, Simkl, MDBList and WeTrakr as 3, 7 and 10 out of 10. A rating you gave on a tracker yourself is never changed. Simkl only gets titles you\'ve watched.</string>
+    <string name="scout_send_ratings_none">No tracker is signed in on this profile, so nothing is sent yet.</string>
+    <string name="scout_use_ratings">Use my tracker ratings</string>
+    <string name="scout_use_ratings_sub">Ratings you gave on your trackers become thumbs here: 9 or 10 is love, 6 to 8 like, 1 to 4 not for me. A thumb you press in Arc always wins.</string>
+    <string name="scout_thumb_from">From %1$s</string>
     <string name="scout_your_thumbs">Your thumbs</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="one">%1$d title rated. Open to change or undo</item>
@@ -82,4 +92,6 @@
     <string name="scout_leave_out">Leave out</string>
     <string name="scout_leave_out_sub">Genres you never want to see</string>
     <string name="scout_leave_out_none">None</string>
+    <string name="scout_menu_visible">Show Scout in the menu</string>
+    <string name="scout_menu_visible_sub">Scout\'s Home rows keep their own switches</string>
 </resources>

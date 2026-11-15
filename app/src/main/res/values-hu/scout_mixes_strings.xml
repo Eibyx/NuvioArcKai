@@ -33,6 +33,7 @@
     <string name="scout_mixes_remix">Újrakeverés</string>
     <string name="scout_mixes_unwatched_only">Csak a nem látottak</string>
     <string name="scout_mixes_keep_playing">Lejátszás folytatása</string>
+    <string name="scout_mixes_pick_sources">Források választása helyettem</string>
     <string name="scout_mixes_edit">Mix szerkesztése</string>
     <string name="scout_mixes_in_this_mix">Ebben a mixben</string>
     <string name="scout_mixes_next_in">Következő: %1$s</string>
@@ -55,4 +56,8 @@
     <string name="scout_mixes_delete_title">Törlöd: %1$s?</string>
     <string name="scout_mixes_delete_detail">A sorozataid és a megtekintési előzményeid változatlanok maradnak</string>
     <string name="scout_mixes_delete_confirm">Törlés</string>
+    <string name="scout_mixes_menu_subtitle">Mix műveletek</string>
+    <string name="scout_mixes_menu_open">Mix megnyitása</string>
+    <string name="scout_mixes_menu_remove">Eltávolítás a mixeim közül</string>
+    <string name="scout_mixes_menu_hide">Elrejtés jövő évig</string>
 </resources>

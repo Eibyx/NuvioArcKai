@@ -151,7 +151,8 @@ internal fun ScoutExclusions.withNotForMe(profile: ScoutProfile): ScoutExclusion
         tmdbKeys = tmdbKeys + out.filter { it.title.id.startsWith("tmdb:") }.map {
             (if (it.title.type.trim().lowercase() != "movie") "tv:" else "movie:") + it.title.id.removePrefix("tmdb:")
         },
-        genres = profile.settings.leaveOutGenres
+        genres = profile.settings.leaveOutGenres,
+        languages = scoutLeaveOutLanguageCodes(profile.settings.leaveOutLanguages)
     )
 }
 
@@ -233,7 +234,8 @@ class ScoutPicksFinder @Inject constructor(
         val rated = store.current().ratings.values.sumOf { it.ratedAt }
         val profile = engine.activeProfile()
         val moodsChecked = withContext(Dispatchers.IO) { moodAi.read(profile).moods.values.sumOf { it.checkedAt } }
-        return "$key|${tmdbSettings.settings.first().language}|${pool()?.builtAt}|$rated|$profile|$moodsChecked"
+        val limit = scoutLimit(context)?.code.orEmpty()
+        return "$key|${tmdbSettings.settings.first().language}|${pool()?.builtAt}|$rated|$profile|$moodsChecked|$limit"
     }
 
     /** A row built in the last day, without anything the profile has since seen or rated. */
@@ -402,6 +404,10 @@ class ScoutPicksFinder @Inject constructor(
             of(country) ?: of("US")
         }
     }.getOrNull()
+
+    /** One page of series for a ready-made mix, in the app's language. */
+    suspend fun discoverSeries(f: TmdbCollectionFilters, page: Int, sortBy: String): List<ScoutPick> =
+        discover(f, true, sortBy, page, tmdbSettings.settings.first().language)
 
     private suspend fun discover(f: TmdbCollectionFilters, tv: Boolean, sortBy: String?, page: Int, language: String): List<ScoutPick> {
         val key = com.nuvio.tv.core.tmdb.TmdbApiKey.current()

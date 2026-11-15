@@ -17,6 +17,7 @@ import com.nuvio.tv.data.trailer.isTrailerPreviewLinkExpired
 import com.nuvio.tv.data.trailer.isTrailerPreviewMissFresh
 import com.nuvio.tv.data.trailer.lookupTrailerPreview
 import com.nuvio.tv.data.trailer.shouldRetryTrailerPreviewAfterFailure
+import com.nuvio.tv.data.trailer.trailerPreviewLookupSettleMs
 import com.nuvio.tv.data.trailer.trailerPreviewMissTimestamp
 import com.nuvio.tv.data.trailer.trailerPreviewYtIds
 import com.nuvio.tv.domain.model.FocusedPosterTrailerPlaybackTarget
@@ -546,9 +547,9 @@ internal fun HomeViewModel.requestTrailerPreviewPipeline(
     // Keep bookkeeping on Main; repositories/extractors own their IO dispatchers.
     trailerPreviewJob = viewModelScope.launch {
         try {
-            // Debounce: wait for focus to settle before hitting network. 350ms starts prewarming
-            // ~250ms sooner than 600 on a deliberate pause, still past a scroll-flick (~<200ms).
-            delay(350)
+            // Wait for focus to settle before hitting network, as long as the trailer's own
+            // start delay allows.
+            delay(trailerPreviewLookupSettleMs(_uiState.value.focusedPosterBackdropExpandDelaySeconds * 1000L))
 
             // Only the LATEST request proceeds — all earlier ones are stale
             if (trailerPreviewRequestVersion != requestVersion) {
@@ -674,6 +675,8 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
         deferredEnrichItem = item
         return
     }
+    val stepWaitMs = focusStepPace.onFocus(System.nanoTime() / 1_000_000L)
+    val focusSettledAtMs = android.os.SystemClock.elapsedRealtime()
     if (pendingTmdbEnrichItemId != item.id) {
         tmdbEnrichFocusJob?.cancel()
         pendingTmdbEnrichItemId = null
@@ -711,7 +714,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
                 pendingTmdbEnrichItemId = item.id
                 tmdbEnrichFocusJob = viewModelScope.launch(Dispatchers.IO) {
                     delay(HomeViewModel.EXTERNAL_META_PREFETCH_FOCUS_DEBOUNCE_MS)
-                    prefetchFocusedDetails(item)
+                    prefetchFocusedDetails(item, focusSettledAtMs)
                 }
             }
             return
@@ -733,6 +736,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
     tmdbEnrichFocusJob = viewModelScope.launch(Dispatchers.IO) {
         if (_uiState.value.homeLayout != HomeLayout.MODERN)
                     delay(HomeViewModel.EXTERNAL_META_PREFETCH_FOCUS_DEBOUNCE_MS)
+        else if (stepWaitMs > 0) delay(stepWaitMs)
         if (pendingTmdbEnrichItemId != item.id) {
             if (_enrichingItemId.value == item.id) setEnrichingItemId(null)
             return@launch
@@ -745,7 +749,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
             if (!externalEnrichmentOutstanding(item.id)) {
                 if (_enrichingItemId.value == item.id) setEnrichingItemId(null)
                 // Still prefetch full meta in background for instant detail screen.
-                prefetchFocusedDetails(item)
+                prefetchFocusedDetails(item, focusSettledAtMs)
                 return@launch
             }
         }
@@ -842,7 +846,7 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
             }
 
             // Always prefetch full meta in background for instant detail screen loading.
-            prefetchFocusedDetails(item)
+            prefetchFocusedDetails(item, focusSettledAtMs)
 
             // Warm up watch progress pipeline so detail screen reads are fast.
             viewModelScope.launch {
@@ -871,16 +875,21 @@ internal fun HomeViewModel.onItemFocusPipeline(item: MetaPreview) {
  * succeeded is skipped here even when external metadata is outstanding. Adjacent prefetch is
  * opportunistic and the focused path retries anyway, so aligning the two would only add requests.
  */
-internal fun HomeViewModel.preloadAdjacentItemPipeline(item: MetaPreview) {
+internal fun HomeViewModel.preloadAdjacentItemPipeline(
+    item: MetaPreview,
+    jobs: AdjacentPrefetchJobs = adjacentItemPrefetchJobs,
+    warmDecode: Boolean = true
+) {
     if (startupGracePeriodActive) return
     if (pendingTmdbEnrichItemId == item.id) return
-    adjacentItemPrefetchJobs.launch(viewModelScope, item.id, Dispatchers.IO) {
+    val launchedAtMs = android.os.SystemClock.elapsedRealtime()
+    jobs.launch(viewModelScope, item.id, Dispatchers.IO) {
         val tmdbEnabledForCurrentLayout = currentTmdbSettings.enabled &&
             (_uiState.value.homeLayout != HomeLayout.MODERN || currentTmdbSettings.modernHomeEnabled)
-        delay(HomeViewModel.EXTERNAL_META_PREFETCH_ADJACENT_DEBOUNCE_MS)
+        delay(HomeViewModel.EXTERNAL_META_PREFETCH_ADJACENT_DEBOUNCE_MS + focusStepPace.extraWaitNowMs)
 
         val initialPreview = _enrichedPreviews.value[item.id] ?: item
-        val artworkWarmup = async { prefetchHeroArtwork(initialPreview) }
+        val artworkWarmup = async { prefetchHeroArtwork(initialPreview, warmDecode) }
         if (item.id in prefetchedTmdbIds || item.id in prefetchedExternalMetaIds) {
             artworkWarmup.await()
             return@launch
@@ -936,9 +945,10 @@ internal fun HomeViewModel.preloadAdjacentItemPipeline(item: MetaPreview) {
 
         val preview = _enrichedPreviews.value[item.id] ?: findCatalogItemById(item.id) ?: item
         artworkWarmup.await()
-        if (preview.backdropUrl != initialPreview.backdropUrl || preview.logo != initialPreview.logo) prefetchHeroArtwork(preview)
+        if (preview.backdropUrl != initialPreview.backdropUrl || preview.logo != initialPreview.logo) prefetchHeroArtwork(preview, warmDecode)
 
         // Background prefetch for detail screen cache.
+        delay(DetailsPrefetchRest.remainingMs(launchedAtMs, android.os.SystemClock.elapsedRealtime()))
         prefetchDetailsMeta(item)
 
     }
@@ -948,7 +958,7 @@ internal fun HomeViewModel.preloadAdjacentItemPipeline(item: MetaPreview) {
  * reuse; a session-long attempted-id marker must not suppress retries or expired data.
  * Runs in the caller's bounded focus/neighbour job, not a detached ViewModel job.
  */
-private suspend fun HomeViewModel.prefetchFocusedDetails(item: MetaPreview) {
+private suspend fun HomeViewModel.prefetchFocusedDetails(item: MetaPreview, settledAtMs: Long) {
     try {
     if (_uiState.value.homeLayout == HomeLayout.MODERN && currentTmdbSettings.enabled &&
         currentTmdbSettings.modernHomeEnabled && currentTmdbSettings.useDetails &&
@@ -965,6 +975,8 @@ private suspend fun HomeViewModel.prefetchFocusedDetails(item: MetaPreview) {
     }
     } catch (e: CancellationException) { throw e }
     catch (e: Exception) { Log.w(HomeViewModel.TAG, "Optional Home age rating unavailable: ${e.javaClass.simpleName}") }
+    // The hero's age rating above keeps its timing; only the details page's own fetch waits for the rest.
+    delay(DetailsPrefetchRest.remainingMs(settledAtMs, android.os.SystemClock.elapsedRealtime()))
     prefetchDetailsMeta(item)
 }
 
@@ -986,7 +998,7 @@ private suspend fun HomeViewModel.fetchFocusedHeroMetadata(
     tmdbMetadataService.fetchHomeHero(tmdbId, contentType, language)
 } else tmdbMetadataService.fetchEnrichment(tmdbId, contentType, language)
 
-private suspend fun HomeViewModel.prefetchHeroArtwork(preview: MetaPreview) {
+private suspend fun HomeViewModel.prefetchHeroArtwork(preview: MetaPreview, warmDecode: Boolean = true) {
     val candidates = landscapeHeroArtwork(preview.id, preview.poster, preview.background, preview.landscapePoster,
         widePoster = preview.poster.takeIf { preview.posterShape == com.nuvio.tv.domain.model.PosterShape.LANDSCAPE })
     val url = candidates.urls.firstOrNull() ?: return
@@ -996,7 +1008,7 @@ private suspend fun HomeViewModel.prefetchHeroArtwork(preview: MetaPreview) {
     val manager = appContext.getSystemService(android.content.Context.ACTIVITY_SERVICE) as android.app.ActivityManager
     val info = android.app.ActivityManager.MemoryInfo().also(manager::getMemoryInfo)
     val cache = appContext.imageLoader.memoryCache
-    val decode = !info.lowMemory && canWarmDecodedHero(manager.isLowRamDevice, info.totalMem, cache?.maxSize ?: 0, width, height)
+    val decode = warmDecode && !info.lowMemory && canWarmDecodedHero(manager.isLowRamDevice, info.totalMem, cache?.maxSize ?: 0, width, height)
     val request = HeroImageRequests.backdrop(appContext, url, width, height)
     if (!decode) request.memoryCachePolicy(coil3.request.CachePolicy.DISABLED)
         .decoderFactory(coil3.decode.BlackholeDecoder.Factory())
@@ -1223,15 +1235,18 @@ private fun HomeViewModel.updateCatalogItemWithMeta(itemId: String, meta: Meta) 
 
     // If external meta brought new trailerYtIds and the item has no trailer resolved yet, retry.
     // Only retry if this item is currently focused — avoid prefetching trailers for adjacent items.
-    if ((incomingTrailerYtIds.isNotEmpty() || gainsImdbId) &&
-        !trailerPreviewUrlsState.containsKey(itemId) && activeTrailerPreviewItemId == itemId) {
-        trailerPreviewNegativeCache.remove(itemId)
-        trailerPreviewLoadingIds.remove(itemId)
-        // Bump version so any in-flight pipeline for this item treats itself as stale
-        // and won't overwrite the retry result with a negative cache entry.
-        trailerPreviewRequestVersion++
-        val currentItem = findCatalogItemById(itemId) ?: return
-        requestTrailerPreviewPipeline(currentItem)
+    // Callers run on IO; the trailer bookkeeping is only touched on the main thread.
+    viewModelScope.launch(Dispatchers.Main.immediate) {
+        if ((incomingTrailerYtIds.isNotEmpty() || gainsImdbId) &&
+            !trailerPreviewUrlsState.containsKey(itemId) && activeTrailerPreviewItemId == itemId) {
+            trailerPreviewNegativeCache.remove(itemId)
+            trailerPreviewLoadingIds.remove(itemId)
+            // Bump version so any in-flight pipeline for this item treats itself as stale
+            // and won't overwrite the retry result with a negative cache entry.
+            trailerPreviewRequestVersion++
+            val currentItem = findCatalogItemById(itemId) ?: return@launch
+            requestTrailerPreviewPipeline(currentItem)
+        }
     }
 }
 

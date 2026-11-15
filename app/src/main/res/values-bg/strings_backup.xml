@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Имена и снимки</string>
     <string name="backup_part_settings">Настройки на Arc</string>
     <string name="backup_part_settings_sub">Scout, миниатюри, DNS, бутони на дистанционното и още</string>
+    <string name="backup_part_history">Библиотека и история на гледане</string>
+    <string name="backup_part_history_sub">Запазени заглавия, „Продължаване на гледането“ и отметки за гледано</string>
+    <string name="backup_part_history_signed_in">Акаунтът ви в Nuvio вече ги пази. Възстановяват се само на устройство, на което не сте влезли.</string>
+    <string name="backup_part_history_counts">Запазени заглавия: %1$d. Гледани: %2$d. Започнати: %3$d.</string>
+    <string name="backup_supporter">Статус на поддръжник</string>
+    <string name="backup_supporter_yes">Да. Цветовете и иконите на поддръжник се запазват.</string>
+    <string name="backup_supporter_no">Не</string>
     <string name="backup_part_secrets">Пароли и ключове</string>
     <string name="backup_part_secrets_saved">Заключени с вашия ПИН</string>
     <string name="backup_part_secrets_needs_pin">Нужен е ПИН кодът на копието</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Ако след това влезете в Nuvio, синхронизираните ви настройки може да заменят възстановените.</string>
     <string name="backup_restore_button">Възстанови</string>
     <string name="backup_pin_create_heading">Изберете ПИН за паролите и ключовете</string>
-    <string name="backup_pin_create_support">Поне 6 цифри. Arc не може да го възстанови, но всичко останало в копието се възстановява и без него.</string>
+    <string name="backup_pin_create_support">От 6 до 16 цифри. По-дълъг ПИН пази по-добре данните ви за вход, ако някой копира файла. Arc не може да възстанови ПИН кода, но всичко останало в копието се възстановява и без него.</string>
     <string name="backup_pin_create_back">Натиснете назад, за да архивирате без пароли</string>
     <string name="backup_pin_confirm_heading">Въведете ПИН кода отново</string>
     <string name="backup_pin_confirm_support">Същите цифри, за проверка.</string>

@@ -7,6 +7,7 @@ import com.nuvio.tv.core.player.ScoutMixSession
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.scout.ScoutMixLibrary
 import com.nuvio.tv.core.scout.ScoutMixSuggestions
+import com.nuvio.tv.core.scout.ScoutReadyMixBuilder
 import com.nuvio.tv.data.local.LayoutPreferenceDataStore
 import com.nuvio.tv.data.local.PlayerSettings
 import com.nuvio.tv.data.local.PlayerSettingsDataStore
@@ -21,6 +22,7 @@ import com.nuvio.tv.domain.model.ScoutMixPick
 import com.nuvio.tv.domain.model.ScoutMixShow
 import com.nuvio.tv.domain.model.Video
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -74,13 +76,23 @@ class ScoutMixViewModelTest {
     )
     private val allWatched = (1..6).map { 1 to it }.toSet()
 
-    private fun viewModel(keepPlaying: Boolean = true, seenEverything: Boolean = false): ScoutMixViewModel {
+    private fun viewModel(
+        keepPlaying: Boolean = true,
+        seenEverything: Boolean = false,
+        shows: List<ScoutMixShow> = listOf(show),
+        fits: (String) -> Boolean = { true }
+    ): ScoutMixViewModel {
         val store = mockk<ScoutMixStore>(relaxed = true)
-        every { store.observe(profile) } returns flowOf(listOf(ScoutMix("m", "Mix", listOf(show), keepPlaying = keepPlaying)))
+        val mixes = listOf(ScoutMix("m", "Mix", shows, keepPlaying = keepPlaying))
+        every { store.observe(profile) } returns flowOf(mixes)
+        every { store.observeAny(profile) } returns flowOf(mixes)
+        every { store.observeNoSources(profile) } returns flowOf(emptySet())
+        lastStore = store
         val library = mockk<ScoutMixLibrary>(relaxed = true)
         coEvery { library.episodes(profile, any()) } returns ScoutMixEpisodes(meta(), if (seenEverything) allWatched else emptySet())
         coEvery { library.episodes(profile, match { it.id == "tt2" }) } returns ScoutMixEpisodes(meta())
         coEvery { library.showFrom(offer) } returns added
+        coEvery { library.startedEpisode(any()) } returns null
         every { library.withSuggestedName(any(), any()) } answers { firstArg() }
         val suggestions = mockk<ScoutMixSuggestions>()
         coEvery { suggestions.forMix(any()) } returns listOf(offer)
@@ -91,8 +103,15 @@ class ScoutMixViewModelTest {
         val layout = mockk<LayoutPreferenceDataStore>(relaxed = true)
         every { layout.posterCardWidthDp } returns flowOf(126)
         every { layout.posterCardCornerRadiusDp } returns flowOf(12)
-        return ScoutMixViewModel(SavedStateHandle(mapOf("mixId" to "m")), store, library, suggestions, session, profiles, settings, layout)
+        val ready = mockk<ScoutReadyMixBuilder>(relaxed = true)
+        coEvery { ready.fittingLimit(any<ScoutMix>()) } answers {
+            val mix = firstArg<ScoutMix>()
+            mix.copy(shows = mix.shows.filter { fits(it.id) })
+        }
+        return ScoutMixViewModel(SavedStateHandle(mapOf("mixId" to "m")), store, library, suggestions, session, profiles, settings, ready, layout)
     }
+
+    private lateinit var lastStore: ScoutMixStore
 
     @Test
     fun `a mix with nothing left offers shows, and only then`() = runTest(mainDispatcherRule.dispatcher) {
@@ -105,6 +124,23 @@ class ScoutMixViewModelTest {
         runCurrent()
         assertTrue(going.state.value.pick is ScoutMixPick.Episode)
         assertTrue(going.state.value.offers.isEmpty())
+    }
+
+    @Test
+    fun `a saved mix shows and plays only what fits the rating limit`() = runTest(mainDispatcherRule.dispatcher) {
+        val vm = viewModel(shows = listOf(show, added), fits = { it == "tt1" })
+        runCurrent()
+        assertEquals(listOf("tt1"), vm.mix.value?.shows?.map { it.id })
+        val pick = vm.state.value.pick as ScoutMixPick.Episode
+        assertEquals("tt1", pick.show.id)
+    }
+
+    @Test
+    fun `a saved mix with nothing that fits offers no episode`() = runTest(mainDispatcherRule.dispatcher) {
+        val vm = viewModel(fits = { false })
+        runCurrent()
+        assertTrue(vm.mix.value?.shows.orEmpty().isEmpty())
+        assertFalse(vm.state.value.pick is ScoutMixPick.Episode)
     }
 
     @Test
@@ -219,11 +255,79 @@ class ScoutMixViewModelTest {
     }
 
     @Test
+    fun `the episode that is up next is never also in the queue`() = runTest(mainDispatcherRule.dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+        repeat(3) {
+            vm.play()
+            session.returnFromPlayer("tt1", ScoutMixReturn.ENDED)
+            vm.onShown()
+            runCurrent()
+            val pick = vm.state.value.pick as ScoutMixPick.Episode
+            assertFalse(vm.state.value.coming.any { it.key == pick.key })
+            vm.stop()
+        }
+    }
+
+    @Test
+    fun `the row lists each episode once even when the queue repeats the pick`() {
+        val episodes = meta().videos.map { ScoutMixPick.Episode(show, meta(), it) }
+        val tiles = mixQueueTiles(episodes[1], listOf(episodes[1], episodes[2], episodes[2], episodes[3]))
+        assertEquals(listOf(episodes[1].key, episodes[2].key, episodes[3].key), tiles.map { it.key })
+        assertEquals(listOf(episodes[2].key), comingWithout(listOf(episodes[1], episodes[2]), episodes[1]).map { it.key })
+        assertEquals(2, comingWithout(listOf(episodes[1], episodes[2]), ScoutMixPick.AllSeen).size)
+    }
+
+    @Test
     fun `with Keep playing off the player's card waits to be pressed`() = runTest(mainDispatcherRule.dispatcher) {
         val vm = viewModel(keepPlaying = false)
         runCurrent()
         val first = vm.play()!!
         runCurrent()
         assertFalse(session.upNextFor(profile, "tt1", first.video.id)!!.startsByItself)
+    }
+
+    @Test
+    fun `an episode without links is left out and the next one plays`() = runTest(mainDispatcherRule.dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+        val first = vm.play()!!
+        assertTrue(session.noSources("tt1", first.video.id))
+        vm.onShown()
+        runCurrent()
+
+        val started = vm.start.first()
+        assertTrue(started.video.id != first.video.id)
+        assertEquals(first.video.id, vm.state.value.noLink?.video?.id)
+        assertFalse(vm.state.value.noLinkStopped)
+        coVerify { lastStore.markNoSources("tt1", first.video.id) }
+    }
+
+    @Test
+    fun `three episodes in a row without links stop the mix`() = runTest(mainDispatcherRule.dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+        var current = vm.play()!!
+        repeat(2) {
+            assertTrue(session.noSources("tt1", current.video.id))
+            vm.onShown()
+            runCurrent()
+            current = vm.start.first()
+            assertFalse(vm.state.value.noLinkStopped)
+        }
+        assertTrue(session.noSources("tt1", current.video.id))
+        vm.onShown()
+        runCurrent()
+        assertTrue(vm.state.value.noLinkStopped)
+        assertFalse(session.active)
+    }
+
+    @Test
+    fun `a link for another episode does not count as no links`() {
+        session.start(profile, "m", "tt1", "tt1:1:1")
+        assertFalse(session.noSources("tt1", "tt1:1:2"))
+        assertFalse(session.noSources("tt9", "tt1:1:1"))
+        assertTrue(session.noSources("tt1", "tt1:1:1"))
+        assertEquals(ScoutMixReturn.NO_SOURCES, session.finish())
     }
 }

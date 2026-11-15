@@ -2,6 +2,7 @@ package com.nuvio.tv.ui.screens.home
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import com.nuvio.tv.ui.util.StableList
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -71,6 +72,20 @@ class PreparedHeroSceneTest {
         assertNull(prepared.value.trailerUrl)
     }
 
+    private fun timeLeft(owner: String, text: String) = scene(owner).copy(
+        preview = HeroPreview(
+            title = "Film", logo = null, description = null, contentTypeText = null, yearText = null,
+            secondaryHighlightText = text, imdbText = null, genres = StableList(emptyList()),
+            poster = null, backdrop = null, imageUrl = null
+        )
+    )
+
+    @Test fun `time left follows the row while the same title stays in the hero`() {
+        val shown = timeLeft("cw", "2H 39M LEFT")
+        assertEquals("2H 35M LEFT", presentedHeroScene(shown, timeLeft("cw", "2H 35M LEFT")).preview?.secondaryHighlightText)
+        assertEquals("2H 39M LEFT", presentedHeroScene(shown, timeLeft("other", "1H LEFT")).preview?.secondaryHighlightText)
+    }
+
     @Test fun `nothing prepared yet shows the neutral hero of the requested title`() {
         val request = mutableStateOf<State<ModernHeroSceneState>>(
             mutableStateOf(scene("spider", play = true, url = "https://trailer/spider.mp4"))
@@ -79,5 +94,21 @@ class PreparedHeroSceneTest {
         assertEquals("spider", prepared.value.artwork.ownerKey)
         assertNull(prepared.value.heroBackdrop)
         assertTrue(prepared.value.shouldPlayTrailer)
+    }
+
+    private fun withLogo(logo: String?) = scene("spider").copy(
+        preview = HeroPreview("Spider", logo, null, null, yearText = null, imdbText = null,
+            genres = StableList(emptyList()), poster = null, backdrop = null, imageUrl = null)
+    )
+
+    @Test fun `a title shown before its logo keeps the slot for the logo instead of showing text first`() {
+        assertTrue(withLogo("https://img/logo.png").neutralHero().logoPending)
+        assertFalse(withLogo(null).neutralHero().logoPending)
+        assertFalse(withLogo(" ").neutralHero().logoPending)
+    }
+
+    @Test fun `a pending logo stays with the shown title when the request changes`() {
+        val shown = withLogo("https://img/logo.png").neutralHero()
+        assertTrue(presentedHeroScene(shown, withLogo("https://img/logo.png")).logoPending)
     }
 }

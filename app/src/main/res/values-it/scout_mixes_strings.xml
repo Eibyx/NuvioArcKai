@@ -35,6 +35,7 @@
     <string name="scout_mixes_remix">Rimescola</string>
     <string name="scout_mixes_unwatched_only">Solo non visti</string>
     <string name="scout_mixes_keep_playing">Continua a riprodurre</string>
+    <string name="scout_mixes_pick_sources">Scegli le sorgenti per me</string>
     <string name="scout_mixes_edit">Modifica mix</string>
     <string name="scout_mixes_in_this_mix">In questo mix</string>
     <string name="scout_mixes_next_in">Prossimo in %1$s</string>
@@ -58,4 +59,8 @@
     <string name="scout_mixes_delete_title">Eliminare %1$s?</string>
     <string name="scout_mixes_delete_detail">Le tue serie e la cronologia restano come sono</string>
     <string name="scout_mixes_delete_confirm">Elimina</string>
+    <string name="scout_mixes_menu_subtitle">Azioni del mix</string>
+    <string name="scout_mixes_menu_open">Apri mix</string>
+    <string name="scout_mixes_menu_remove">Rimuovi dai miei mix</string>
+    <string name="scout_mixes_menu_hide">Nascondi fino al prossimo anno</string>
 </resources>

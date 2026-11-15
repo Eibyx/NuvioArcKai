@@ -29,7 +29,7 @@ sealed class Screen(val route: String) {
             return "detail/$encodedItemId/$encodedItemType?addonBaseUrl=$encodedAddon&returnFocusSeason=${returnFocusSeason ?: ""}&returnFocusEpisode=${returnFocusEpisode ?: ""}&returnToHomeOnBack=$returnToHomeOnBack&heroBackdropUrl=$encodedHeroBackdrop&playOnLoad=$playOnLoad&manualSelection=$manualSelection&heroLogoUrl=$encodedHeroLogo"
         }
     }
-    data object Stream : Screen("stream/{videoId}/{contentType}/{title}?poster={poster}&backdrop={backdrop}&logo={logo}&season={season}&episode={episode}&episodeName={episodeName}&genres={genres}&year={year}&contentId={contentId}&contentName={contentName}&runtime={runtime}&manualSelection={manualSelection}&returnToDetailOnBack={returnToDetailOnBack}&returnToHomeOnBack={returnToHomeOnBack}&startFromBeginning={startFromBeginning}&contentLanguage={contentLanguage}&profileId={profileId}") {
+    data object Stream : Screen("stream/{videoId}/{contentType}/{title}?poster={poster}&backdrop={backdrop}&logo={logo}&season={season}&episode={episode}&episodeName={episodeName}&genres={genres}&year={year}&contentId={contentId}&contentName={contentName}&runtime={runtime}&manualSelection={manualSelection}&returnToDetailOnBack={returnToDetailOnBack}&returnToHomeOnBack={returnToHomeOnBack}&startFromBeginning={startFromBeginning}&contentLanguage={contentLanguage}&profileId={profileId}&pickForMe={pickForMe}") {
         private fun encode(value: String): String =
             URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
@@ -53,7 +53,8 @@ sealed class Screen(val route: String) {
             returnToHomeOnBack: Boolean = false,
             startFromBeginning: Boolean = false,
             contentLanguage: String? = null,
-            profileId: Int? = null
+            profileId: Int? = null,
+            pickForMe: Boolean = false
         ): String {
             val encodedVideoId = encode(videoId)
             val encodedContentTypePath = encode(contentType)
@@ -67,10 +68,10 @@ sealed class Screen(val route: String) {
             val encodedContentId = contentId?.let { encode(it) } ?: ""
             val encodedContentName = contentName?.let { encode(it) } ?: ""
             val encodedContentLanguage = contentLanguage?.let { encode(it) } ?: ""
-            return "stream/$encodedVideoId/$encodedContentTypePath/$encodedTitle?poster=$encodedPoster&backdrop=$encodedBackdrop&logo=$encodedLogo&season=${season ?: ""}&episode=${episode ?: ""}&episodeName=$encodedEpisodeName&genres=$encodedGenres&year=$encodedYear&contentId=$encodedContentId&contentName=$encodedContentName&runtime=${runtime ?: ""}&manualSelection=$manualSelection&returnToDetailOnBack=$returnToDetailOnBack&returnToHomeOnBack=$returnToHomeOnBack&startFromBeginning=$startFromBeginning&contentLanguage=$encodedContentLanguage&profileId=${profileId ?: ""}"
+            return "stream/$encodedVideoId/$encodedContentTypePath/$encodedTitle?poster=$encodedPoster&backdrop=$encodedBackdrop&logo=$encodedLogo&season=${season ?: ""}&episode=${episode ?: ""}&episodeName=$encodedEpisodeName&genres=$encodedGenres&year=$encodedYear&contentId=$encodedContentId&contentName=$encodedContentName&runtime=${runtime ?: ""}&manualSelection=$manualSelection&returnToDetailOnBack=$returnToDetailOnBack&returnToHomeOnBack=$returnToHomeOnBack&startFromBeginning=$startFromBeginning&contentLanguage=$encodedContentLanguage&profileId=${profileId ?: ""}&pickForMe=$pickForMe"
         }
     }
-    data object Player : Screen("player/{streamUrl}/{title}?streamName={streamName}&year={year}&headers={headers}&contentId={contentId}&contentType={contentType}&contentName={contentName}&poster={poster}&backdrop={backdrop}&logo={logo}&videoId={videoId}&season={season}&episode={episode}&episodeTitle={episodeTitle}&bingeGroup={bingeGroup}&autoPlayNav={autoPlayNav}&returnToDetailOnBack={returnToDetailOnBack}&returnToHomeOnBack={returnToHomeOnBack}&filename={filename}&videoHash={videoHash}&videoSize={videoSize}&startFromBeginning={startFromBeginning}&addonName={addonName}&addonLogo={addonLogo}&streamDescription={streamDescription}&infoHash={infoHash}&fileIdx={fileIdx}&sources={sources}&contentLanguage={contentLanguage}&runtimeMinutes={runtimeMinutes}&cloudSessionToken={cloudSessionToken}&launchStartedAtMs={launchStartedAtMs}&profileId={profileId}&audioDelayMs={audioDelayMs}&audioDelayLanguage={audioDelayLanguage}") {
+    data object Player : Screen("player/{streamUrl}/{title}?streamName={streamName}&year={year}&headers={headers}&contentId={contentId}&contentType={contentType}&contentName={contentName}&poster={poster}&backdrop={backdrop}&logo={logo}&videoId={videoId}&season={season}&episode={episode}&episodeTitle={episodeTitle}&bingeGroup={bingeGroup}&autoPlayNav={autoPlayNav}&returnToDetailOnBack={returnToDetailOnBack}&returnToHomeOnBack={returnToHomeOnBack}&filename={filename}&videoHash={videoHash}&videoSize={videoSize}&startFromBeginning={startFromBeginning}&addonName={addonName}&addonLogo={addonLogo}&streamDescription={streamDescription}&infoHash={infoHash}&fileIdx={fileIdx}&sources={sources}&contentLanguage={contentLanguage}&runtimeMinutes={runtimeMinutes}&cloudSessionToken={cloudSessionToken}&launchStartedAtMs={launchStartedAtMs}&profileId={profileId}&audioDelayMs={audioDelayMs}&audioDelayLanguage={audioDelayLanguage}&fromLinkCache={fromLinkCache}") {
         private fun encode(value: String): String =
             URLEncoder.encode(value, "UTF-8").replace("+", "%20")
 
@@ -111,7 +112,8 @@ sealed class Screen(val route: String) {
             launchStartedAtMs: Long = SystemClock.elapsedRealtime(),
             profileId: Int? = null,
             audioDelayMs: Int? = null,
-            audioDelayLanguage: String? = null
+            audioDelayLanguage: String? = null,
+            fromLinkCache: Boolean = false
         ): String {
             val encodedUrl = encode(streamUrl)
             val encodedTitle = encode(title)
@@ -139,7 +141,7 @@ sealed class Screen(val route: String) {
             val encodedContentLanguage = contentLanguage?.let { encode(it) } ?: ""
             val encodedCloudSessionToken = cloudSessionToken?.let { encode(it) } ?: ""
             val encodedAudioDelayLanguage = audioDelayLanguage?.let { encode(it) } ?: ""
-            return "player/$encodedUrl/$encodedTitle?streamName=$encodedStreamName&year=$encodedYear&headers=$encodedHeaders&contentId=$encodedContentId&contentType=$encodedContentType&contentName=$encodedContentName&poster=$encodedPoster&backdrop=$encodedBackdrop&logo=$encodedLogo&videoId=$encodedVideoId&season=${season ?: ""}&episode=${episode ?: ""}&episodeTitle=$encodedEpisodeTitle&bingeGroup=$encodedBingeGroup&autoPlayNav=$autoPlayNav&returnToDetailOnBack=$returnToDetailOnBack&returnToHomeOnBack=$returnToHomeOnBack&filename=$encodedFilename&videoHash=$encodedVideoHash&videoSize=${videoSize ?: ""}&startFromBeginning=$startFromBeginning&addonName=$encodedAddonName&addonLogo=$encodedAddonLogo&streamDescription=$encodedStreamDescription&infoHash=$encodedInfoHash&fileIdx=${fileIdx ?: ""}&sources=$encodedSources&contentLanguage=$encodedContentLanguage&runtimeMinutes=${runtimeMinutes ?: ""}&cloudSessionToken=$encodedCloudSessionToken&launchStartedAtMs=$launchStartedAtMs&profileId=${profileId ?: ""}&audioDelayMs=${audioDelayMs ?: ""}&audioDelayLanguage=$encodedAudioDelayLanguage"
+            return "player/$encodedUrl/$encodedTitle?streamName=$encodedStreamName&year=$encodedYear&headers=$encodedHeaders&contentId=$encodedContentId&contentType=$encodedContentType&contentName=$encodedContentName&poster=$encodedPoster&backdrop=$encodedBackdrop&logo=$encodedLogo&videoId=$encodedVideoId&season=${season ?: ""}&episode=${episode ?: ""}&episodeTitle=$encodedEpisodeTitle&bingeGroup=$encodedBingeGroup&autoPlayNav=$autoPlayNav&returnToDetailOnBack=$returnToDetailOnBack&returnToHomeOnBack=$returnToHomeOnBack&filename=$encodedFilename&videoHash=$encodedVideoHash&videoSize=${videoSize ?: ""}&startFromBeginning=$startFromBeginning&addonName=$encodedAddonName&addonLogo=$encodedAddonLogo&streamDescription=$encodedStreamDescription&infoHash=$encodedInfoHash&fileIdx=${fileIdx ?: ""}&sources=$encodedSources&contentLanguage=$encodedContentLanguage&runtimeMinutes=${runtimeMinutes ?: ""}&cloudSessionToken=$encodedCloudSessionToken&launchStartedAtMs=$launchStartedAtMs&profileId=${profileId ?: ""}&audioDelayMs=${audioDelayMs ?: ""}&audioDelayLanguage=$encodedAudioDelayLanguage&fromLinkCache=$fromLinkCache"
         }
     }
     data object Search : Screen("search")
@@ -170,8 +172,14 @@ sealed class Screen(val route: String) {
     data object ScoutTaste : Screen("scout_taste")
     data object ScoutQuickStart : Screen("scout_quick_start")
     data object ScoutWords : Screen("scout_words")
-    data object ScoutMix : Screen("scout_mix/{mixId}") {
-        fun createRoute(mixId: String): String = "scout_mix/${URLEncoder.encode(mixId, "UTF-8")}"
+    data object ScoutMix : Screen("scout_mix/{mixId}?play={play}") {
+        fun createRoute(mixId: String, play: Boolean = false): String =
+            "scout_mix/${URLEncoder.encode(mixId, "UTF-8")}" + if (play) "?play=1" else ""
+    }
+    data object ScoutMixes : Screen("scout_mixes")
+    data object ScoutMixOwn : Screen("scout_mix_own?recipe={recipe}") {
+        fun createRoute(recipe: String?): String =
+            "scout_mix_own" + (recipe?.let { "?recipe=" + URLEncoder.encode(it, "UTF-8") } ?: "")
     }
     data object ExperienceModeSelection : Screen("experience_mode_selection")
     data object LayoutSelection : Screen("layout_selection")

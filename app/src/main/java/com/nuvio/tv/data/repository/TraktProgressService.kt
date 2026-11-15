@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
@@ -57,6 +58,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
@@ -92,10 +94,13 @@ class TraktProgressService @Inject constructor(
     private val profileManager: ProfileManager,
     private val watchedSeriesStateHolder: com.nuvio.tv.data.local.WatchedSeriesStateHolder,
     private val traktAuthDataStore: com.nuvio.tv.data.local.TraktAuthDataStore,
-    private val savedWatchedMovies: TraktSavedWatchedMovies
+    private val savedWatchedMovies: TraktSavedWatchedMovies,
+    private val appVisibility: com.nuvio.tv.core.calendar.CalendarAppVisibility,
+    private val screensaverController: com.nuvio.tv.core.player.ScreensaverController
 ) {
     companion object {
         private const val TAG = "TraktProgressSvc"
+        private const val PLAYBACK_REFRESH_INTERVAL_MS = 5 * 60_000L
         private const val WATCHED_PAGE_LIMIT = 250
         private const val PROFILE_READY_WAIT_MS = 5_000L
         private const val WATCHED_MAX_PAGES = 1_000
@@ -584,6 +589,7 @@ class TraktProgressService @Inject constructor(
         }
             .filterNotNull()
             .distinctUntilChanged()
+            .flowOn(Dispatchers.Default)
     }
 
     fun observeRemoteProgressLoaded(): Flow<Boolean> {
@@ -704,6 +710,12 @@ class TraktProgressService @Inject constructor(
             .map { state -> state[cacheKey]?.hasCompletedSnapshot == true }
             .distinctUntilChanged()
     }
+
+    /** The show's episode map once Trakt has answered for it in full; null before that. */
+    fun loadedEpisodeProgress(contentId: String): Map<Pair<Int, Int>, WatchProgress>? =
+        episodeProgressState.value[canonicalLookupKey(contentId)]
+            ?.takeIf { it.hasCompletedSnapshot }
+            ?.progress
 
     suspend fun getEpisodeProgressSnapshot(
         contentId: String
@@ -828,6 +840,9 @@ class TraktProgressService @Inject constructor(
                 }
         }
     }
+
+    /** Watched movie keys as Trakt returned or accepted them, without optimistic progress. */
+    fun observeReportedWatchedMovieIds(): Flow<Set<String>> = watchedMoviesState.asStateFlow()
 
     suspend fun markAsWatched(
         progress: WatchProgress,
@@ -1163,9 +1178,15 @@ class TraktProgressService @Inject constructor(
         refreshNow()
     }
 
+    /** Paused while Arc is not on screen (one check on the way back), and every few minutes while a film plays. */
     private fun refreshTicker(): Flow<Unit> = flow {
         while (true) {
             delay(refreshIntervalMs)
+            if (!appVisibility.visible.value) {
+                appVisibility.visible.first { it }
+            } else if (screensaverController.playbackActive.value) {
+                delay((PLAYBACK_REFRESH_INTERVAL_MS - refreshIntervalMs).coerceAtLeast(0L))
+            }
             emit(Unit)
         }
     }

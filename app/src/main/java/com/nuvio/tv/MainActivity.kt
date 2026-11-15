@@ -111,6 +111,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -234,9 +235,12 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 val LocalSidebarExpanded = compositionLocalOf { false }
+val LocalRootContentInset = compositionLocalOf { 0.dp }
+val LocalRootRoutes = compositionLocalOf<Set<String>> { emptySet() }
 val LocalContentFocusRequester = compositionLocalOf { FocusRequester.Default }
 
 private const val SIDEBAR_AUTO_COLLAPSE_DELAY_MS = 3_000L
+private const val FIRST_TRACKER_REFRESH_DELAY_MS = 8_000L
 
 private const val MAX_SUPPORTED_FONT_SCALE = 1.15f
 
@@ -306,6 +310,12 @@ open class MainActivity : ComponentActivity() {
     lateinit var profileManager: ProfileManager
 
     @Inject
+    lateinit var pinAskStore: com.nuvio.tv.core.profile.PinAskStore
+
+    @Inject
+    lateinit var profileLockStateDataStore: com.nuvio.tv.data.local.ProfileLockStateDataStore
+
+    @Inject
     lateinit var authManager: AuthManager
 
     @Inject
@@ -346,6 +356,9 @@ open class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var ambientModeDataStore: com.nuvio.tv.data.local.AmbientModeDataStore
+
+    @Inject
+    lateinit var scoutStore: com.nuvio.tv.data.local.ScoutStore
 
     @Inject
     lateinit var calendarSettingsDataStore: com.nuvio.tv.core.calendar.CalendarSettingsDataStore
@@ -455,7 +468,11 @@ open class MainActivity : ComponentActivity() {
         }
 
         // Extract extras set by the Continue Watching launcher channel preview programs.
-        val launchContentId = intent?.getStringExtra("contentId")
+        val isFreshLaunch = isFreshLaunchIntent(
+            hasSavedInstanceState = savedInstanceState != null,
+            intentFlags = intent?.flags ?: 0
+        )
+        val launchContentId = intent?.getStringExtra("contentId")?.takeIf { isFreshLaunch }
         val launchContentType = intent?.getStringExtra("contentType")
         val launchMode = intent?.getStringExtra("launchMode")
         val launchVideoId = intent?.getStringExtra("videoId")
@@ -468,7 +485,7 @@ open class MainActivity : ComponentActivity() {
         val launchEpisodeTitle = intent?.getStringExtra("episodeTitle")
         captureDeepLinkIntent(intent)
 
-        setContent {
+        setContent { LauncherOnlySemantics(hideSemanticsTree.value) {
             var hasSelectedProfileThisSession by rememberSaveable { mutableStateOf(false) }
             var v2ProfilePickerRequested by rememberSaveable { mutableStateOf(false) }
             var onboardingCompletedThisSession by remember { mutableStateOf(false) }
@@ -509,24 +526,41 @@ open class MainActivity : ComponentActivity() {
             val activeProfile = remember(activeProfileId, profiles) {
                 profiles.firstOrNull { it.id == activeProfileId }
             }
-            var profilePinStates by remember { mutableStateOf<Map<Int, Boolean>>(emptyMap()) }
+            val profilePinStates by remember {
+                profileLockStateDataStore.pinEnabled.map<Map<Int, Boolean>, Map<Int, Boolean>?> { it }
+            }.collectAsState(initial = null)
 
             LaunchedEffect(authState, profiles) {
                 if (authState is AuthState.FullAccount) {
                     profileSyncService.pullProfileLockStates()
-                        .onSuccess { profilePinStates = it }
-                        .onFailure { profilePinStates = emptyMap() }
-                } else {
-                    profilePinStates = emptyMap()
+                        .onSuccess { profileLockStateDataStore.replaceAll(it) }
                 }
             }
 
-            val activeProfileHasPin = remember(activeProfileId, profilePinStates) {
-                profilePinStates[activeProfileId] == true
+            val signedOut = authState is AuthState.SignedOut
+            val pinAsks by pinAskStore.asks.collectAsState()
+            val activeProfileHasPin = remember(activeProfileId, profilePinStates, signedOut) {
+                com.nuvio.tv.core.profile.ProfileStartGate.hasPin(signedOut, profilePinStates, activeProfileId)
             }
 
-            LaunchedEffect(hasEverSelectedProfile, activeProfileHasPin, rememberLastProfileEnabled) {
-                if (rememberLastProfileEnabled && hasEverSelectedProfile && !activeProfileHasPin && !hasSelectedProfileThisSession && !v2ProfilePickerRequested) {
+            LaunchedEffect(profilePinStates, pinAsks, signedOut) {
+                val states = profilePinStates
+                if (!signedOut && states != null) {
+                    com.nuvio.tv.core.profile.PinAsk.withoutPin(pinAsks, states).forEach(pinAskStore::forgetProfile)
+                }
+            }
+
+            LaunchedEffect(hasEverSelectedProfile, activeProfileHasPin, rememberLastProfileEnabled, pinAsks) {
+                val savedId = profileManager.savedActiveProfileId()
+                if (!hasSelectedProfileThisSession && !v2ProfilePickerRequested && com.nuvio.tv.core.profile.ProfileStartGate.canAutoSelect(
+                        rememberLastProfileEnabled, hasEverSelectedProfile,
+                        com.nuvio.tv.core.profile.ProfileStartGate.asksAtStart(activeProfileHasPin, pinAsks[activeProfileId]),
+                        com.nuvio.tv.core.profile.ProfileStartGate.asksAtStart(
+                            com.nuvio.tv.core.profile.ProfileStartGate.hasPin(signedOut, profilePinStates, savedId),
+                            pinAskStore.asks.value[savedId]
+                        )
+                    )
+                ) {
                     hasSelectedProfileThisSession = true
                     if (authManager.authState.value is AuthState.FullAccount) {
                         startupSyncService.requestSyncNow()
@@ -674,7 +708,7 @@ open class MainActivity : ComponentActivity() {
             // Resolve the device snapshot before profile selection's first themed frame.
             if (device == null || appearance == null || originalScale == null) {
                 Box(Modifier.fillMaxSize().then(if (startPicture.showing) Modifier else Modifier.background(Color.Black)))
-                return@setContent
+                return@LauncherOnlySemantics
             }
             SideEffect { com.nuvio.tv.core.util.StartupLatencyTrace.coldOnce("prefs_ready") }
             var playbackUiActive by remember { mutableStateOf(false) }
@@ -778,7 +812,7 @@ open class MainActivity : ComponentActivity() {
                         return@Surface
                     }
 
-                    if (authState is AuthState.Loading) {
+                    if (authState is AuthState.Loading || activeProfileHasPin == null) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -860,8 +894,9 @@ open class MainActivity : ComponentActivity() {
                         return@Surface
                     }
 
-                    val shouldShowProfileSelection =
-                        !hasSelectedProfileThisSession && (profiles.size > 1 || activeProfileHasPin || v2ProfilePickerRequested)
+                    val shouldShowProfileSelection = com.nuvio.tv.core.profile.ProfileStartGate.showPicker(
+                        hasSelectedProfileThisSession, profiles.size, activeProfileHasPin, v2ProfilePickerRequested
+                    )
 
                     if (shouldShowProfileSelection) {
                         SideEffect { startPicture.end() }
@@ -977,6 +1012,9 @@ open class MainActivity : ComponentActivity() {
                     val actualRoute = navBackStackEntry?.destination?.route
                     val currentRoute = optimisticRoute ?: actualRoute
                     val visibleEntries by navController.visibleEntries.collectAsState()
+                    LaunchedEffect(actualRoute) {
+                        com.nuvio.tv.data.repository.ArcBreadcrumbs.note("screen ${actualRoute?.substringBefore('?') ?: "none"}")
+                    }
                     SideEffect {
                         playbackUiActive = isPlayerUiVisible(
                             actualRoute, visibleEntries.map { it.destination.route }
@@ -997,6 +1035,23 @@ open class MainActivity : ComponentActivity() {
                     LaunchedEffect(actualRoute) {
                         optimisticRoute = null
                         screensaverController.notifyInteraction()
+                    }
+
+                    // The player and home are routes inside this activity, so leaving the
+                    // player or returning home never reaches onResume. Ask for the same
+                    // throttled watch state pull a foreground return gets.
+                    LaunchedEffect(navController) {
+                        var previousRoute: String? = null
+                        navController.currentBackStackEntryFlow.collect { entry ->
+                            val route = entry.destination.route
+                            if (route == previousRoute) return@collect
+                            val leftPlayer = previousRoute == Screen.Player.route
+                            val returnedHome = previousRoute != null && route == Screen.Home.route
+                            if (leftPlayer || returnedHome) {
+                                startupSyncService.requestNavigationSync()
+                            }
+                            previousRoute = route
+                        }
                     }
 
                     // Auto-play next episode for EXTERNAL players: the tracker resolves the
@@ -1203,8 +1258,18 @@ open class MainActivity : ComponentActivity() {
                     val calendarInMenu by calendarInMenuFlow.collectAsState(
                         initial = com.nuvio.tv.ui.screens.calendar.calendarMenuVisible(calendarSettingsDataStore.settings.value)
                     )
-                    val rootRoutes = remember(discoverLocation, calendarInMenu) {
-                        appRootRoutes(discoverInSidebar = discoverLocation == DiscoverLocation.IN_SIDEBAR, calendarInMenu = calendarInMenu)
+                    val scoutInMenuFlow = remember {
+                        scoutStore.profile
+                            .map { com.nuvio.tv.domain.model.scoutMenuShown(com.nuvio.tv.domain.model.ScoutFeature.available, it.settings) }
+                            .distinctUntilChanged()
+                    }
+                    val scoutInMenu by scoutInMenuFlow.collectAsState(initial = com.nuvio.tv.domain.model.ScoutFeature.available)
+                    val rootRoutes = remember(discoverLocation, calendarInMenu, scoutInMenu) {
+                        appRootRoutes(
+                            discoverInSidebar = discoverLocation == DiscoverLocation.IN_SIDEBAR,
+                            calendarInMenu = calendarInMenu,
+                            scoutInMenu = scoutInMenu
+                        )
                     }
 
                     SideEffect {
@@ -1236,7 +1301,8 @@ open class MainActivity : ComponentActivity() {
                         strNavSettings,
                         strNavCalendar,
                         discoverLocation,
-                        calendarInMenu
+                        calendarInMenu,
+                        scoutInMenu
                     ) {
                         buildList {
                             add(
@@ -1262,7 +1328,7 @@ open class MainActivity : ComponentActivity() {
                                     iconRes = R.raw.sidebar_search
                                 )
                             )
-                            if (com.nuvio.tv.domain.model.ScoutFeature.available) {
+                            if (scoutInMenu) {
                                 add(DrawerItem(route = Screen.Scout.route, label = strNavScout, iconRes = R.raw.sidebar_scout))
                             }
                             add(
@@ -1522,16 +1588,23 @@ open class MainActivity : ComponentActivity() {
                 System.nanoTime(), frameData.frameDurationUiNanos, frameData.isJank
             )
             if (frameData.isJank) {
+                com.nuvio.tv.data.repository.ArcSlowFrames.note(
+                    frameData.frameDurationUiNanos / 1_000_000,
+                    frameData.states.firstOrNull { it.key == "Screen" }?.value
+                )
                 Log.w(
                     "JankStats",
                     "JANK: ${frameData.frameDurationUiNanos / 1_000_000}ms | states: ${frameData.states}"
                 )
             }
-        }
+        } }
     }
+
+    private val hideSemanticsTree = mutableStateOf(false)
 
     override fun onResume() {
         super.onResume()
+        hideSemanticsTree.value = com.nuvio.tv.core.performance.launcherOnlySemanticsTest(this)
         ambientIdleController.dismiss()
         qualityGovernor.resume(System.nanoTime())
         if (::jankStats.isInitialized) jankStats.isTrackingEnabled = true
@@ -1541,13 +1614,14 @@ open class MainActivity : ComponentActivity() {
             startupSyncService.requestForegroundSync()
         }
         lifecycleScope.launch {
-            val refreshIntent = if (isFirstResumeAfterCreate) {
+            if (isFirstResumeAfterCreate) {
                 isFirstResumeAfterCreate = false
-                TrackingRefreshIntent.INVALIDATED
+                // Home loads first; then only the trackers that are due refresh, one after another.
+                delay(FIRST_TRACKER_REFRESH_DELAY_MS)
+                trackingProgressRefreshCoordinator.refreshConnected(TrackingRefreshIntent.AUTOMATIC, oneAtATime = true)
             } else {
-                TrackingRefreshIntent.AUTOMATIC
+                trackingProgressRefreshCoordinator.refreshConnected(TrackingRefreshIntent.AUTOMATIC)
             }
-            trackingProgressRefreshCoordinator.refreshConnected(refreshIntent)
         }
     }
 
@@ -1694,6 +1768,15 @@ open class MainActivity : ComponentActivity() {
         super.onDestroy()
         PluginRuntimeHooks.onActivityDestroy()
     }
+}
+
+/** Test switch: see [com.nuvio.tv.core.performance.launcherOnlySemanticsTest]. */
+@Composable
+private fun LauncherOnlySemantics(hide: Boolean, content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier.fillMaxSize().then(if (hide) Modifier.clearAndSetSemantics {} else Modifier),
+        propagateMinConstraints = true
+    ) { content() }
 }
 
 @Composable
@@ -1941,19 +2024,20 @@ private fun LegacySidebarScaffold(
         }
         }
     ) {
-        val contentStartPadding by animateDpAsState(
-            targetValue = if (showSidebar && !sidebarCollapsed) {
-                NuvioLayout.tokens.sidebarContentOffset
-            } else {
+        // Applied per root destination (not on the NavHost container) so it only changes
+        // with the collapse setting, never during a navigation transition.
+        val rootContentInset by animateDpAsState(
+            targetValue = if (sidebarCollapsed) {
                 NuvioTheme.spacing.none
+            } else {
+                NuvioLayout.tokens.sidebarContentOffset
             },
             animationSpec = tween(NuvioMotion.tokens.durations.medium),
-            label = "contentStartPadding"
+            label = "rootContentInset"
         )
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(start = contentStartPadding)
                 .onPreviewKeyEvent { keyEvent ->
                     // Long-press Back on a root route directly opens the sidebar,
                     // bypassing the "scroll row to start" BackHandler in home content.
@@ -2001,6 +2085,8 @@ private fun LegacySidebarScaffold(
         ) {
             CompositionLocalProvider(
                 LocalSidebarExpanded provides (drawerState.currentValue == DrawerValue.Open),
+                LocalRootContentInset provides rootContentInset,
+                LocalRootRoutes provides rootRoutes,
                 LocalContentFocusRequester provides contentFocusRequester
             ) {
                 navigationContent(hideBuiltInHeaders)
@@ -2839,10 +2925,10 @@ internal fun launchTargetsReady(storedMode: ExperienceMode?, hasChosenLayout: Bo
     resolveStartExperienceMode(storedMode, hasChosenLayout) != null
 
 /** Pages with a menu entry; a page without one, such as a hidden Calendar opened from a reminder, goes Back to Home. */
-internal fun appRootRoutes(discoverInSidebar: Boolean, calendarInMenu: Boolean): Set<String> = buildSet {
+internal fun appRootRoutes(discoverInSidebar: Boolean, calendarInMenu: Boolean, scoutInMenu: Boolean): Set<String> = buildSet {
     add(Screen.Home.route)
     add(Screen.Search.route)
-    if (com.nuvio.tv.domain.model.ScoutFeature.available) add(Screen.Scout.route)
+    if (scoutInMenu) add(Screen.Scout.route)
     add(Screen.Library.route)
     if (calendarInMenu) add(Screen.Calendar.route)
     add(Screen.Settings.route)

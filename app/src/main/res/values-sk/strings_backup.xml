@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Mená a obrázky</string>
     <string name="backup_part_settings">Nastavenia Arc</string>
     <string name="backup_part_settings_sub">Scout, miniatúry, DNS, tlačidlá ovládača a ďalšie</string>
+    <string name="backup_part_history">Knižnica a história sledovania</string>
+    <string name="backup_part_history_sub">Uložené tituly, Pokračovať v sledovaní a označenia videného</string>
+    <string name="backup_part_history_signed_in">Váš účet Nuvio ich už uchováva. Obnovia sa len v zariadení, ktoré nie je prihlásené.</string>
+    <string name="backup_part_history_counts">Uložené tituly: %1$d. Videné: %2$d. Rozpozerané: %3$d.</string>
+    <string name="backup_supporter">Stav podporovateľa</string>
+    <string name="backup_supporter_yes">Áno. Farby a ikony podporovateľa zostanú.</string>
+    <string name="backup_supporter_no">Nie</string>
     <string name="backup_part_secrets">Heslá a kľúče</string>
     <string name="backup_part_secrets_saved">Chránené vaším PIN-om</string>
     <string name="backup_part_secrets_needs_pin">Vyžaduje PIN zálohy</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Ak sa potom prihlásite do Nuvio, synchronizované nastavenia môžu nahradiť tie obnovené.</string>
     <string name="backup_restore_button">Obnoviť</string>
     <string name="backup_pin_create_heading">Zvoľte PIN pre heslá a kľúče</string>
-    <string name="backup_pin_create_support">Aspoň 6 číslic. Arc ho nedokáže získať späť, ale všetko ostatné v zálohe sa obnoví aj bez neho.</string>
+    <string name="backup_pin_create_support">6 až 16 číslic. Dlhší PIN lepšie chráni vaše prihlasovacie údaje, ak niekto súbor skopíruje. Arc PIN nedokáže získať späť, ale všetko ostatné v zálohe sa obnoví aj bez neho.</string>
     <string name="backup_pin_create_back">Stlačte späť pre zálohu bez hesiel</string>
     <string name="backup_pin_confirm_heading">Zadajte PIN znova</string>
     <string name="backup_pin_confirm_support">Rovnaké číslice, pre istotu.</string>

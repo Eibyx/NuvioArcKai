@@ -128,10 +128,97 @@ class StreamScreenViewModel @Inject constructor(
     private val serverPlayback: ServerPlayback,
     private val subtitleLibrary: com.nuvio.tv.core.subtitlelibrary.SubtitleLibraryService,
     thumbnailCopyDebrid: com.nuvio.tv.core.debrid.ThumbnailCopyDebrid,
-    partyRuntime: com.nuvio.tv.core.party.PartyRuntime,
-    profileManager: com.nuvio.tv.core.profile.ProfileManager,
-    savedStateHandle: SavedStateHandle
+    private val partyRuntime: com.nuvio.tv.core.party.PartyRuntime,
+    private val profileManager: com.nuvio.tv.core.profile.ProfileManager,
+    private val scoutMixSession: com.nuvio.tv.core.player.ScoutMixSession,
+    savedStateHandle: SavedStateHandle,
+    private val ratingLimits: com.nuvio.tv.core.ratinglimit.RatingLimitGate,
+    private val profileSync: com.nuvio.tv.core.sync.ProfileSyncService,
+    private val profileLocks: com.nuvio.tv.data.local.ProfileLockStateDataStore
 ) : ViewModel() {
+
+    private val _mixHasNoSources = MutableStateFlow(false)
+    /** A mix episode picking its own source found none: the page closes and the mix tries another. */
+    val mixHasNoSources: StateFlow<Boolean> = _mixHasNoSources.asStateFlow()
+
+    data class RatingPinRequest(
+        val owner: com.nuvio.tv.domain.model.UserProfile,
+        val ownerHasPin: Boolean,
+        val profileName: String,
+        val certification: String?,
+        val limit: com.nuvio.tv.core.ratinglimit.RatingLimit
+    )
+
+    private val _ratingPin = MutableStateFlow<RatingPinRequest?>(null)
+    val ratingPin: StateFlow<RatingPinRequest?> = _ratingPin.asStateFlow()
+    private val _ratingPinError = MutableStateFlow<String?>(null)
+    val ratingPinError: StateFlow<String?> = _ratingPinError.asStateFlow()
+    private val _ratingPinWorking = MutableStateFlow(false)
+    val ratingPinWorking: StateFlow<Boolean> = _ratingPinWorking.asStateFlow()
+
+    private fun ratingTitleId(): String = contentId ?: videoId
+
+    private fun startWhenRatingFits() {
+        viewModelScope.launch {
+            val check = ratingLimits.check(playbackProfileId, ratingTitleId(), contentType)
+            if (check !is com.nuvio.tv.core.ratinglimit.RatingCheck.NeedsPin) {
+                loadStreams()
+                return@launch
+            }
+            val profiles = profileManager.profiles.value
+            val owner = profiles.firstOrNull { it.isPrimary }
+            if (owner == null) {
+                loadStreams()
+                return@launch
+            }
+            val request = RatingPinRequest(
+                owner = owner,
+                ownerHasPin = profileLocks.pinEnabled.first()[owner.id] == true,
+                profileName = profiles.firstOrNull { it.id == playbackProfileId }?.name.orEmpty(),
+                certification = check.certification,
+                limit = check.limit
+            )
+            if (partyHostMedia != null) {
+                runCatching { partyRuntime.party.leaveParty() }
+                _partyBlocked.value = request
+            } else {
+                _ratingPin.value = request
+            }
+        }
+    }
+
+    private val _partyBlocked = MutableStateFlow<RatingPinRequest?>(null)
+    val partyBlocked: StateFlow<RatingPinRequest?> = _partyBlocked.asStateFlow()
+
+    fun clearRatingPinError() {
+        _ratingPinError.value = null
+    }
+
+    fun submitRatingPin(pin: String) {
+        val request = _ratingPin.value ?: return
+        if (!request.ownerHasPin || _ratingPinWorking.value) return
+        _ratingPinWorking.value = true
+        viewModelScope.launch {
+            val answer = profileSync.verifyProfilePin(request.owner.id, pin)
+            _ratingPinWorking.value = false
+            answer.onSuccess { verify ->
+                if (verify.unlocked) {
+                    ratingLimits.unlock(playbackProfileId, ratingTitleId(), contentType)
+                    _ratingPinError.value = null
+                    _ratingPin.value = null
+                    loadStreams()
+                } else {
+                    _ratingPinError.value = if (verify.retryAfterSeconds > 0) {
+                        context.getString(R.string.profile_pin_locked, verify.retryAfterSeconds)
+                    } else {
+                        context.getString(R.string.profile_pin_incorrect)
+                    }
+                }
+            }.onFailure {
+                _ratingPinError.value = context.getString(R.string.profile_pin_verify_error)
+            }
+        }
+    }
 
     /** Latest debrid stream preferences for TRaSH-aligned auto-pick ranking. */
     @Volatile
@@ -205,6 +292,8 @@ class StreamScreenViewModel @Inject constructor(
     private val manualSelection: Boolean = savedStateHandle.get<String>("manualSelection")
         ?.toBooleanStrictOrNull()
         ?: false
+    private val pickForMe: Boolean = !manualSelection &&
+        savedStateHandle.get<String>("pickForMe")?.toBooleanStrictOrNull() == true
     private val streamCacheKey: String = "${contentType.lowercase()}|$videoId"
     private val partyHostMedia: com.nuvio.tv.core.party.PartyMedia? =
         partyRuntime.guestMediaFor(videoId, season, episode)
@@ -361,7 +450,7 @@ class StreamScreenViewModel @Inject constructor(
             }
         }
         loadMissingMetaDetailsIfNeeded()
-        loadStreams()
+        startWhenRatingFits()
     }
 
     private fun SavedStateHandle.getOptionalString(key: String): String? {
@@ -467,7 +556,7 @@ class StreamScreenViewModel @Inject constructor(
             // before the scrape is even built, and applySuccess does ordering,
             // badge-merge and chip-merge work on Main afterwards. Logging only.
             val loadSplitT0 = SystemClock.elapsedRealtime()
-            val playerSettings = playerSettingsDataStore.playerSettings.first()
+            val playerSettings = playerSettingsDataStore.playerSettings.first().forMixPick(pickForMe)
             // Kai: look for this episode in the user's subtitle folders while the streams load,
             // so the subtitle and its fonts are ready when the player opens.
             subtitleLibrary.prefetch(
@@ -587,7 +676,8 @@ class StreamScreenViewModel @Inject constructor(
                                 audioDelayLanguage = cached.audioDelayLanguage,
                                 addonName = cached.addonName,
                                 addonLogo = cached.addonLogo,
-                                streamDescription = cached.streamDescription
+                                streamDescription = cached.streamDescription,
+                                fromLinkCache = true
                             ),
                             showDirectAutoPlayOverlay = showOverlay || it.showDirectAutoPlayOverlay,
                             isDirectAutoPlayFlow = showOverlay || it.isDirectAutoPlayFlow
@@ -607,6 +697,9 @@ class StreamScreenViewModel @Inject constructor(
             val isNativeServerRequest = serverStreams.isNativeRequest(videoId)
             val serverSourceNames = serverStreams.sources(contentType, videoId, season, episode).map { it.name }
             val preferredServerNames = serverStreams.preferredSourceNames(contentType, videoId)
+            val serverFirstNames = if (playerSettings.streamAutoPlayMode != StreamAutoPlayMode.MANUAL) {
+                serverStreams.autoPlayFirstNames(contentType, videoId)
+            } else emptySet()
             val addonsSplitT0 = SystemClock.elapsedRealtime()
             val installedAddons = if (isNativeServerRequest) {
                 emptyList()
@@ -687,9 +780,14 @@ class StreamScreenViewModel @Inject constructor(
                 val applyBadgeMs = SystemClock.elapsedRealtime() - applyT0 - applyOrderMs
                 val availableAddons = mergedAddonStreams.map { it.addonName }
 
+                // A server set to go first gets its answer in before a binge group match can win.
+                val waitForServerFirst = directAutoPlayFlowEnabledForSession && serverFirstNames.isNotEmpty() && !isAllLoaded &&
+                    allStreams.none { it.addonName in serverFirstNames }
                 // Early binge group match: if we have a persisted binge group, try to
                 // match it immediately on every emission without waiting for all addons.
-                val earlyBingeGroupMatch = if (!autoPlayHandledForSession && !resolvedAutoPlayTarget && persistedBingeGroup != null) {
+                val earlyBingeGroupMatch = if (
+                    !autoPlayHandledForSession && !resolvedAutoPlayTarget && persistedBingeGroup != null && !waitForServerFirst
+                ) {
                     val debridPreferences = latestDebridStreamPreferences
                     withContext(Dispatchers.Default) {
                         bingeGroupFileMatch(
@@ -730,7 +828,19 @@ class StreamScreenViewModel @Inject constructor(
                     partyPickDone = true
                     updateUiStateIfChanged { it.copy(autoPlayPlaybackInfo = partySharedLinkPlayback(partyHostMedia)) }
                 }
-                val selectedAutoPlayStream = partyPick ?: earlyBingeGroupMatch ?: if (!shouldAutoSelect) {
+                // A server set to go first wins as soon as it answers with the title.
+                val serverFirst = if (
+                    directAutoPlayFlowEnabledForSession && serverFirstNames.isNotEmpty() &&
+                    !autoPlayHandledForSession && !resolvedAutoPlayTarget
+                ) {
+                    val debridPreferences = latestDebridStreamPreferences
+                    withContext(Dispatchers.Default) {
+                        com.nuvio.tv.core.player.serverFirstPick(allStreams, serverFirstNames) { own ->
+                            AutoPlaySelection.select(streams = own, inputs = autoPlayInputs, debridStreamPreferences = debridPreferences)
+                        }
+                    }.takeUnless { resolvedAutoPlayTarget || autoPlayHandledForSession }
+                } else null
+                val selectedAutoPlayStream = partyPick ?: serverFirst ?: earlyBingeGroupMatch ?: if (!shouldAutoSelect) {
                     null
                 } else {
                     val gateT0 = SystemClock.elapsedRealtime()
@@ -991,7 +1101,7 @@ class StreamScreenViewModel @Inject constructor(
                                         }
                                     }
                                 }
-                            } else if (directFlowActive && persistedBingeGroup != null) {
+                            } else if (directFlowActive && persistedBingeGroup != null && serverFirstNames.isEmpty()) {
                                 // Before timeout: eagerly check binge group only
                                 // (no fallback to FIRST_STREAM/REGEX yet). If a
                                 // match is found we can start playback immediately
@@ -1098,6 +1208,11 @@ class StreamScreenViewModel @Inject constructor(
                 } else {
                     if (!cutShort && !listFailed) lastSuccessData?.let { handOverToPlayer(it) }
                     markRemainingSourceChipsAsError()
+                }
+                if (pickForMe && !(hasLoadingChips && cutShort) && _uiState.value.allStreams.isEmpty() &&
+                    scoutMixSession.noSources(contentId, videoId)
+                ) {
+                    _mixHasNoSources.value = true
                 }
                 if (directAutoPlayFlowEnabledForSession && !resolvedAutoPlayTarget) {
                     directAutoPlayFlowEnabledForSession = false
@@ -1566,6 +1681,9 @@ class StreamScreenViewModel @Inject constructor(
 
     suspend fun prewarmSelectedPlayback(playbackInfo: StreamPlaybackInfo) {
         if (playbackInfo.isServerStream) return
+        com.nuvio.tv.ui.screens.player.SlowStartServer.noteStream(
+            playbackInfo.url, playbackInfo.streamName, playbackInfo.streamDescription, playbackInfo.addonName
+        )
         com.nuvio.tv.ui.screens.player.PlayerPlaybackNetworking.prewarmSelectedPlayback(
             playbackInfo.url, playbackInfo.headers
         )
@@ -1685,6 +1803,10 @@ class StreamScreenViewModel @Inject constructor(
             }
             DirectDebridResolveResult.Stale -> {
                 showDirectDebridPlaybackError(context.getString(R.string.debrid_stale_stream), refreshStreams = true)
+                null
+            }
+            is DirectDebridResolveResult.Busy -> {
+                showDirectDebridPlaybackError(context.getString(R.string.debrid_busy, result.httpStatus), refreshStreams = false)
                 null
             }
             DirectDebridResolveResult.Error -> {
@@ -2598,7 +2720,9 @@ data class StreamPlaybackInfo(
     val launchStartedAtMs: Long? = null,
     val audioDelayMs: Int? = null,
     val audioDelayLanguage: String? = null,
-    val isServerStream: Boolean = false
+    val isServerStream: Boolean = false,
+    /** The link was taken from the reuse-last-link cache, not picked fresh from add-ons. */
+    val fromLinkCache: Boolean = false
 )
 
 private fun playbackUrlFor(playbackInfo: StreamPlaybackInfo): String? =

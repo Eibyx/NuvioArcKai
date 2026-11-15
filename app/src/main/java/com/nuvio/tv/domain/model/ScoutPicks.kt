@@ -10,6 +10,7 @@ const val SCOUT_MAX_NEGATIVE_SEEDS = 4
 const val SCOUT_MIN_SEEDS = 3
 const val SCOUT_REFRESH_MS = 24L * 60 * 60 * 1000
 const val SCOUT_MIN_REBUILD_GAP_MS = 60L * 60 * 1000
+const val SCOUT_POOL_VERSION = 1
 private const val RECENCY_DECAY = 0.97
 private const val FINISHED_WEIGHT = 1.0
 private const val LIKE_WEIGHT = 3.0
@@ -36,7 +37,9 @@ data class ScoutPick(
     val whyLoved: Boolean = false,
     val whyKeyword: String? = null,
     val stretch: Boolean = false,
-    val aiReason: String? = null
+    val aiReason: String? = null,
+    val language: String? = null,
+    val origin: List<String> = emptyList()
 ) {
     val key: String get() = (if (tv) "tv:" else "movie:") + tmdbId
 }
@@ -53,7 +56,8 @@ data class ScoutPool(
     val gems: List<ScoutPick> = emptyList(),
     val tasteRows: List<ScoutTasteRow> = emptyList(),
     val newForYou: List<ScoutPick> = emptyList(),
-    val trendingForYou: List<ScoutPick> = emptyList()
+    val trendingForYou: List<ScoutPick> = emptyList(),
+    val version: Int = 0
 )
 
 @JsonClass(generateAdapter = true)
@@ -91,14 +95,16 @@ fun scoutSeeds(watched: List<WatchedItem>, ratings: kotlin.collections.Collectio
         )
     }
     val finishedIds = finished.map { it.contentId }.toSet()
-    val ratedOnly = ratings.filter { it.title.id !in finishedIds }
+    val ratedOnly = ratings.limitImported(SCOUT_IMPORTED_SEEDS).filter { it.title.id !in finishedIds }
         .sortedByDescending { it.ratedAt }
-        .map { ScoutSeed(it.title.id, it.title.type.scoutIsTv(), it.title.name, it.rating.seedWeight(), null) }
+        .map { ScoutSeed(it.title.id, it.title.type.scoutIsTv(), it.title.name, it.rating.seedWeight() * it.importWeight(), null) }
     val all = finished + ratedOnly
     val negative = all.filter { it.weight < 0 }.take(SCOUT_MAX_NEGATIVE_SEEDS)
     val positive = all.filter { it.weight > 0 }.sortedByDescending { it.weight }.take(SCOUT_MAX_SEEDS)
     return positive + negative
 }
+
+internal fun ScoutRatingEntry.importWeight(): Double = if (imported) SCOUT_IMPORTED_WEIGHT else 1.0
 
 private fun ScoutRating.seedWeight(): Double = when (this) {
     ScoutRating.LOVE -> LOVE_WEIGHT
@@ -108,21 +114,30 @@ private fun ScoutRating.seedWeight(): Double = when (this) {
 
 private fun String.scoutIsTv(): Boolean = trim().lowercase() in setOf("series", "tv", "show", "tvshow", "anime")
 
+private val SCOUT_MARKS = Regex("\\p{M}+")
+private val SCOUT_NOT_LETTER_OR_DIGIT = Regex("[^\\p{L}\\p{N}]+")
+private val SCOUT_YEAR = Regex("\\d{4}")
+
 fun scoutNormalizedName(name: String): String =
     Normalizer.normalize(name, Normalizer.Form.NFD)
-        .replace(Regex("\\p{M}+"), "")
+        .replace(SCOUT_MARKS, "")
         .lowercase()
-        .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+        .replace(SCOUT_NOT_LETTER_OR_DIGIT, " ")
         .trim()
 
-/** What must never be offered: anything watched, started or rated, and any left-out genre. */
+/** What must never be offered: anything watched, started or rated, any left-out genre or language, and anime recap films. */
 data class ScoutExclusions(
     val names: Set<String> = emptySet(),
     val tmdbKeys: Set<String> = emptySet(),
-    val genres: Set<Int> = emptySet()
+    val genres: Set<Int> = emptySet(),
+    val languages: Set<String> = emptySet(),
+    /** Anime films TMDB marks as re-cuts of a TV season. */
+    val recaps: Set<String> = emptySet()
 ) {
     fun blocks(pick: ScoutPick): Boolean {
         if (pick.key in tmdbKeys || pick.genres.any { it in genres }) return true
+        if (com.nuvio.tv.core.scout.scoutIsAnimeRecap(pick, recaps)) return true
+        if (pick.language != null && pick.language in languages) return true
         val name = scoutNormalizedName(pick.name)
         if (name in names) return true
         val year = pick.released?.take(4)?.toIntOrNull() ?: return false
@@ -132,7 +147,7 @@ data class ScoutExclusions(
 
 /** With a year, a remake under the same name is not mistaken for the title already seen. */
 fun scoutExclusionName(name: String, releaseInfo: String?): String {
-    val year = releaseInfo?.let { Regex("\\d{4}").find(it)?.value }
+    val year = releaseInfo?.let { SCOUT_YEAR.find(it)?.value }
     return scoutNormalizedName(name) + (year?.let { "|$it" } ?: "")
 }
 
@@ -172,12 +187,13 @@ fun scoutRotate(picks: List<ScoutPick>, count: Int, seed: Long): List<ScoutPick>
 }
 
 fun scoutShouldRefresh(pool: ScoutPool?, signature: String, now: Long): Boolean {
-    if (pool == null || pool.builtAt <= 0L) return true
+    if (pool == null || pool.builtAt <= 0L || pool.version < SCOUT_POOL_VERSION) return true
     val age = now - pool.builtAt
     if (age >= SCOUT_REFRESH_MS || age < 0) return true
     return signature != pool.historySignature && age >= SCOUT_MIN_REBUILD_GAP_MS
 }
 
 /** Rebuilding is only worth a request when something to base picks on has changed. */
-fun scoutHistorySignature(seeds: List<ScoutSeed>, leftOut: Set<Int>): String =
-    (seeds.map { it.contentId + ":" + it.weight.toInt() } + leftOut.sorted().map(Int::toString)).joinToString(",")
+fun scoutHistorySignature(seeds: List<ScoutSeed>, leftOut: Set<Int>, leftOutLanguages: Set<String> = emptySet()): String =
+    (seeds.map { it.contentId + ":" + it.weight.toInt() } + leftOut.sorted().map(Int::toString) +
+        leftOutLanguages.sorted().map { "lang:$it" }).joinToString(",")

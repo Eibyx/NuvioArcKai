@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Оценки</string>
     <string name="scout_row_picked">Выбрано для вас</string>
     <string name="scout_row_picked_sub">Фильмы и сериалы, обновляются раз в день</string>
+    <string name="scout_row_genre">Ряды по жанрам</string>
+    <string name="scout_row_genre_sub">Подборки по жанрам, которые вам нравятся</string>
     <string name="scout_row_because">Потому что вы смотрели…</string>
     <string name="scout_row_because_sub">Следует за тем, что вы досмотрели последним</string>
     <string name="scout_row_gems">Скрытые жемчужины</string>
     <string name="scout_row_gems_sub">Высоко оценённые тайтлы, которые видели немногие</string>
     <string name="scout_row_tiles">Плитки Scout</string>
     <string name="scout_row_tiles_sub">Удиви меня, настроения, десятилетия</string>
+    <string name="scout_row_mixes">Миксы</string>
+    <string name="scout_row_mixes_sub">Твои сохранённые миксы и праздничный микс сезона</string>
     <string name="scout_ratings_enabled">Оценивать тайтлы</string>
     <string name="scout_ratings_enabled_sub">Показывает кнопку Оценить, пальцы в меню долгого нажатия и вопрос после фильма</string>
     <string name="scout_ratings_off_note">Скрывает кнопку Оценить, пальцы в меню и вопрос после фильма. Ваши оценки по-прежнему учитываются.</string>
     <string name="scout_ask_enabled">Спрашивать о фильме после просмотра</string>
     <string name="scout_ask_enabled_sub">Не для меня, нравится или обожаю при выходе из плеера</string>
+    <string name="scout_send_ratings">Отправлять мои оценки в трекеры</string>
+    <string name="scout_send_ratings_sub">Не для меня, Нравится и Обожаю уходят в Trakt, Simkl, MDBList и WeTrakr как 3, 7 и 10 из 10. Оценка, которую вы сами поставили в трекере, никогда не меняется. Simkl получает только просмотренные тайтлы.</string>
+    <string name="scout_send_ratings_none">В этом профиле не подключён ни один трекер, поэтому пока ничего не отправляется.</string>
+    <string name="scout_use_ratings">Использовать мои оценки из трекеров</string>
+    <string name="scout_use_ratings_sub">Оценки из ваших трекеров переносятся сюда: 9 или 10 означает Обожаю, от 6 до 8 Нравится, от 1 до 4 Не для меня. Оценка, поставленная в Arc, всегда важнее.</string>
+    <string name="scout_thumb_from">Из %1$s</string>
     <string name="scout_your_thumbs">Ваши оценки</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="one">Оценён %1$d тайтл. Откройте, чтобы изменить или отменить</item>
@@ -83,4 +93,6 @@
     <string name="scout_leave_out">Исключить</string>
     <string name="scout_leave_out_sub">Жанры, которые вы никогда не хотите видеть</string>
     <string name="scout_leave_out_none">Нет</string>
+    <string name="scout_menu_visible">Показывать Scout в меню</string>
+    <string name="scout_menu_visible_sub">У строк Scout на главной свои переключатели</string>
 </resources>

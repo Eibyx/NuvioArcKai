@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.compose.runtime.Immutable
 import com.nuvio.tv.LocaleCache
 import com.nuvio.tv.R
+import com.nuvio.tv.core.image.HomeLoadLevel
+import com.nuvio.tv.core.image.homeRowEndsWithSeeAll
 import com.nuvio.tv.core.util.withAppLocale
 import com.nuvio.tv.domain.model.CatalogRow
 import com.nuvio.tv.domain.model.Collection
@@ -197,6 +199,8 @@ internal fun buildModernHomePresentation(
                     } else {
                         val rowItemOccurrenceCounts = mutableMapOf<String, Int>()
                         val rowItemCache = cache.catalogItemCache.getOrPut(rowKey) { mutableMapOf() }
+                        val titleLimit = HomeLoadLevel.current.rowTitleLimit
+                        val seeAll = homeRowEndsWithSeeAll(row.items.size, row.hasMore, titleLimit)
                         HeroCarouselRow(
                             key = rowKey,
                             title = catalogRowTitle(
@@ -210,9 +214,10 @@ internal fun buildModernHomePresentation(
                             addonId = row.addonId,
                             apiType = row.apiType,
                             supportsSkip = row.supportsSkip,
-                            hasMore = row.hasMore,
+                            hasMore = row.hasMore && !seeAll,
                             isLoading = row.isLoading,
-                            items = row.items.mapIndexed { itemIndex, item ->
+                            seeAll = seeAll,
+                            items = (if (seeAll) row.items.subList(0, titleLimit) else row.items).mapIndexed { itemIndex, item ->
                                 val occurrence = rowItemOccurrenceCounts.getOrDefault(item.id, 0)
                                 rowItemOccurrenceCounts[item.id] = occurrence + 1
                                 val cacheKey = "${item.id}_$occurrence"
@@ -365,11 +370,27 @@ internal fun buildModernHomePresentation(
         cache.collectionRows.keys.retainAll(activeCollectionKeys)
     }
 
-    val lookups = buildCarouselRowLookups(rows)
+    val listed = withUniqueRowKeys(rows)
+    val lookups = buildCarouselRowLookups(listed)
     return ModernHomePresentationState(
-        rows = rows.asStable(),
+        rows = listed.asStable(),
         lookups = lookups
     )
+}
+
+/**
+ * Two rows with one key close the app the moment both are laid out (a folder whose sources resolve to the same
+ * catalogue). A repeat gets a suffix here, after the build cache, so the list can always be shown.
+ */
+internal fun withUniqueRowKeys(rows: List<HeroCarouselRow>): List<HeroCarouselRow> {
+    val seen = HashMap<String, Int>(rows.size)
+    var repeated = false
+    val unique = rows.map { row ->
+        val earlier = seen.getOrDefault(row.key, 0)
+        seen[row.key] = earlier + 1
+        if (earlier == 0) row else row.copy(key = "${row.key}#$earlier").also { repeated = true }
+    }
+    return if (repeated) unique else rows
 }
 
 private fun resolveVisibleHomeRows(input: ModernHomePresentationInput): List<HomeRow> {

@@ -31,6 +31,7 @@
     <string name="scout_mixes_remix">Yeniden karıştır</string>
     <string name="scout_mixes_unwatched_only">Yalnızca izlenmeyenler</string>
     <string name="scout_mixes_keep_playing">Oynatmaya devam et</string>
+    <string name="scout_mixes_pick_sources">Kaynakları benim için seç</string>
     <string name="scout_mixes_edit">Karışımı düzenle</string>
     <string name="scout_mixes_in_this_mix">Bu karışımda</string>
     <string name="scout_mixes_next_in">%1$s içinde sıradaki</string>
@@ -52,4 +53,8 @@
     <string name="scout_mixes_delete_title">%1$s silinsin mi?</string>
     <string name="scout_mixes_delete_detail">Dizileriniz ve izleme geçmişiniz olduğu gibi kalır</string>
     <string name="scout_mixes_delete_confirm">Sil</string>
+    <string name="scout_mixes_menu_subtitle">Karışım işlemleri</string>
+    <string name="scout_mixes_menu_open">Karışımı aç</string>
+    <string name="scout_mixes_menu_remove">Karışımlarımdan kaldır</string>
+    <string name="scout_mixes_menu_hide">Gelecek yıla kadar gizle</string>
 </resources>

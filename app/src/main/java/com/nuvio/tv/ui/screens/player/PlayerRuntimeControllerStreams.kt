@@ -253,13 +253,17 @@ internal fun PlayerRuntimeController.prefetchSourceStreamsWhenSettled() {
     sourcePrefetchJob = scope.launch {
         PlayerSessionTracker.settled.first { it }
         if (_uiState.value.sourceAllStreams.isEmpty() || sourceStreamsCacheRequestKey != currentSourceRequestKey()) {
-            loadSourceStreams(forceRefresh = false)
+            loadSourceStreams(forceRefresh = false, background = true)
         }
     }
 }
 
-internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
-    streamRepository.setLocalPluginSearchPaused(false)
+/**
+ * [background] is the fill behind a playing film: it leaves local plugin searches paused, so they wait for the sources
+ * panel or a failover instead of running against playback.
+ */
+internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean, background: Boolean = false) {
+    if (!background) streamRepository.setLocalPluginSearchPaused(false)
     val request = currentSourceStreamsRequest() ?: return
     val type = request.type
     val vid = request.videoId
@@ -415,7 +419,12 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
                             sourceStreamsError = null
                         )
                     }
-                    if (partial != null) sourceCopyListEarly = true
+                    // A background fill leaves plugin searches paused, so the search stays open: thumbnails take the list
+                    // once the add-ons and servers have answered.
+                    if (partial != null || (background &&
+                            streamRepository.sourcesAnsweredExceptPlugins(type, vid, seasonArg, episodeArg))) {
+                        sourceCopyListEarly = true
+                    }
                     launchSourceDebridPreparationIfNeeded(
                         launched = debridPreparationLaunched,
                         streams = allStreams,
@@ -763,6 +772,7 @@ private fun PlayerRuntimeController.applySelectedStreamState(
 ) {
     val playbackRequest = PlayerMediaSourceFactory.normalizePlaybackRequest(url, headers)
     currentStreamUrl = playbackRequest.url
+    SlowStartServer.noteStream(playbackRequest.url, stream.name, stream.description, stream.addonName)
     currentHeaders = playbackRequest.headers
     currentFilename = stream.behaviorHints?.filename ?: streamFilenameFromUrl(playbackRequest.url)
     currentStreamResponseHeaders = stream.behaviorHints?.proxyHeaders?.response.orEmpty()
@@ -1137,6 +1147,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     val playbackUrl = currentStreamUrl
     val playbackHeaders = currentHeaders
     persistSelectedStreamForReuse(stream = stream, url = playbackUrl, headers = playbackHeaders)
+    persistStreamRouteState(stream, isTorrent = false)
 
     // Reset stream-state error flags for the new stream.
     hasRetriedCurrentStreamAfter416 = false
@@ -1327,6 +1338,7 @@ private fun PlayerRuntimeController.switchToTorrentSourceStream(
     resetPostPlayOverlayState(clearEpisode = false)
     launchTorrentSourceStream(stream, infoHash, loadSavedProgress = true)
     persistTorrentStreamForReuse(stream)
+    persistStreamRouteState(stream, isTorrent = true)
 }
 
 private fun PlayerRuntimeController.switchToTorrentEpisodeStream(
@@ -1343,6 +1355,7 @@ private fun PlayerRuntimeController.switchToTorrentEpisodeStream(
     switchToEpisodeStreamCommon(stream, forcedTargetVideo, showSourceIndicator = !isAutoPlay)
     launchTorrentSourceStream(stream, infoHash, loadSavedProgress = true)
     persistTorrentStreamForReuse(stream)
+    persistStreamRouteState(stream, isTorrent = true)
 }
 
 internal fun PlayerRuntimeController.loadEpisodesIfNeeded() {
@@ -1873,11 +1886,13 @@ internal fun PlayerRuntimeController.switchToEpisodeStream(
     serverDeadAnswerRetried.clear()
     serverAudioChosenByUser = false
     clearSourceStreams()
+    carrySubtitleDelayTo(targetVideoId)
     currentVideoId = targetVideoId
     currentSeason = targetVideo?.season ?: _uiState.value.episodeStreamsSeason ?: currentSeason
     currentEpisode = targetVideo?.episode ?: _uiState.value.episodeStreamsEpisode ?: currentEpisode
     currentEpisodeTitle = if (targetVideo != null) targetVideo.title else _uiState.value.episodeStreamsTitle
     persistSelectedStreamForReuse(stream = stream, url = playbackUrl, headers = playbackHeaders)
+    persistStreamRouteState(stream, isTorrent = false)
     // Until the new file loads, MPV keeps reporting the old one, which is often at its end.
     hasRenderedFirstFrame = false
     mpvView?.markMediaRequested(playbackUrl)
@@ -1966,6 +1981,14 @@ internal fun PlayerRuntimeController.switchToEpisodeStream(
     )
 }
 
+private fun PlayerRuntimeController.carrySubtitleDelayTo(nextVideoId: String?) {
+    val currentDelayMs = _uiState.value.subtitleDelayMs
+    val delayMs = subtitleDelayMsAfterSwitch(currentDelayMs, currentVideoId, nextVideoId)
+    if (delayMs == currentDelayMs) return
+    subtitleDelayUs.set(delayMs.toLong() * 1000L)
+    _uiState.update { it.copy(subtitleDelayMs = delayMs) }
+}
+
 private fun String.safeStreamTraceHost(): String {
     return runCatching {
         Uri.parse(this).host ?: substringBefore("://").takeIf { it.isNotBlank() } ?: "unknown"
@@ -2015,6 +2038,7 @@ private fun PlayerRuntimeController.switchToEpisodeStreamCommon(
     serverAudioChosenByUser = false
     clearSourceStreams()
 
+    carrySubtitleDelayTo(targetVideo?.id ?: _uiState.value.episodeStreamsForVideoId ?: currentVideoId)
     currentVideoId = targetVideo?.id ?: _uiState.value.episodeStreamsForVideoId ?: currentVideoId
     currentSeason = targetVideo?.season ?: _uiState.value.episodeStreamsSeason ?: currentSeason
     currentEpisode = targetVideo?.episode ?: _uiState.value.episodeStreamsEpisode ?: currentEpisode
@@ -2281,6 +2305,11 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
             val installedAddons = streamAddonsFor(nextVideo.id)
             val installedAddonOrder = installedAddons.map { it.displayName }
             val preferredServerNames = serverStreams.preferredSourceNames(type, nextVideo.id)
+            val serverFirstNames = if (playerSettings.streamAutoPlayMode != StreamAutoPlayMode.MANUAL) {
+                serverStreams.autoPlayFirstNames(type, nextVideo.id)
+            } else {
+                emptySet()
+            }
             val effectiveMode = if (shouldAutoSelectInManualMode) {
                 StreamAutoPlayMode.FIRST_STREAM
             } else {
@@ -2364,6 +2393,7 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
                     debridStreamPreferences = debridStreamPreferences,
                     bingeGroupOnly = bingeGroupOnlyManualMode
                 )
+                com.nuvio.tv.core.player.serverFirstPick(allStreams, serverFirstNames, ::select)?.let { return it }
                 // A pick made for Manual mode tries the current add-on and service first.
                 return if (shouldAutoSelectInManualMode) {
                     pickSameSourceFirst(allStreams, currentSource, !sameSourceOnly, ::select)
@@ -2373,6 +2403,9 @@ internal fun PlayerRuntimeController.playNextEpisode(userInitiated: Boolean = fa
             }
 
             fun tryBingeGroupOnlyInner(data: List<AddonStreams>): Stream? {
+                if (data.any { group -> group.addonName in serverFirstNames && group.streams.isNotEmpty() }) {
+                    return trySelectStreamInner(data)
+                }
                 if (currentStreamBingeGroup == null || !playerSettings.streamAutoPlayPreferBingeGroupForNextEpisode) return null
                 val orderedStreams = StreamAutoPlaySelector.orderAddonStreams(
                     data.withoutAddonsWhenContinuingPlugin(currentStreamBingeGroup),

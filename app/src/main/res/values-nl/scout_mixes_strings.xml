@@ -33,6 +33,7 @@
     <string name="scout_mixes_remix">Opnieuw mixen</string>
     <string name="scout_mixes_unwatched_only">Alleen ongezien</string>
     <string name="scout_mixes_keep_playing">Blijven afspelen</string>
+    <string name="scout_mixes_pick_sources">Bronnen voor mij kiezen</string>
     <string name="scout_mixes_edit">Mix bewerken</string>
     <string name="scout_mixes_in_this_mix">In deze mix</string>
     <string name="scout_mixes_next_in">Volgende in %1$s</string>
@@ -55,4 +56,8 @@
     <string name="scout_mixes_delete_title">%1$s verwijderen?</string>
     <string name="scout_mixes_delete_detail">Je series en kijkgeschiedenis blijven zoals ze zijn</string>
     <string name="scout_mixes_delete_confirm">Verwijderen</string>
+    <string name="scout_mixes_menu_subtitle">Mixacties</string>
+    <string name="scout_mixes_menu_open">Mix openen</string>
+    <string name="scout_mixes_menu_remove">Verwijderen uit mijn mixen</string>
+    <string name="scout_mixes_menu_hide">Verbergen tot volgend jaar</string>
 </resources>

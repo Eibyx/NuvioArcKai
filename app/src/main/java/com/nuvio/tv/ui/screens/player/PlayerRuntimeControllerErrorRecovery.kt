@@ -51,8 +51,11 @@ internal fun PlayerRuntimeController.attemptStartupRecovery(
     error: PlaybackException,
     detailedError: String
 ): Boolean {
-    if (currentVideoTrackIsLikelyVc1 ||
-        Vc1VideoFormatHeuristics.isLikelyVc1(streamName = _uiState.value.currentStreamName ?: streamName)
+    if (Vc1VideoFormatHeuristics.isVc1PlaybackFailure(
+            error,
+            currentVideoTrackIsLikelyVc1,
+            _uiState.value.currentStreamName ?: streamName
+        )
     ) {
         return false
     }
@@ -350,8 +353,11 @@ internal fun PlayerRuntimeController.attemptAutoRetry(
     error: PlaybackException,
     detailedError: String
 ): Boolean {
-    if (currentVideoTrackIsLikelyVc1 ||
-        Vc1VideoFormatHeuristics.isLikelyVc1(streamName = _uiState.value.currentStreamName ?: streamName)
+    if (Vc1VideoFormatHeuristics.isVc1PlaybackFailure(
+            error,
+            currentVideoTrackIsLikelyVc1,
+            _uiState.value.currentStreamName ?: streamName
+        )
     ) {
         return false
     }
@@ -360,6 +366,15 @@ internal fun PlayerRuntimeController.attemptAutoRetry(
     // they are handled by attemptDeadSourceFailover before this is reached.
     if (isDeadSourcePlaybackError(error)) return false
     if (errorRetryCount >= MAX_AUTO_RETRIES) return false
+    if (RateLimitStartGiveUp.skipsPlayerRetry(
+            httpStatus = error.findInvalidResponseCodeException()?.responseCode,
+            firstFrameRendered = hasRenderedFirstFrame,
+            mediaBytesRead = PlaybackByteCounter.mediaBytesFor(currentStreamUrl)
+        )
+    ) {
+        Log.w(PlayerRuntimeController.TAG, "429 since the start with no media bytes; no player retry for host=${currentStreamUrl.safeHost()}")
+        return false
+    }
 
     val paused = pausedByUser
     val attempt = errorRetryCount
@@ -445,6 +460,9 @@ internal fun PlayerRuntimeController.scheduleStableProgressReset() {
         if (player.playbackState == Player.STATE_READY && player.isPlaying) {
             resetErrorRetryState()
             delay(PlaybackRecoveryGate.AUDIO_RETRY_STABLE_RESET_MS - STABLE_PROGRESS_RESET_DELAY_MS)
+            if (_exoPlayer === player && player.playbackState == Player.STATE_READY && player.isPlaying) {
+                autoRecoveryCountForCurrentStream = 0
+            }
             if (_exoPlayer === player && player.playbackState == Player.STATE_READY && player.isPlaying &&
                 playbackRecoveryGate.noteStablePlayback(playingSinceMs, android.os.SystemClock.elapsedRealtime())
             ) {
@@ -820,8 +838,11 @@ internal fun PlayerRuntimeController.tryParsingErrorProbeFallback(
     savedPosition: Long = 0L,
     paused: Boolean = pausedByUser
 ): Boolean {
-    if (currentVideoTrackIsLikelyVc1 ||
-        Vc1VideoFormatHeuristics.isLikelyVc1(streamName = _uiState.value.currentStreamName ?: streamName)
+    if (Vc1VideoFormatHeuristics.isVc1PlaybackFailure(
+            error,
+            currentVideoTrackIsLikelyVc1,
+            _uiState.value.currentStreamName ?: streamName
+        )
     ) {
         return false
     }
@@ -895,6 +916,13 @@ internal fun PlayerRuntimeController.tryParsingErrorProbeFallback(
             if (isDeadSourcePlaybackError(error) && attemptDeadSourceFailover(error, detailedError)) {
                 return@launch
             }
+            val linkError = ReusedLinkRefresh.isLinkError(
+                error.findInvalidResponseCodeException()?.responseCode,
+                isDeadSourcePlaybackError(error)
+            )
+            if (tryRefreshExpiredLinkAfterError(detailedError, linkError)) {
+                return@launch
+            }
             if (maybeAutoSwitchInternalPlayerOnStartupError(detailedError = detailedError, allowEngineFailover = allowEngineFailover)) {
                 return@launch
             }
@@ -907,10 +935,12 @@ internal fun PlayerRuntimeController.tryParsingErrorProbeFallback(
             if (isServerDirectPlay && advanceToNextLiveSource(detailedError)) {
                 return@launch
             }
-            val userFacingError = error.toDisplayMessage(context)
+            val card = errorCardFor(error)
+            val userFacingError = card?.message ?: error.toDisplayMessage(context)
             _uiState.update {
                 it.copy(
                     error = userFacingError,
+                    errorCard = card,
                     isBuffering = false,
                     showLoadingOverlay = false,
                     showPauseOverlay = false

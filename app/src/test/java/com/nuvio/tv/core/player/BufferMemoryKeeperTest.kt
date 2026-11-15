@@ -74,8 +74,27 @@ class BufferMemoryKeeperTest {
 
     private var swapFree = -1L
 
-    private fun keeper(control: BufferBudgetControl, budgetManaged: Boolean = true, ceilingMb: Long = 0L) =
-        BufferMemoryKeeper(control, { free }, { now }, worker, budgetManaged, ceilingMb * mb) { swapFree }
+    private var lastWarnings = 0
+
+    private val criticalTold = mutableListOf<Boolean>()
+
+    private fun keeper(
+        control: BufferBudgetControl,
+        budgetManaged: Boolean = true,
+        ceilingMb: Long = 0L,
+        floorMb: Int = BufferSizing.MIN_SIZED_BUFFER_MB,
+        oneGbBox: Boolean = false,
+    ) = BufferMemoryKeeper(
+        control, { free }, { now }, worker, budgetManaged, ceilingMb * mb,
+        swapFreeMb = { swapFree },
+        addressSpaceUsedMb = { addressSpaceMb },
+        floorBytes = floorMb * mb,
+        oneGbBox = oneGbBox,
+        onLastWarning = { lastWarnings++ },
+        onCritical = { criticalTold += it },
+    )
+
+    private var addressSpaceMb: Long? = null
 
     private fun take(megabytes: Long): List<Allocation> =
         List((megabytes * mb / segment).toInt()) { allocator.allocate() }
@@ -88,6 +107,51 @@ class BufferMemoryKeeperTest {
         free = BufferSizing.FreeMemory(200 * mb, 130 * mb, false)
         k.onTrimMemory(level)
         free = before
+    }
+
+    @Test
+    fun `a 32-bit box with address space to spare keeps its whole budget`() {
+        addressSpaceMb = 2_500L
+        val k = keeper(customControl(budgetMb = 300))
+        k.attach()
+        assertEquals(-1L, k.roomCapBytes)
+        assertEquals(-1L, k.effectiveCapBytes())
+        k.detach()
+    }
+
+    @Test
+    fun `near the 32-bit ceiling the buffer keeps what it holds plus the room left`() {
+        addressSpaceMb = 3_260L
+        val lc = customControl(budgetMb = 300)
+        take(60)
+        val k = keeper(lc)
+        k.tendAddressSpace()
+        assertEquals(100 * mb, k.roomCapBytes)
+        assertEquals(100 * mb, k.effectiveCapBytes())
+    }
+
+    @Test
+    fun `past the 32-bit ceiling the buffer drops to its floor and gets room back later`() {
+        addressSpaceMb = 3_500L
+        val lc = customControl(budgetMb = 300)
+        take(60)
+        val k = keeper(lc)
+        k.tendAddressSpace()
+        assertEquals(BufferSizing.MIN_SIZED_BUFFER_MB * mb, k.roomCapBytes)
+        addressSpaceMb = 2_000L
+        k.tendAddressSpace()
+        assertEquals(-1L, k.roomCapBytes)
+        assertEquals(-1L, k.effectiveCapBytes())
+    }
+
+    @Test
+    fun `a 64-bit box is never capped by address space`() {
+        addressSpaceMb = null
+        val lc = customControl(budgetMb = 300)
+        take(60)
+        val k = keeper(lc)
+        k.tendAddressSpace()
+        assertEquals(-1L, k.roomCapBytes)
     }
 
     @Test
@@ -238,6 +302,32 @@ class BufferMemoryKeeperTest {
     }
 
     @Test
+    fun `swap staying used up beside little free memory steps the cut up like low memory does`() {
+        val k = keeper(customControl(budgetMb = 100))
+        free = BufferSizing.FreeMemory(188 * mb, 144 * mb, false)
+        swapFree = 0
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_LOW, k.pressureLevel)
+        now += BufferMemoryKeeper.ESCALATE_AFTER_MS - 1
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_LOW, k.pressureLevel)
+        now += 1
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+    }
+
+    @Test
+    fun `swap used up with room left above the line stays at the first cut`() {
+        val k = keeper(customControl(budgetMb = 100))
+        free = BufferSizing.FreeMemory(230 * mb, 144 * mb, false)
+        swapFree = 4
+        k.check()
+        now += BufferMemoryKeeper.ESCALATE_AFTER_MS * 3
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_LOW, k.pressureLevel)
+    }
+
+    @Test
     fun `the budget comes back once the box has room again`() {
         val lc = customControl(budgetMb = 100)
         val k = keeper(lc)
@@ -253,6 +343,34 @@ class BufferMemoryKeeperTest {
         assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
         take(110)
         assertTrue(lc.shouldContinueLoading(params(bufferedMs = 6_000)))
+    }
+
+    @Test
+    fun `only a critical level limits the downloads, and easing or leaving lifts it`() {
+        val k = keeper(customControl(budgetMb = 100))
+        warn(k, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        assertEquals(emptyList<Boolean>(), criticalTold)
+        warn(k, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        warn(k, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        assertEquals(listOf(true), criticalTold)
+        now += BufferMemoryKeeper.RESTORE_QUIET_MS
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_LOW, k.pressureLevel)
+        assertEquals(listOf(true, false), criticalTold)
+
+        val again = keeper(customControl(budgetMb = 100))
+        warn(again, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        again.detach()
+        assertEquals(listOf(true, false, true, false), criticalTold)
+    }
+
+    @Test
+    fun `a box with room ignores a critical warning and never limits the downloads`() {
+        val k = keeper(customControl(budgetMb = 100))
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+        k.detach()
+        assertEquals(emptyList<Boolean>(), criticalTold)
     }
 
     @Test
@@ -628,5 +746,212 @@ class BufferMemoryKeeperTest {
         swapFree = -1
         unknown.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
         assertEquals(BufferMemoryKeeper.LEVEL_LOW, unknown.pressureLevel)
+    }
+
+    /** A 904 MB TV while playing: 229 MB free against a 64 MB line, 160 MB of swap left. */
+    private fun oneGbTvNumbers() {
+        free = BufferSizing.FreeMemory(229 * mb, 64 * mb, false)
+        swapFree = 160
+    }
+
+    @Test
+    fun `on a 1 GB box Android's last warning stands even with free memory`() {
+        oneGbTvNumbers()
+        assertFalse(BufferMemoryKeeper.warningStands(free!!, swapFree))
+        assertTrue(BufferMemoryKeeper.oneGbLastWarning(ComponentCallbacks2.TRIM_MEMORY_COMPLETE, oneGbBox = true))
+        assertFalse(BufferMemoryKeeper.oneGbLastWarning(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, oneGbBox = true))
+        assertFalse(BufferMemoryKeeper.oneGbLastWarning(ComponentCallbacks2.TRIM_MEMORY_COMPLETE, oneGbBox = false))
+
+        val floorMb = BufferSizing.sizedFloorMb(oneGbBox = true, bitrateBps = 8_000_000L)
+        val lc = customControl(budgetMb = 25)
+        val k = keeper(lc, floorMb = floorMb, oneGbBox = true)
+        giveBack(take(10))
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+        assertEquals(16 * mb, k.effectiveCapBytes())
+        assertEquals(1, lastWarnings)
+        assertTrue(allocator.availableBytes <= BufferMemoryKeeper.KEEP_IDLE_BYTES)
+    }
+
+    @Test
+    fun `on a 1 GB box the earlier warnings are still judged by the box's numbers`() {
+        oneGbTvNumbers()
+        val k = keeper(customControl(budgetMb = 25), floorMb = 16, oneGbBox = true)
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+        assertEquals(0, lastWarnings)
+    }
+
+    @Test
+    fun `a 1 GB box with a hand-set size still takes the last warning, as critical always did`() {
+        oneGbTvNumbers()
+        val k = keeper(customControl(budgetMb = 60), budgetManaged = false, floorMb = 16, oneGbBox = true)
+        k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+        assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+        assertEquals(21 * mb, k.effectiveCapBytes())
+    }
+
+    @Test
+    fun `2 GB and 4 GB boxes set the same warning aside as before`() {
+        for ((totalMem, budgetMb) in listOf((1.9 * 1024 * mb).toLong() to 200L, (3.8 * 1024 * mb).toLong() to 1000L)) {
+            val oneGb = BufferSizing.isOneGbBox(totalMem, lowRamDevice = true)
+            assertFalse(oneGb)
+            val floorMb = BufferSizing.sizedFloorMb(oneGb, 8_000_000L)
+            assertEquals(BufferSizing.MIN_SIZED_BUFFER_MB, floorMb)
+            oneGbTvNumbers()
+            lastWarnings = 0
+            val lc = customControl(budgetMb = budgetMb)
+            val k = keeper(lc, floorMb = floorMb, oneGbBox = oneGb)
+            k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+            assertEquals(BufferMemoryKeeper.LEVEL_NONE, k.pressureLevel)
+            assertEquals(-1L, k.effectiveCapBytes())
+            assertEquals(budgetMb * mb, lc.uncappedBudgetBytes)
+            assertEquals(0, lastWarnings)
+            // A warning the numbers confirm cuts to the same caps as before.
+            free = BufferSizing.FreeMemory(200 * mb, 130 * mb, false)
+            k.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_COMPLETE)
+            assertEquals(BufferMemoryKeeper.LEVEL_CRITICAL, k.pressureLevel)
+            val expected = maxOf(budgetMb * mb * BufferMemoryKeeper.CRITICAL_SHARE_PERCENT / 100, 50 * mb)
+            assertEquals(expected, k.effectiveCapBytes())
+            assertEquals(0, lastWarnings)
+        }
+    }
+
+    @Test
+    fun `swap nearly gone with thin room lowers the budget without a warning`() {
+        // A 2 GB Xiaomi box during a 4K film: 276 MB available against a 144 MB line, swap empty, no trim warning.
+        val lc = customControl(budgetMb = 200)
+        val k = keeper(lc)
+        free = BufferSizing.FreeMemory(276 * mb, 144 * mb, false)
+        swapFree = 0
+        k.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_LOW, k.pressureLevel)
+        assertTrue(k.effectiveCapBytes() in 1 until 200 * mb)
+
+        val roomy = keeper(customControl(budgetMb = 200))
+        free = BufferSizing.FreeMemory(658 * mb, 144 * mb, false)
+        roomy.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, roomy.pressureLevel)
+
+        val swapLeft = keeper(customControl(budgetMb = 200))
+        free = BufferSizing.FreeMemory(276 * mb, 144 * mb, false)
+        swapFree = 300
+        swapLeft.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, swapLeft.pressureLevel)
+
+        val userSize = keeper(customControl(budgetMb = 200), budgetManaged = false)
+        swapFree = 0
+        userSize.check()
+        assertEquals(BufferMemoryKeeper.LEVEL_NONE, userSize.pressureLevel)
+    }
+
+    @Test
+    fun `a box without swap reads -1 and never arms the swap rule`() {
+        val thin = BufferSizing.FreeMemory(276 * mb, 144 * mb, false)
+        assertFalse(BufferMemoryKeeper.swapRunsOut(thin, -1L))
+        assertTrue(BufferMemoryKeeper.swapRunsOut(thin, 0L))
+    }
+
+    @Test
+    fun `a budget that is not filled yet does not grow on memory the fill will use`() {
+        val lc = performanceControl(budgetMb = 731)
+        val k = keeper(lc, ceilingMb = 1000)
+        // An AM9 at the start of a 4K film: 891 MB available against a 216 MB line, the buffer nearly empty.
+        free = BufferSizing.FreeMemory(891 * mb, 216 * mb, false)
+        take(10)
+        k.check()
+        assertEquals(0L, k.grownBytes)
+        assertEquals(731 * mb, lc.uncappedBudgetBytes)
+    }
+
+    @Test
+    fun `a filled budget grows while the box has room beside it`() {
+        val lc = performanceControl(budgetMb = 100)
+        val k = keeper(lc, ceilingMb = 200)
+        free = BufferSizing.FreeMemory(700 * mb, 216 * mb, false)
+        take(100)
+        k.check()
+        assertEquals(32 * mb, k.grownBytes)
+        k.check()
+        assertEquals(64 * mb, k.grownBytes)
+    }
+
+    @Test
+    fun `growth stops when the unfilled steps would take the room`() {
+        val lc = performanceControl(budgetMb = 100)
+        val k = keeper(lc, ceilingMb = 400)
+        // Room above the line and margin: 180 MB. Each step adds 32 MB that is not filled.
+        free = BufferSizing.FreeMemory(496 * mb, 216 * mb, false)
+        take(100)
+        repeat(6) { k.check() }
+        assertEquals(96 * mb, k.grownBytes)
+    }
+
+    @Test
+    fun `a paused film does not grow the budget`() {
+        val lc = performanceControl(budgetMb = 100)
+        val k = keeper(lc, ceilingMb = 200)
+        free = BufferSizing.FreeMemory(700 * mb, 216 * mb, false)
+        take(100)
+        repeat(3) { k.check(playing = false) }
+        assertEquals(0L, k.grownBytes)
+        k.check(playing = true)
+        assertEquals(32 * mb, k.grownBytes)
+    }
+
+    @Test
+    fun `paused with little room, loading stops at what is held until play`() {
+        val lc = performanceControl(budgetMb = 400)
+        val k = keeper(lc, ceilingMb = 400)
+        // The AM9 paused on a 4K film: 452 MB available against a 216 MB line.
+        free = BufferSizing.FreeMemory(452 * mb, 216 * mb, false)
+        take(300)
+        k.check(playing = false)
+        assertEquals(300 * mb, k.pausedCapBytes)
+        assertEquals(300 * mb, k.effectiveCapBytes())
+        assertEquals(300 * mb, lc.allocatorTargetBytes().toLong())
+        take(20)
+        k.check(playing = false)
+        assertEquals(300 * mb, k.pausedCapBytes)
+        k.check(playing = true)
+        assertEquals(-1L, k.pausedCapBytes)
+        assertEquals(400 * mb, lc.allocatorTargetBytes().toLong())
+    }
+
+    @Test
+    fun `paused with room to spare keeps loading`() {
+        val lc = performanceControl(budgetMb = 400)
+        val k = keeper(lc, ceilingMb = 400)
+        free = BufferSizing.FreeMemory(1200 * mb, 216 * mb, false)
+        take(300)
+        k.check(playing = false)
+        assertEquals(-1L, k.pausedCapBytes)
+        assertEquals(400 * mb, lc.allocatorTargetBytes().toLong())
+    }
+
+    @Test
+    fun `the paused cap never goes below the floor and joins a pressure cut`() {
+        val lc = performanceControl(budgetMb = 400)
+        val k = keeper(lc, ceilingMb = 400)
+        free = BufferSizing.FreeMemory(452 * mb, 216 * mb, false)
+        take(10)
+        k.check(playing = false)
+        assertEquals(BufferSizing.MIN_SIZED_BUFFER_MB * mb, k.pausedCapBytes)
+        warn(k, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+        assertEquals(minOf(k.capBytes(BufferMemoryKeeper.LEVEL_LOW), k.pausedCapBytes), k.effectiveCapBytes())
+    }
+
+    @Test
+    fun `leaving the app frees what the teardown hands back as it arrives`() {
+        val queued = mutableListOf<Runnable>()
+        val stopTrim = AllocatorStopTrim(allocator, background = { queued += it })
+        val held = take(64)
+        var waits = 0
+        stopTrim.trimUntilEmpty(steps = 6, pause = { waits++; if (waits == 2) giveBack(held) })
+        assertEquals(1, queued.size)
+        queued.single().run()
+        assertEquals(0, allocator.totalBytesAllocated)
+        assertEquals(0L, allocator.memoryFootprint.toLong())
+        assertTrue(waits in 2..3)
     }
 }

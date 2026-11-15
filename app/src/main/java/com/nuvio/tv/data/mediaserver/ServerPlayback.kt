@@ -54,7 +54,10 @@ class ServerPlayback internal constructor(
         open(target)
     }
 
-    /** Closes the session behind [url] on [target]'s server, or waits for its stop report if it has just ended. */
+    /**
+     * Closes the session behind [url] on [target]'s server, or waits for its stop report if it has just ended.
+     * False when that session never started: nothing was sent for it, so the server has no room yet.
+     */
     private suspend fun closeForReplacement(url: String?, target: ServerPlaybackTarget): Boolean {
         val current = url?.let { key ->
             synchronized(lock) {
@@ -67,7 +70,7 @@ class ServerPlayback internal constructor(
             }
         } ?: return false
         current.stopAndWait()
-        return true
+        return current.started
     }
 
     private suspend fun open(target: ServerPlaybackTarget): ServerPlaybackSession {
@@ -236,7 +239,9 @@ class ServerPlayback internal constructor(
         if (!current.provider.supports(ServerCapability.USER_STATE_READ)) return null
         val details = try {
             withTimeoutOrNull(RESUME_TIMEOUT_MS) {
-                current.provider.details(current.liveSession(), current.playback.target.item.itemId)
+                repository.callForPlayback(current.session) { provider, session ->
+                    provider.details(session, current.playback.target.item.itemId)
+                }
             }
         } catch (error: CancellationException) {
             throw error
@@ -330,7 +335,9 @@ class ServerPlayback internal constructor(
         private val reporter = scope.launch {
             for (event in events) {
                 try {
-                    withTimeoutOrNull(REPORT_TIMEOUT_MS) { provider.report(liveSession(), playback, event) }
+                    withTimeoutOrNull(REPORT_TIMEOUT_MS) {
+                        repository.callForPlayback(session) { server, current -> server.report(current, playback, event) }
+                    }
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Exception) {

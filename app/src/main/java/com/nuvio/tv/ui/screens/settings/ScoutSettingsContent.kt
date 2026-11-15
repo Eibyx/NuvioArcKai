@@ -7,14 +7,21 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Diamond
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.QuestionAnswer
@@ -22,6 +29,7 @@ import androidx.compose.material.icons.filled.RateReview
 import androidx.compose.material.icons.filled.Recommend
 import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.ThumbsUpDown
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,9 +66,11 @@ internal fun ScoutSettingsContent(
     val context = androidx.compose.ui.platform.LocalContext.current
     val askHasKey by askAccess.hasKey.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val trackerSignedIn by viewModel.trackerSignedIn.collectAsStateWithLifecycle()
     val settings = profile.settings
     var showThumbs by rememberSaveable { mutableStateOf(false) }
     var showLeaveOut by remember { mutableStateOf(false) }
+    var showLeaveOutLanguages by remember { mutableStateOf(false) }
     var genres by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     LaunchedEffect(Unit) { genres = viewModel.genres() }
 
@@ -68,14 +78,30 @@ internal fun ScoutSettingsContent(
 
     if (showLeaveOut) {
         ScoutLeaveOutDialog(
-            genres = genres,
-            selected = settings.leaveOutGenres,
-            onToggle = { id ->
+            title = stringResource(R.string.scout_leave_out),
+            choices = genres.entries.sortedBy { it.value }.map { it.key.toString() to it.value },
+            selected = settings.leaveOutGenres.map(Int::toString).toSet(),
+            onToggle = { key ->
+                val id = key.toInt()
                 viewModel.updateSettings {
                     it.copy(leaveOutGenres = if (id in it.leaveOutGenres) it.leaveOutGenres - id else it.leaveOutGenres + id)
                 }
             },
             onDismiss = { showLeaveOut = false }
+        )
+    }
+    val languageNames = scoutLeaveOutLanguageNames()
+    if (showLeaveOutLanguages) {
+        ScoutLeaveOutDialog(
+            title = stringResource(R.string.scout_leave_out_languages),
+            choices = languageNames,
+            selected = settings.leaveOutLanguages,
+            onToggle = { id ->
+                viewModel.updateSettings {
+                    it.copy(leaveOutLanguages = if (id in it.leaveOutLanguages) it.leaveOutLanguages - id else it.leaveOutLanguages + id)
+                }
+            },
+            onDismiss = { showLeaveOutLanguages = false }
         )
     }
 
@@ -117,6 +143,13 @@ internal fun ScoutSettingsContent(
                     onClick = { onOpenRoute(com.nuvio.tv.ui.navigation.Screen.ScoutWords.route) }
                 )
             }
+            SettingsToggleRow(
+                title = stringResource(R.string.scout_menu_visible),
+                leadingIcon = Icons.Default.Menu,
+                subtitle = stringResource(R.string.scout_menu_visible_sub),
+                checked = settings.menuVisible,
+                onToggle = { viewModel.updateSettings { it.copy(menuVisible = !it.menuVisible) } }
+            )
         }
         SettingsGroupCard(title = stringResource(R.string.scout_settings_on_home)) {
             SettingsToggleRow(
@@ -125,6 +158,13 @@ internal fun ScoutSettingsContent(
                 subtitle = stringResource(R.string.scout_row_picked_sub),
                 checked = settings.pickedRow,
                 onToggle = { viewModel.updateSettings { it.copy(pickedRow = !it.pickedRow) } }
+            )
+            SettingsToggleRow(
+                title = stringResource(R.string.scout_row_genre),
+                leadingIcon = Icons.Default.Category,
+                subtitle = stringResource(R.string.scout_row_genre_sub),
+                checked = settings.genreRows,
+                onToggle = { viewModel.updateSettings { it.copy(genreRows = !it.genreRows) } }
             )
             SettingsToggleRow(
                 title = stringResource(R.string.scout_row_because),
@@ -147,6 +187,13 @@ internal fun ScoutSettingsContent(
                 checked = settings.tilesRow,
                 onToggle = { viewModel.updateSettings { it.copy(tilesRow = !it.tilesRow) } }
             )
+            SettingsToggleRow(
+                title = stringResource(R.string.scout_row_mixes),
+                leadingIcon = Icons.Default.Shuffle,
+                subtitle = stringResource(R.string.scout_row_mixes_sub),
+                checked = settings.mixesRow,
+                onToggle = { viewModel.updateSettings { it.copy(mixesRow = !it.mixesRow) } }
+            )
         }
         SettingsGroupCard(title = stringResource(R.string.scout_settings_tune)) {
             SettingsActionRow(
@@ -157,6 +204,14 @@ internal fun ScoutSettingsContent(
                     .ifBlank { stringResource(R.string.scout_leave_out_none) },
                 onClick = { showLeaveOut = true },
                 enabled = genres.isNotEmpty()
+            )
+            SettingsActionRow(
+                title = stringResource(R.string.scout_leave_out_languages),
+                leadingIcon = Icons.Default.Translate,
+                subtitle = stringResource(R.string.scout_leave_out_languages_sub),
+                value = languageNames.filter { it.first in settings.leaveOutLanguages }.joinToString(", ") { it.second }
+                    .ifBlank { stringResource(R.string.scout_leave_out_none) },
+                onClick = { showLeaveOutLanguages = true }
             )
         }
         SettingsGroupCard(title = stringResource(R.string.scout_question_title)) {
@@ -189,6 +244,23 @@ internal fun ScoutSettingsContent(
                     checked = settings.askAfterFilm,
                     onToggle = { viewModel.updateSettings { it.copy(askAfterFilm = !it.askAfterFilm) } }
                 )
+                SettingsToggleRow(
+                    title = stringResource(R.string.scout_send_ratings),
+                    leadingIcon = Icons.Default.CloudUpload,
+                    subtitle = stringResource(R.string.scout_send_ratings_sub),
+                    checked = settings.sendToTrackers,
+                    onToggle = { viewModel.updateSettings { it.copy(sendToTrackers = !it.sendToTrackers) } }
+                )
+                if (settings.sendToTrackers && !trackerSignedIn) {
+                    SettingsNote(text = stringResource(R.string.scout_send_ratings_none))
+                }
+                SettingsToggleRow(
+                    title = stringResource(R.string.scout_use_ratings),
+                    leadingIcon = Icons.Default.CloudDownload,
+                    subtitle = stringResource(R.string.scout_use_ratings_sub),
+                    checked = settings.useTrackerRatings,
+                    onToggle = { viewModel.updateSettings { it.copy(useTrackerRatings = !it.useTrackerRatings) } }
+                )
                 SettingsActionRow(
                     title = stringResource(R.string.scout_your_thumbs),
                     leadingIcon = Icons.Default.ThumbUp,
@@ -203,20 +275,37 @@ internal fun ScoutSettingsContent(
     }
 }
 
+/** Indian languages first, then the others by their name in the app's language. */
+@Composable
+private fun scoutLeaveOutLanguageNames(): List<Pair<String, String>> {
+    val indian = stringResource(R.string.scout_language_indian)
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    return remember(indian, locale) {
+        val others = com.nuvio.tv.core.scout.SCOUT_LEAVE_OUT_LANGUAGES
+            .filter { it.id != com.nuvio.tv.core.scout.SCOUT_LANGUAGE_INDIAN }
+            .map { choice ->
+                choice.id to java.util.Locale(choice.id).getDisplayLanguage(locale).replaceFirstChar { it.titlecase(locale) }
+            }
+            .sortedBy { it.second }
+        listOf(com.nuvio.tv.core.scout.SCOUT_LANGUAGE_INDIAN to indian) + others
+    }
+}
+
 @Composable
 private fun ScoutLeaveOutDialog(
-    genres: Map<Int, String>,
-    selected: Set<Int>,
-    onToggle: (Int) -> Unit,
+    title: String,
+    choices: List<Pair<String, String>>,
+    selected: Set<String>,
+    onToggle: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val first = remember { FocusRequester() }
-    NuvioDialog(onDismiss = onDismiss, title = stringResource(R.string.scout_leave_out)) {
+    NuvioDialog(onDismiss = onDismiss, title = title) {
         Column(
             modifier = Modifier.verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            genres.entries.sortedBy { it.value }.forEachIndexed { index, (id, name) ->
+            choices.forEachIndexed { index, (id, name) ->
                 SettingsToggleRow(
                     title = name,
                     subtitle = null,
@@ -245,24 +334,29 @@ internal fun ScoutThumbsPage(
         rows[target]?.requestFocusAfterFrames()
     }
     Column(
-        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         SettingsDetailHeader(
             title = stringResource(R.string.scout_your_thumbs),
             subtitle = stringResource(R.string.scout_your_thumbs_page_sub)
         )
-        SettingsGroupCard(modifier = Modifier.fillMaxWidth()) {
-            entries.forEachIndexed { index, entry ->
-                SettingsActionRow(
-                    title = entry.title.name,
-                    subtitle = null,
-                    value = stringResource(entry.rating.labelRes()),
-                    onClick = { editing = entry },
-                    modifier = Modifier
-                        .focusRequester(rows.getOrPut(entry.title.id) { FocusRequester() })
-                        .then(if (index == 0) Modifier.focusRequester(first) else Modifier)
-                )
+        SettingsGroupCard(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                itemsIndexed(entries, key = { _, entry -> entry.title.id }) { index, entry ->
+                    SettingsActionRow(
+                        title = entry.title.name,
+                        subtitle = entry.source?.let { stringResource(R.string.scout_thumb_from, trackerName(it)) },
+                        value = stringResource(entry.rating.labelRes()),
+                        onClick = { editing = entry },
+                        modifier = Modifier
+                            .focusRequester(rows.getOrPut(entry.title.id) { FocusRequester() })
+                            .then(if (index == 0) Modifier.focusRequester(first) else Modifier)
+                    )
+                }
             }
         }
     }
@@ -286,3 +380,14 @@ internal fun ScoutThumbsPage(
         LaunchedEffect(entry) { focus.requestFocusAfterFrames() }
     }
 }
+
+private fun trackerName(source: String): String =
+    when (com.nuvio.tv.core.tracking.TrackingProviderId.fromStorage(source)) {
+        com.nuvio.tv.core.tracking.TrackingProviderId.TRAKT -> "Trakt"
+        com.nuvio.tv.core.tracking.TrackingProviderId.SIMKL -> "Simkl"
+        com.nuvio.tv.core.tracking.TrackingProviderId.MDBLIST -> "MDBList"
+        com.nuvio.tv.core.tracking.TrackingProviderId.WETRAKR -> "WeTrakr"
+        com.nuvio.tv.core.tracking.TrackingProviderId.FLOPPY -> "Floppy"
+        com.nuvio.tv.core.tracking.TrackingProviderId.ANILIST -> "AniList"
+        null -> source
+    }

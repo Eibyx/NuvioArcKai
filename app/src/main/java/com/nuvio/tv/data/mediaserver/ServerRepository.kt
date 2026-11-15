@@ -220,6 +220,22 @@ class ServerRepository(
         }
     }
 
+    /**
+     * For a play already running: renews like [call], but carries on when the server list changes, uses [started]
+     * when its connection is gone, and leaves the connection's failure state alone.
+     */
+    suspend fun <T> callForPlayback(started: ServerSession, block: suspend (ServerProvider, ServerSession) -> T): T {
+        val session = session(started.connection.id) ?: started
+        val provider = provider(session.connection) ?: throw ServerException(ServerFailure.UNSUPPORTED)
+        val ready = if (provider.renewalDue(session)) renewAhead(provider, session) else session
+        return try {
+            block(provider, ready)
+        } catch (error: ServerException) {
+            if (error.failure != ServerFailure.AUTH_REQUIRED) throw error
+            block(provider, renew(provider, ready, error) ?: throw error)
+        }
+    }
+
     private suspend fun renewAhead(provider: ServerProvider, session: ServerSession): ServerSession = try {
         renew(provider, session, null) ?: session
     } catch (error: ServerException) {
@@ -389,6 +405,7 @@ class ServerRepository(
             enabled = true,
             useCatalogMetadata = existing?.useCatalogMetadata ?: true,
             importContinueWatching = existing?.importContinueWatching ?: true,
+            autoPlayFirst = existing?.autoPlayFirst ?: false,
             syncedImportWatchState = existing?.syncedImportWatchState,
             alternateAddress = existing?.alternateAddress,
             tlsPins = existing?.tlsPins.orEmpty() + listOfNotNull(acceptedCertificate),
@@ -471,6 +488,10 @@ class ServerRepository(
 
     fun setCatalogMetadata(connectionId: String, enabled: Boolean) {
         updateConnection(connectionId) { it.copy(useCatalogMetadata = enabled) }
+    }
+
+    fun setAutoPlayFirst(connectionId: String, enabled: Boolean) {
+        updateConnection(connectionId) { it.copy(autoPlayFirst = enabled) }
     }
 
     fun setImportContinueWatching(connectionId: String, enabled: Boolean) {
@@ -578,12 +599,16 @@ class ServerRepository(
             server.toConnection(id, credentialRef)
                 .copy(
                     importContinueWatching = local?.importContinueWatching ?: true,
+                    autoPlayFirst = local?.autoPlayFirst ?: false,
                     alternateAddress = local?.alternateAddress,
                     lastGoodAddress = local?.lastGoodAddress,
                     tlsPins = local?.tlsPins.orEmpty()
                 )
         }
-        val deviceOnly = current.filterNot { it.syncsToAccount || it.id in usedIds }
+        val offered = snapshot.servers.mapTo(mutableSetOf()) { it.key }
+        val deviceOnly = current.filter {
+            it.id !in usedIds && (!it.syncsToAccount || serverKey(it.providerId, it.remoteServerId, it.remoteUserId) !in offered)
+        }
         deviceOnly.forEach { connection ->
             currentTokens[connection.credentialRef]?.let { updatedTokens[connection.credentialRef] = it }
         }

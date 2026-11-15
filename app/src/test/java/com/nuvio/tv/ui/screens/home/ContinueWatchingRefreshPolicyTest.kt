@@ -44,6 +44,34 @@ class ContinueWatchingRefreshPolicyTest {
     }
 
     @Test
+    fun `film details stay fresh for 30 days, an ended show for 7, a running show until its next episode`() {
+        assertEquals(now + 30 * day, cwMetaKeepUntilMs(isFilm = true, ended = false, nextEpisodeAirMs = now + hour, nowMs = now))
+        assertEquals(now + 7 * day, cwMetaKeepUntilMs(isFilm = false, ended = true, nextEpisodeAirMs = null, nowMs = now))
+        assertEquals(now + 2 * hour, cwMetaKeepUntilMs(isFilm = false, ended = false, nextEpisodeAirMs = now + 2 * hour, nowMs = now))
+        assertEquals(now + 6 * hour, cwMetaKeepUntilMs(isFilm = false, ended = false, nextEpisodeAirMs = null, nowMs = now))
+    }
+
+    @Test
+    fun `a running show read back from storage is fetched again at once, films and ended shows keep their time`() {
+        val running = summary(status = "Continuing", videos = listOf(episode(1, 1, "2026-10-01")))
+        val ended = summary(status = "Ended", videos = listOf(episode(1, 1, "2026-10-01")))
+
+        assertEquals(now, cwStoredMetaRefreshAtMs("series:tt1", running, now + 5 * hour, now))
+        assertEquals(now + 7 * day, cwStoredMetaRefreshAtMs("series:tt2", ended, now + 7 * day, now))
+        assertEquals(now + 30 * day, cwStoredMetaRefreshAtMs("movie:tt3", running, now + 30 * day, now))
+    }
+
+    @Test
+    fun `details for another title are recognised, other id kinds are not judged`() {
+        assertTrue(cwMetaIsOtherTitle("tt10370710", "tt6763664"))
+        assertTrue(cwMetaIsOtherTitle("tmdb:103516", "tmdb:72844"))
+        assertFalse(cwMetaIsOtherTitle("tt6763664", "tt6763664"))
+        assertFalse(cwMetaIsOtherTitle("tt6763664", "tmdb:72844"))
+        assertFalse(cwMetaIsOtherTitle("kitsu:1", "tt6763664"))
+        assertFalse(cwMetaIsOtherTitle(null, "tt6763664"))
+    }
+
+    @Test
     fun `episode list without a refresh time is fetched again`() {
         assertTrue(shouldRefreshCwMeta(refreshAtMs = null, nowMs = now, playerOpen = false))
     }

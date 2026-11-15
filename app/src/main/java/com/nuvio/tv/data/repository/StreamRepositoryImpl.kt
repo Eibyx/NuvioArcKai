@@ -78,6 +78,9 @@ private const val SERVER_SOURCE_FETCH_TIMEOUT_MS = 15_000L
 private const val PLUGIN_LINK_DELIVERY_MARGIN_MS = 1_500L
 private const val PLUGIN_ICON_SIZE = "128"
 
+/** Queued once the add-on and server jobs are all done; compared by identity, never shown. */
+private val OTHER_SOURCES_DONE = AddonStreams(addonName = "", addonLogo = null, streams = emptyList())
+
 class StreamRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val api: AddonApi,
@@ -156,6 +159,11 @@ class StreamRepositoryImpl @Inject constructor(
     override fun setLocalPluginSearchPaused(paused: Boolean) {
         localPluginSearchPaused.value = paused
     }
+
+    private val sourcesAnsweredExceptPlugins: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    override fun sourcesAnsweredExceptPlugins(type: String, videoId: String, season: Int?, episode: Int?): Boolean =
+        pluginSearchKey(type, videoId, season, episode) in sourcesAnsweredExceptPlugins
 
     private enum class StreamFailureKind {
         MISSING,
@@ -362,6 +370,8 @@ class StreamRepositoryImpl @Inject constructor(
         serverStreams.logSkippedSources(type, videoId, season, episode)
 
         val addonTimeoutMs = addonStreamTimeoutMs()
+        val searchKey = pluginSearchKey(type, videoId, season, episode)
+        sourcesAnsweredExceptPlugins -= searchKey
 
         try {
             // A series started from a plugin keeps the next episode on that plugin.
@@ -389,6 +399,19 @@ class StreamRepositoryImpl @Inject constructor(
                 // Track number of pending jobs
                 val totalJobs = streamAddons.size + 1 + serverSources.size
                 val completedJobs = java.util.concurrent.atomic.AtomicInteger(0)
+                val otherJobs = streamAddons.size + serverSources.size
+                val otherJobsDone = java.util.concurrent.atomic.AtomicInteger(0)
+                val marksOthersDone = hasCompatiblePlugins && !continuePluginOnly
+                // The marker goes in before the count, so the channel is still open and it queues behind the last result.
+                fun finishJob(otherSource: Boolean) {
+                    if (otherSource && otherJobsDone.incrementAndGet() == otherJobs && marksOthersDone) {
+                        resultChannel.trySend(OTHER_SOURCES_DONE)
+                    }
+                    if (completedJobs.incrementAndGet() >= totalJobs) {
+                        resultChannel.close()
+                    }
+                }
+                if (otherJobs == 0 && marksOthersDone) resultChannel.trySend(OTHER_SOURCES_DONE)
 
                 // Launch addon jobs
                 streamAddons.forEach { addon ->
@@ -490,9 +513,7 @@ class StreamRepositoryImpl @Inject constructor(
                                     "streams=$addonStreamCount outcome=$addonOutcome"
                             )
                             recordAddonHealth(addon.baseUrl, addonOutcome, addonMs)
-                            if (completedJobs.incrementAndGet() >= totalJobs) {
-                                resultChannel.close()
-                            }
+                            finishJob(otherSource = true)
                         }
                     }
                 }
@@ -546,9 +567,7 @@ class StreamRepositoryImpl @Inject constructor(
                                     failure
                                 )
                             )
-                            if (completedJobs.incrementAndGet() >= totalJobs) {
-                                resultChannel.close()
-                            }
+                            finishJob(otherSource = true)
                         }
                     }
                 }
@@ -616,9 +635,7 @@ class StreamRepositoryImpl @Inject constructor(
                                 "ms=${android.os.SystemClock.elapsedRealtime() - pluginT0} " +
                                 "streams=-1 outcome=$pluginOutcome"
                         )
-                        if (completedJobs.incrementAndGet() >= totalJobs) {
-                            resultChannel.close()
-                        }
+                        finishJob(otherSource = false)
                     }
                 }
 
@@ -633,6 +650,14 @@ class StreamRepositoryImpl @Inject constructor(
                     while (true) {
                         val more = resultChannel.tryReceive().getOrNull() ?: break
                         batch += more
+                    }
+                    val othersDone = batch.removeAll { it === OTHER_SOURCES_DONE }
+                    if (othersDone) sourcesAnsweredExceptPlugins += searchKey
+                    if (batch.isEmpty()) {
+                        if (othersDone && accumulatedResults.isNotEmpty()) {
+                            emit(NetworkResult.Success(accumulatedResults.toList()))
+                        }
+                        continue
                     }
                     // Timing: the debrid cache check sits between an
                     // addon's arrival and its visibility to every consumer, so
@@ -682,6 +707,8 @@ class StreamRepositoryImpl @Inject constructor(
             if (e is CancellationException) throw e
             Log.e(TAG, "Failed to fetch streams: ${e.message}", e)
             emit(NetworkResult.Error(e.message ?: context.getString(com.nuvio.tv.R.string.stream_error_fetch_failed)))
+        } finally {
+            sourcesAnsweredExceptPlugins -= searchKey
         }
     }
 
@@ -778,10 +805,16 @@ class StreamRepositoryImpl @Inject constructor(
             val merged = existing.copy(
                 streams = mergeStreams(existing.streams + existing.thumbnailCopyStreams, result.streams)
             )
-            accumulatedResults[existingIndex] = presentStreams(merged, debridSettings)
+            accumulatedResults[existingIndex] = keptPerSource(presentStreams(merged, debridSettings))
         } else {
-            accumulatedResults.add(presentStreams(result, debridSettings))
+            accumulatedResults.add(keptPerSource(presentStreams(result, debridSettings)))
         }
+    }
+
+    private fun keptPerSource(group: AddonStreams): AddonStreams {
+        if (group.streams.size <= MAX_STREAMS_PER_SOURCE) return group
+        Log.i(TAG, "STREAM_CAP source=${group.addonName} streams=${group.streams.size} kept=$MAX_STREAMS_PER_SOURCE")
+        return group.copy(streams = capStreamsPerSource(group.streams))
     }
 
     private fun presentStreams(result: AddonStreams, debridSettings: DebridSettings): AddonStreams {
@@ -1188,3 +1221,12 @@ private val FINAL_DEBRID_STATES = setOf(
     com.nuvio.tv.domain.model.StreamDebridCacheState.CACHED,
     com.nuvio.tv.domain.model.StreamDebridCacheState.NOT_CACHED
 )
+
+/**
+ * One source answering with thousands of streams for a title costs every later step (matching, sorting, drawing) and
+ * the memory to hold them twice, for entries nobody scrolls to. Sources list their best first, so the head is kept.
+ */
+internal const val MAX_STREAMS_PER_SOURCE = 300
+
+internal fun <T> capStreamsPerSource(streams: List<T>, limit: Int = MAX_STREAMS_PER_SOURCE): List<T> =
+    if (streams.size > limit) streams.subList(0, limit).toList() else streams

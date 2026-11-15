@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Penilaian</string>
     <string name="scout_row_picked">Dipilih untuk Anda</string>
     <string name="scout_row_picked_sub">Film dan serial, diperbarui sekali sehari</string>
+    <string name="scout_row_genre">Baris per genre</string>
+    <string name="scout_row_genre_sub">Pilihan yang dikelompokkan menurut genre yang kamu suka</string>
     <string name="scout_row_because">Karena Anda menonton…</string>
     <string name="scout_row_because_sub">Mengikuti yang terakhir Anda selesaikan</string>
     <string name="scout_row_gems">Permata tersembunyi</string>
     <string name="scout_row_gems_sub">Judul bernilai bagus yang jarang ditonton orang</string>
     <string name="scout_row_tiles">Kotak Scout</string>
     <string name="scout_row_tiles_sub">Kejutkan saya, suasana hati, dekade</string>
+    <string name="scout_row_mixes">Campuran</string>
+    <string name="scout_row_mixes_sub">Campuran yang kamu simpan dan campuran hari raya musim ini</string>
     <string name="scout_ratings_enabled">Nilai judul</string>
     <string name="scout_ratings_enabled_sub">Menampilkan tombol Beri nilai, jempol di menu tekan lama, dan pertanyaan setelah film</string>
     <string name="scout_ratings_off_note">Menyembunyikan tombol Beri nilai, jempol di menu, dan pertanyaan setelah film. Penilaian Anda tetap dihitung.</string>
     <string name="scout_ask_enabled">Tanya kesan setelah film</string>
     <string name="scout_ask_enabled_sub">Bukan untuk saya, suka, atau sangat suka saat keluar dari pemutar</string>
+    <string name="scout_send_ratings">Kirim nilai saya ke pelacak</string>
+    <string name="scout_send_ratings_sub">Bukan untuk saya, Saya suka, dan Sangat suka dikirim ke Trakt, Simkl, MDBList, dan WeTrakr sebagai 3, 7, dan 10 dari 10. Nilai yang Anda berikan sendiri di pelacak tidak pernah diubah. Simkl hanya menerima judul yang sudah Anda tonton.</string>
+    <string name="scout_send_ratings_none">Belum ada pelacak yang masuk di profil ini, jadi belum ada yang dikirim.</string>
+    <string name="scout_use_ratings">Gunakan nilai dari pelacak saya</string>
+    <string name="scout_use_ratings_sub">Nilai yang Anda berikan di pelacak menjadi jempol di sini: 9 atau 10 berarti Sangat suka, 6 sampai 8 Saya suka, 1 sampai 4 Bukan untuk saya. Jempol yang Anda tekan di Arc selalu diutamakan.</string>
+    <string name="scout_thumb_from">Dari %1$s</string>
     <string name="scout_your_thumbs">Jempol Anda</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="other">%1$d judul dinilai. Buka untuk mengubah atau membatalkan</item>
@@ -80,4 +90,6 @@
     <string name="scout_leave_out">Kecualikan</string>
     <string name="scout_leave_out_sub">Genre yang tidak pernah ingin Anda lihat</string>
     <string name="scout_leave_out_none">Tidak ada</string>
+    <string name="scout_menu_visible">Tampilkan Scout di menu</string>
+    <string name="scout_menu_visible_sub">Baris Scout di Beranda punya sakelar sendiri</string>
 </resources>

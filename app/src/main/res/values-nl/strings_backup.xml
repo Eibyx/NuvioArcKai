@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Namen en afbeeldingen</string>
     <string name="backup_part_settings">Arc-instellingen</string>
     <string name="backup_part_settings_sub">Scout, miniaturen, DNS, afstandsbedieningsknoppen en meer</string>
+    <string name="backup_part_history">Bibliotheek en kijkgeschiedenis</string>
+    <string name="backup_part_history_sub">Opgeslagen titels, Verder kijken en bekeken-markeringen</string>
+    <string name="backup_part_history_signed_in">Je Nuvio-account bewaart dit al. Alleen hersteld op een box die niet is aangemeld.</string>
+    <string name="backup_part_history_counts">Opgeslagen titels: %1$d. Bekeken: %2$d. Bezig: %3$d.</string>
+    <string name="backup_supporter">Supporterstatus</string>
+    <string name="backup_supporter_yes">Ja. Supporterkleuren en -pictogrammen blijven behouden.</string>
+    <string name="backup_supporter_no">Nee</string>
     <string name="backup_part_secrets">Wachtwoorden en sleutels</string>
     <string name="backup_part_secrets_saved">Beveiligd met je pincode</string>
     <string name="backup_part_secrets_needs_pin">Back-uppincode nodig</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Als je je daarna aanmeldt bij Nuvio, kunnen je gesynchroniseerde instellingen de herstelde vervangen.</string>
     <string name="backup_restore_button">Herstellen</string>
     <string name="backup_pin_create_heading">Kies een pincode voor wachtwoorden en sleutels</string>
-    <string name="backup_pin_create_support">Minstens 6 cijfers. Arc kan de pincode niet terughalen, maar de rest van de back-up wordt ook zonder hersteld.</string>
+    <string name="backup_pin_create_support">6 tot 16 cijfers. Een langere pincode beschermt je inloggegevens beter als iemand het bestand kopieert. Arc kan de pincode niet terughalen, maar de rest van de back-up wordt ook zonder hersteld.</string>
     <string name="backup_pin_create_back">Druk op terug voor een back-up zonder wachtwoorden</string>
     <string name="backup_pin_confirm_heading">Voer de pincode opnieuw in</string>
     <string name="backup_pin_confirm_support">Dezelfde cijfers, voor de zekerheid.</string>

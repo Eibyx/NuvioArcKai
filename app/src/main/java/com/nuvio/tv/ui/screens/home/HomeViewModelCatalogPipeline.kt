@@ -14,12 +14,14 @@ import com.nuvio.tv.domain.model.Collection
 import com.nuvio.tv.domain.model.HomeLayout
 import com.nuvio.tv.domain.model.catalogRowStableKey
 import com.nuvio.tv.domain.model.enabledAddons
+import com.nuvio.tv.core.ratinglimit.withRatedCatalogsOnly
 import com.nuvio.tv.domain.model.legacyKey
 import com.nuvio.tv.domain.model.mergeCatalogPage
 import com.nuvio.tv.domain.model.nextCatalogSkip
 import com.nuvio.tv.domain.model.skipStep
 import com.nuvio.tv.domain.model.stableKey
 import com.nuvio.tv.domain.model.WatchedItem
+import com.nuvio.tv.domain.model.isSeriesLikeType
 import com.nuvio.tv.domain.model.supportsExtra
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -139,12 +141,20 @@ internal fun HomeViewModel.observeTmdbSettingsPipeline() {
 @OptIn(FlowPreview::class)
 internal fun HomeViewModel.observeInstalledAddonsPipeline() {
     viewModelScope.launch {
-        combine(addonRepository.getInstalledAddons(), serverCatalog.addons, builtInCatalogs.addons) { installed, servers, builtIn ->
+        val ratingLimits = com.nuvio.tv.core.ratinglimit.ratingLimitGateOrNull(appContext)
+        val limited = if (ratingLimits == null) {
+            kotlinx.coroutines.flow.flowOf(false)
+        } else {
+            kotlinx.coroutines.withContext(Dispatchers.IO) { ratingLimits.limitFor(profileManager.activeProfileId.value) }
+            combine(profileManager.activeProfileId, ratingLimits.limits) { id, _ -> ratingLimits.limitFor(id) != null }
+        }
+        combine(addonRepository.getInstalledAddons(), serverCatalog.addons, builtInCatalogs.addons, limited) { installed, servers, builtIn, isLimited ->
             val hidden = layoutPreferenceDataStore.hideNewCatalogsByDefault(
                 ServerCatalog.hiddenByDefaultKeys(servers) + builtInCatalogs.hiddenByDefaultKeys(builtIn)
             )
             if (hidden.isNotEmpty()) disabledHomeCatalogKeys = disabledHomeCatalogKeys + hidden
-            installed.enabledAddons() + servers + builtIn
+            val own = installed.enabledAddons()
+            (if (isLimited) own.withRatedCatalogsOnly() else own) + servers + builtIn
         }
             .distinctUntilChanged()
             .collectLatest { addons ->
@@ -170,12 +180,15 @@ internal suspend fun HomeViewModel.loadAllCatalogsPipeline(
     activeCatalogLoadSignature = signature
     watchedTitles.refillPages.clear()
     StartupLatencyTrace.mark("catalogs_load_start")
+    com.nuvio.tv.core.image.HomeStartCalm.begin()
     catalogsLoadInProgress = true
     // A full load leaves every catalog fresh, so the next return to Home has nothing to do.
     lastHomeCatalogRefreshAtMs = android.os.SystemClock.elapsedRealtime()
     catalogLoadGeneration += 1
     val generation = catalogLoadGeneration
     cancelInFlightCatalogLoads()
+    failedCatalogRetryJob?.cancel()
+    failedCatalogKeys.clear()
 
     // On reload (not first load), keep existing UI data visible while new
     // catalogs load in the background to avoid a flash of empty content.
@@ -491,6 +504,7 @@ internal fun HomeViewModel.loadCatalogPipeline(
                             replaceCatalogRow(key, result.data)
                             watchedTitles.refillPages.remove(key)
                         }
+                        failedCatalogKeys.remove(key)
                         // Trigger MDBList batch for newly loaded catalog data.
                         onCatalogRowItemsChanged(key)
                         // Remove placeholder descriptor now that real data is available
@@ -523,6 +537,10 @@ internal fun HomeViewModel.loadCatalogPipeline(
                         // Remove placeholder on error so it doesn't show forever
                         synchronized(catalogStateLock) {
                             placeholderDescriptors.removeAll { it.catalogKey == errorKey }
+                        }
+                        // One timed retry per failed row, later ones only with a refresh.
+                        if (readCatalogRow(errorKey) == null && failedCatalogKeys.add(errorKey)) {
+                            scheduleFailedCatalogRetry()
                         }
                         if (!hasCountedCompletion) {
                             pendingCatalogLoads = (pendingCatalogLoads - 1).coerceAtLeast(0)
@@ -1081,10 +1099,11 @@ internal fun HomeViewModel.schedulePosterStatusReconcilePipeline(rows: List<Cata
 }
 
 internal fun HomeViewModel.reconcilePosterStatusObserversPipeline(rows: List<CatalogRow>) {
+    // Movies and every other one-video type (an add-on's "youtube", say) are watched as a whole.
     val allMovieItemsByKey = linkedMapOf<String, String>()
     rows.asSequence()
         .flatMap { row -> row.items.asSequence() }
-        .filter { it.apiType.equals("movie", ignoreCase = true) }
+        .filterNot { isSeriesLikeType(it.apiType) }
         .forEach { item ->
             val key = homeItemStatusKey(item.id, item.apiType)
             if (key !in allMovieItemsByKey) {
@@ -1096,7 +1115,7 @@ internal fun HomeViewModel.reconcilePosterStatusObserversPipeline(rows: List<Cat
     val allSeriesItemsByKey = linkedMapOf<String, String>()
     rows.asSequence()
         .flatMap { row -> row.items.asSequence() }
-        .filter { it.apiType.equals("series", ignoreCase = true) || it.apiType.equals("tv", ignoreCase = true) }
+        .filter { it.apiType.equals("series", ignoreCase = true) || it.apiType.equals("tv", ignoreCase = true) || it.apiType.equals("anime", ignoreCase = true) }
         .forEach { item ->
             val key = homeItemStatusKey(item.id, item.apiType)
             if (key !in allSeriesItemsByKey) {
@@ -1115,12 +1134,14 @@ internal fun HomeViewModel.reconcilePosterStatusObserversPipeline(rows: List<Cat
             movieWatchedBatchJob = viewModelScope.launch {
                 watchProgressRepository.observeWatchedMovieIds()
                     .collectLatest { watchedIds ->
-                        _uiState.update { state ->
-                            val movieStatus = buildMap {
+                        val movieStatus = withContext(Dispatchers.Default) {
+                            buildMap {
                                 allMovieItemsByKey.forEach { (statusKey, contentId) ->
                                     put(statusKey, contentId in watchedIds)
                                 }
                             }
+                        }
+                        _uiState.update { state ->
                             // Merge with existing status to preserve series entries.
                             val merged = state.movieWatchedStatus
                                 .filterKeys { it !in desiredMovieKeys } + movieStatus
@@ -1137,7 +1158,13 @@ internal fun HomeViewModel.reconcilePosterStatusObserversPipeline(rows: List<Cat
 
     // Update series watched status from CW pipeline's fully-watched resolution.
     // This piggybacks on the meta lookups CW already performs — no extra network calls.
-    if (allSeriesItemsByKey.isNotEmpty()) {
+    val desiredSeriesKeys = allSeriesItemsByKey.keys
+    if (desiredSeriesKeys.isEmpty()) {
+        lastSeriesWatchedItemKeys = emptySet()
+        seriesWatchedObserverJob?.cancel()
+        seriesWatchedObserverJob = null
+    } else if (desiredSeriesKeys != lastSeriesWatchedItemKeys || seriesWatchedObserverJob?.isActive != true) {
+        lastSeriesWatchedItemKeys = desiredSeriesKeys
         seriesWatchedObserverJob?.cancel()
         seriesWatchedObserverJob = viewModelScope.launch {
             combine(
@@ -1146,33 +1173,32 @@ internal fun HomeViewModel.reconcilePosterStatusObserversPipeline(rows: List<Cat
             ) { fullyWatched, watchedItems ->
                 fullyWatched to watchedItems
             }.collectLatest { (fullyWatched, watchedItems) ->
-                val effectiveFullyWatched = if (
-                    watchProgressRepository.activeProviderOwnsCompletedHistoryProjection()
-                ) {
-                    fullyWatched
-                } else {
-                    reconcileFullyWatchedFromLocalItems(
-                        fullyWatched = fullyWatched,
-                        watchedItems = watchedItems,
-                        seriesContentIds = allSeriesItemsByKey.values
-                    )
-                }
-                val seriesStatus = buildMap {
-                    allSeriesItemsByKey.forEach { (statusKey, contentId) ->
-                        put(statusKey, contentId in effectiveFullyWatched)
+                val seriesStatus = withContext(Dispatchers.Default) {
+                    val effectiveFullyWatched = if (
+                        watchProgressRepository.activeProviderOwnsCompletedHistoryProjection()
+                    ) {
+                        fullyWatched
+                    } else {
+                        reconcileFullyWatchedFromLocalItems(
+                            fullyWatched = fullyWatched,
+                            watchedItems = watchedItems,
+                            seriesContentIds = allSeriesItemsByKey.values
+                        )
+                    }
+                    buildMap {
+                        allSeriesItemsByKey.forEach { (statusKey, contentId) ->
+                            put(statusKey, contentId in effectiveFullyWatched)
+                        }
                     }
                 }
                 _uiState.update { state ->
                     val merged = state.movieWatchedStatus
-                        .filterKeys { it !in allSeriesItemsByKey.keys } + seriesStatus
+                        .filterKeys { it !in desiredSeriesKeys } + seriesStatus
                     if (state.movieWatchedStatus == merged) state
                     else state.copy(movieWatchedStatus = merged)
                 }
             }
         }
-    } else {
-        seriesWatchedObserverJob?.cancel()
-        seriesWatchedObserverJob = null
     }
 
     _uiState.update { state ->
@@ -1358,8 +1384,26 @@ internal fun HomeViewModel.mergeRefreshedCatalogRow(
 }
 
 
-internal fun HomeViewModel.refreshVisibleCatalogsPipeline(requestedByUser: Boolean = false, forceReplace: Boolean = false) {
-    val loadedKeys = synchronized(catalogStateLock) { catalogsMap.keys.toSet() }
+private const val FAILED_CATALOG_RETRY_DELAY_MS = 30_000L
+
+private fun HomeViewModel.scheduleFailedCatalogRetry() {
+    if (failedCatalogRetryJob?.isActive == true) return
+    failedCatalogRetryJob = viewModelScope.launch {
+        delay(FAILED_CATALOG_RETRY_DELAY_MS)
+        refreshVisibleCatalogsPipeline(failedOnly = true)
+    }
+}
+
+internal fun HomeViewModel.refreshVisibleCatalogsPipeline(
+    requestedByUser: Boolean = false,
+    forceReplace: Boolean = false,
+    failedOnly: Boolean = false
+) {
+    val loadedKeys = if (failedOnly) {
+        failedCatalogKeys.toSet()
+    } else {
+        synchronized(catalogStateLock) { catalogsMap.keys.toSet() } + failedCatalogKeys
+    }
     if (loadedKeys.isEmpty()) return
 
     val toRefresh = addonsCache.flatMap { addon ->

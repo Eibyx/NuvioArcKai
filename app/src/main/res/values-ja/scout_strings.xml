@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">評価</string>
     <string name="scout_row_picked">あなたへのおすすめ</string>
     <string name="scout_row_picked_sub">映画とシリーズ、1日1回更新</string>
+    <string name="scout_row_genre">ジャンル別の列</string>
+    <string name="scout_row_genre_sub">好きなジャンルごとにまとめたおすすめ</string>
     <string name="scout_row_because">… を観たあなたへ</string>
     <string name="scout_row_because_sub">最近見終えた作品に連動</string>
     <string name="scout_row_gems">隠れた名作</string>
     <string name="scout_row_gems_sub">高評価だがあまり知られていない作品</string>
     <string name="scout_row_tiles">Scoutタイル</string>
     <string name="scout_row_tiles_sub">おまかせ、気分、年代</string>
+    <string name="scout_row_mixes">ミックス</string>
+    <string name="scout_row_mixes_sub">保存したミックスと、季節の行事ミックス</string>
     <string name="scout_ratings_enabled">作品を評価</string>
     <string name="scout_ratings_enabled_sub">評価ボタン、長押しメニューの親指、映画後の質問を表示</string>
     <string name="scout_ratings_off_note">評価ボタン、メニュー内の評価項目、映画の後の質問を非表示にします。これまでの評価は引き続き反映されます。</string>
     <string name="scout_ask_enabled">映画の後に感想を聞く</string>
     <string name="scout_ask_enabled_sub">プレーヤーを閉じるときに 好みじゃない・好き・大好き</string>
+    <string name="scout_send_ratings">評価をトラッカーに送信</string>
+    <string name="scout_send_ratings_sub">好みじゃない・好き・大好きは、Trakt、Simkl、MDBList、WeTrakrに10点中3・7・10点として送信されます。トラッカーで自分で付けた評価は変更されません。Simklには視聴済みの作品のみ送信されます。</string>
+    <string name="scout_send_ratings_none">このプロフィールにはサインイン中のトラッカーがないため、まだ何も送信されません。</string>
+    <string name="scout_use_ratings">トラッカーの評価を使う</string>
+    <string name="scout_use_ratings_sub">トラッカーで付けた評価がここでの評価になります：9か10は大好き、6〜8は好き、1〜4は好みじゃない。Arcで付けた評価が常に優先されます。</string>
+    <string name="scout_thumb_from">%1$sから</string>
     <string name="scout_your_thumbs">あなたの評価</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="other">%1$d作品を評価済み。開いて変更・取り消し</item>
@@ -80,4 +90,6 @@
     <string name="scout_leave_out">除外</string>
     <string name="scout_leave_out_sub">見たくないジャンル</string>
     <string name="scout_leave_out_none">なし</string>
+    <string name="scout_menu_visible">メニューにScoutを表示</string>
+    <string name="scout_menu_visible_sub">ホームのScout行にはそれぞれ専用のスイッチがあります</string>
 </resources>

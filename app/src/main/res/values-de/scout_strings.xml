@@ -12,17 +12,27 @@
     <string name="scout_settings_ratings">Bewertungen</string>
     <string name="scout_row_picked">Für dich ausgewählt</string>
     <string name="scout_row_picked_sub">Filme und Serien, einmal täglich aktualisiert</string>
+    <string name="scout_row_genre">Reihen nach Genre</string>
+    <string name="scout_row_genre_sub">Vorschläge nach deinen Lieblingsgenres gruppiert</string>
     <string name="scout_row_because">Weil du … gesehen hast</string>
     <string name="scout_row_because_sub">Folgt dem, was du zuletzt beendet hast</string>
     <string name="scout_row_gems">Verborgene Perlen</string>
     <string name="scout_row_gems_sub">Gut bewertete Titel, die wenige gesehen haben</string>
     <string name="scout_row_tiles">Scout-Kacheln</string>
     <string name="scout_row_tiles_sub">Überrasche mich, Stimmungen, Jahrzehnte</string>
+    <string name="scout_row_mixes">Mixe</string>
+    <string name="scout_row_mixes_sub">Deine gespeicherten Mixe und der Feiertagsmix der Saison</string>
     <string name="scout_ratings_enabled">Titel bewerten</string>
     <string name="scout_ratings_enabled_sub">Zeigt die Bewerten-Taste, die Daumen im Menü bei langem Drücken und die Frage nach einem Film</string>
     <string name="scout_ratings_off_note">Blendet die Bewerten-Taste, die Daumen im Menü und die Frage nach einem Film aus. Deine Bewertungen zählen weiter.</string>
     <string name="scout_ask_enabled">Nach einem Film nachfragen</string>
     <string name="scout_ask_enabled_sub">Nichts für mich, gefällt mir oder liebe ich beim Verlassen des Players</string>
+    <string name="scout_send_ratings">Meine Bewertungen an Tracker senden</string>
+    <string name="scout_send_ratings_sub">Nichts für mich, Gefällt mir und Liebe ich gehen als 3, 7 und 10 von 10 an Trakt, Simkl, MDBList und WeTrakr. Eine Bewertung, die du selbst auf einem Tracker vergeben hast, wird nie geändert. Simkl erhält nur Titel, die du gesehen hast.</string>
+    <string name="scout_send_ratings_none">In diesem Profil ist kein Tracker angemeldet, daher wird noch nichts gesendet.</string>
+    <string name="scout_use_ratings">Meine Tracker-Bewertungen nutzen</string>
+    <string name="scout_use_ratings_sub">Bewertungen von deinen Trackern werden hier zu Daumen: 9 oder 10 ist Liebe ich, 6 bis 8 Gefällt mir, 1 bis 4 Nichts für mich. Ein Daumen, den du in Arc drückst, hat immer Vorrang.</string>
+    <string name="scout_thumb_from">Von %1$s</string>
     <string name="scout_your_thumbs">Deine Daumen</string>
     <plurals name="scout_your_thumbs_sub">
         <item quantity="one">%1$d Titel bewertet. Öffnen zum Ändern oder Zurücknehmen</item>
@@ -81,4 +91,6 @@
     <string name="scout_leave_out">Auslassen</string>
     <string name="scout_leave_out_sub">Genres, die du nie sehen willst</string>
     <string name="scout_leave_out_none">Keine</string>
+    <string name="scout_menu_visible">Scout im Menü anzeigen</string>
+    <string name="scout_menu_visible_sub">Die Scout-Zeilen auf der Startseite haben eigene Schalter</string>
 </resources>

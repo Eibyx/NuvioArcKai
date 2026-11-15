@@ -67,6 +67,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.nuvio.tv.core.util.withAppLocale
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
@@ -114,7 +115,7 @@ class PlayerRuntimeController(
     internal val serverPlayback: ServerPlayback,
     internal val serverStreams: ServerStreams,
     internal val profileId: Int,
-    savedStateHandle: SavedStateHandle,
+    internal val savedStateHandle: SavedStateHandle,
     internal val scope: CoroutineScope,
     /** The user's subtitle folders (Kai); null in tests and builds without them. */
     internal val subtitleLibrary: com.nuvio.tv.core.subtitlelibrary.SubtitleLibraryService? = null,
@@ -256,6 +257,9 @@ class PlayerRuntimeController(
         }
     }
 
+    /** The screen was timed at another rate than Android reported for this film. */
+    internal var refreshMismatch: com.nuvio.tv.core.player.DisplayRefreshMeter.Reading? = null
+
     init {
         PlayerMemoryReporter.bufferedAheadProvider = bufferedAheadProvider
         PlayerMediaSourceFactory.vodCachePlayheadBytesProvider = vodCachePlayheadBytesProvider
@@ -313,6 +317,12 @@ class PlayerRuntimeController(
             PlayerMediaSourceFactory.parseHeaders(headersJson)
         )
         currentStreamUrl = initialPlaybackRequest.url
+        SlowStartServer.noteStream(
+            initialPlaybackRequest.url,
+            navigationArgs.streamName,
+            navigationArgs.streamDescription,
+            navigationArgs.addonName
+        )
         currentStreamMimeType = PlayerMediaSourceFactory.inferMimeType(
             url = initialPlaybackRequest.url,
             filename = currentFilename,
@@ -322,6 +332,23 @@ class PlayerRuntimeController(
         streamSubtitles = StreamSidecarSubtitles.forUrl(initialStreamUrl)
             .ifEmpty { StreamSidecarSubtitles.forUrl(currentStreamUrl) }
     }
+
+    /** URL opened from the reuse-last-link cache; it is refetched after a playback error even without a token. */
+    internal var linkCacheSourceUrl: String? = currentStreamUrl.takeIf {
+        navigationArgs.fromLinkCache && it.isNotBlank() && !it.startsWith("torrent://")
+    }
+
+    /** Last URL refetched after a playback error, so a link is refreshed at most once. */
+    internal var linkRefreshAttemptedUrl: String? = null
+
+    /** URL picked by auto source selection; only this source falls back to the next match on failure. */
+    internal var autoSelectedSourceUrl: String? = currentStreamUrl.takeIf {
+        navigationArgs.autoPlayNav && it.isNotBlank() && !it.startsWith("torrent://")
+    }
+    internal var sourceFallbackAttempts = 0
+    internal val sourceFallbackTriedKeys = mutableSetOf<String>()
+    internal var sourceFallbackJob: Job? = null
+    internal var sourceStartupTimeoutJob: Job? = null
 
     fun getCurrentStreamUrl(): String = currentStreamUrl
     fun getCurrentHeaders(): Map<String, String> = currentHeaders
@@ -418,6 +445,8 @@ class PlayerRuntimeController(
     val uiState: StateFlow<PlayerUiState> = _uiState.asStateFlow()
 
     init {
+        observeDisplayRefresh()
+        notePlayerPanels()
         scope.launch {
             _uiState
                 .map { it.isPlaying }
@@ -541,6 +570,8 @@ class PlayerRuntimeController(
     internal var seekProgressSyncJob: Job? = null
     internal var frameRateProbeJob: Job? = null
     internal var frameRateProbeToken: Long = 0L
+    internal val mkvTimedFrameRate = kotlinx.coroutines.flow.MutableStateFlow<Float?>(null)
+    @Volatile internal var mkvFrameTimingToken: Long = 0L
     internal var hideAspectRatioIndicatorJob: Job? = null
     internal var hideStreamSourceIndicatorJob: Job? = null
     internal var hidePlayerEngineSwitchInfoJob: Job? = null
@@ -627,6 +658,8 @@ class PlayerRuntimeController(
     internal var mpvEofSeenClear = false
     // Set once the Exo progress loop forced a natural end for a position past duration.
     internal var exoEndOverrunHandled = false
+    // Set when a load error right at the end of the file was taken as the natural end.
+    internal var exoSourceEndReached = false
     internal var shouldEnforceAutoplayOnFirstReady = true
 
     internal var rebufferCount: Int = 0
@@ -768,6 +801,10 @@ class PlayerRuntimeController(
     internal var resolvedAutoPlayerEngine: InternalPlayerEngine? = null
     internal var currentInternalPlayerEngine: InternalPlayerEngine = InternalPlayerEngine.EXOPLAYER
     internal var streamAutoPlayModeSetting: StreamAutoPlayMode = StreamAutoPlayMode.MANUAL
+    internal var streamAutoPlayFallbackActive: Boolean = false
+    internal var streamAutoPlayFallbackMaxSources: Int = PlayerSettings.DEFAULT_SOURCE_FALLBACK_MAX_SOURCES
+    internal var streamAutoPlayFallbackStartupTimeoutSeconds: Int =
+        PlayerSettings.DEFAULT_SOURCE_STARTUP_TIMEOUT_SECONDS
     internal var streamAutoPlayNextEpisodeEnabledSetting: Boolean = false
     internal var streamAutoPlayPreferBingeGroupForNextEpisodeSetting: Boolean = false
     internal var streamAutoPlayTimeoutSecondsSetting: Int = 10
@@ -858,6 +895,11 @@ class PlayerRuntimeController(
     // playback start briefly so the (tunneled) pipeline does not begin inside
     // the mode transition.
     internal var exoDelayStartAfterAfrSwitch: Boolean = false
+    // True while playback waits for the TV to settle after a pre-start mode switch; every start site stands
+    // down and the settle job starts playback when it ends.
+    internal var afrSettleHolding: Boolean = false
+    internal var afrSettleJob: Job? = null
+    internal var afrSettleToken: Int = 0
     // Frame rate taken from ExoPlayer's reported track format between prepare
     // and first frame, instead of a MediaExtractor probe on the ExoPlayer engine
     // path. trackAfrAttemptedForCurrentStream gates one attempt
@@ -914,7 +956,10 @@ class PlayerRuntimeController(
     internal var pendingAudioPcmFallbackRebuild: Boolean = false
     // Same-configuration rebuilds after a bitstream (passthrough) AudioTrack refusal, per stream.
     internal val playbackRecoveryGate = PlaybackRecoveryGate()
+    internal val sinkErrorLimiter = com.nuvio.tv.core.report.SinkErrorLimiter()
     internal var playbackRecoveryJob: Job? = null
+    internal var networkDropWatchJob: Job? = null
+    internal var networkDropRecoveredId: Int = 0
     internal var hasTriedDv7HevcFallback: Boolean = false
     internal var forceDv7ToHevc: Boolean = false
     internal var startupRetryCount: Int = 0
@@ -1021,6 +1066,7 @@ class PlayerRuntimeController(
     internal var libassPipelineDecisionStreamUrl: String? = null
     internal var torrentStreamJob: Job? = null
     internal var torrentStateObserverJob: Job? = null
+    internal var torrentMetadataWatchJob: Job? = null
     internal var isTorrentStream: Boolean = navigationArgs.infoHash != null && !initialStreamUrl.startsWith("http")
     internal var currentInfoHash: String? = navigationArgs.infoHash
     internal var currentFileIdx: Int? = navigationArgs.fileIdx
@@ -1120,17 +1166,20 @@ class PlayerRuntimeController(
     private fun observeStreamBadgeSettings() {
         scope.launch {
             streamBadgeSettingsDataStore.settings.collect { settings ->
+                val filters = if (settings.showInPlayer) {
+                    withContext(Dispatchers.Default) {
+                        StreamBadgeMatcher.compileCached(settings.rules.forPlayer(settings.playerBadgeSource))
+                    }
+                } else {
+                    emptyList()
+                }
                 _uiState.update {
                     it.copy(
                         showFileSizeBadges = settings.showFileSizeBadges,
                         showAddonLogo = settings.showAddonLogo,
                         streamBadgePlacement = settings.badgePlacement,
                         showPlayerBadges = settings.showInPlayer,
-                        playerBadgeFilters = if (settings.showInPlayer) {
-                            StreamBadgeMatcher.compile(settings.rules.forPlayer(settings.playerBadgeSource))
-                        } else {
-                            emptyList()
-                        }
+                        playerBadgeFilters = filters
                     )
                 }
             }
@@ -1144,6 +1193,7 @@ class PlayerRuntimeController(
         playerSession.close()
         stopServerPlayback()
         releasePlayer(flushPlaybackState = true, trimBufferInBackground = true)
+        PlaybackByteCounter.firstLengthListener = null
         stopTorrentStream()
         torrentService.shutdown()
         startupLoadingReportJob?.cancel()

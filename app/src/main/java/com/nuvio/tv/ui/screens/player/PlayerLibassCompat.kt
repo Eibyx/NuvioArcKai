@@ -19,6 +19,8 @@ import androidx.media3.extractor.text.SubtitleParser
 import com.nuvio.tv.core.player.HdrColorSignalingExtractor
 import com.nuvio.tv.core.player.RenderTimeSubtitles
 import com.nuvio.tv.core.player.dvmkv.MatroskaExtractor as DvMatroskaExtractor
+import com.nuvio.tv.core.player.BufferSizing
+import com.nuvio.tv.libass.media.AssHandlerConfig
 import com.nuvio.tv.libass.media.AssHandler
 import com.nuvio.tv.ui.screens.player.autosync.AutoSyncLibassSubtitles
 import com.nuvio.tv.libass.media.parser.AssSubtitleParserFactory
@@ -33,6 +35,9 @@ private class AssPlayerBinding(
 )
 
 private val assBindingsByPlayer = Collections.synchronizedMap(WeakHashMap<ExoPlayer, AssPlayerBinding>())
+
+/** Players that have a libass renderer now, for the memory snapshot. */
+internal fun libassPlayersAlive(): Int = assBindingsByPlayer.size
 
 /**
  * [subtitleTimeShiftUs] moves libass subtitles against the picture (audio delay minus subtitle
@@ -49,7 +54,7 @@ internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
     subtitleTimeShiftUs: () -> Long = { 0L },
     libraryFonts: LibraryFontRegistry = LibraryFontRegistry()
 ): ExoPlayer {
-    val assHandler = AssHandler()
+    val assHandler = AssHandler(assCacheConfig(smallBox = BufferSizing.isSmallBox(totalRamBytes(context))))
     val assSubtitleParserFactory = CompatAssSubtitleParserFactory(assHandler, libraryFonts)
     // AutoSync and the tap wrap after the Matroska swap, which matches extractors by class.
     val swappedExtractorsFactory = extractorsFactory.withAssMkvSupportCompat(
@@ -82,7 +87,14 @@ internal fun ExoPlayer.Builder.buildWithAssSupportCompat(
         .build()
 
     assBindingsByPlayer[player] = AssPlayerBinding(assHandler, subtitleTimeShiftUs, libraryFonts)
-    assHandler.init(player)
+    try {
+        assHandler.init(player)
+    } catch (failure: Throwable) {
+        // Nobody holds this player yet, so nobody else would release it.
+        assBindingsByPlayer.remove(player)
+        runCatching { player.release() }
+        throw failure
+    }
     // Registered after AssHandler, so it runs after libass has dropped the fonts: only a check
     // that the reload's transition did come before the folder subtitle's parser (see the registry).
     player.addListener(object : androidx.media3.common.Player.Listener {
@@ -198,3 +210,19 @@ internal fun ExtractorsFactory.withAssMkvSupportCompat(
         ): Array<Extractor> = delegate.createExtractors(uri, responseHeaders).map(::replace).toTypedArray()
     }
 }
+
+/**
+ * The library keeps up to 128 MB of drawn subtitle pieces by default, whatever the box. On a 2 GB box a film with
+ * heavy styled signs fills that beside the film buffer, so small boxes keep a quarter and redraw more often.
+ */
+internal fun assCacheConfig(smallBox: Boolean): AssHandlerConfig =
+    if (smallBox) AssHandlerConfig(SMALL_BOX_ASS_GLYPHS, SMALL_BOX_ASS_CACHE_MB) else AssHandlerConfig()
+
+internal const val SMALL_BOX_ASS_GLYPHS = 3_000
+internal const val SMALL_BOX_ASS_CACHE_MB = 32
+
+private fun totalRamBytes(context: Context): Long = runCatching {
+    val info = android.app.ActivityManager.MemoryInfo()
+    context.getSystemService(android.app.ActivityManager::class.java)?.getMemoryInfo(info)
+    info.totalMem
+}.getOrDefault(0L)

@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">名稱和頭像</string>
     <string name="backup_part_settings">Arc 設定</string>
     <string name="backup_part_settings_sub">Scout、縮圖、DNS、遙控器按鍵等</string>
+    <string name="backup_part_history">媒體庫與觀看紀錄</string>
+    <string name="backup_part_history_sub">已儲存的作品、繼續觀看和已觀看標記</string>
+    <string name="backup_part_history_signed_in">您的 Nuvio 帳戶已保存這些內容。僅在未登入的裝置上還原。</string>
+    <string name="backup_part_history_counts">已儲存：%1$d。已觀看：%2$d。觀看中：%3$d。</string>
+    <string name="backup_supporter">支持者狀態</string>
+    <string name="backup_supporter_yes">是。支持者顏色和圖示會保留。</string>
+    <string name="backup_supporter_no">否</string>
     <string name="backup_part_secrets">密碼和金鑰</string>
     <string name="backup_part_secrets_saved">已用您的 PIN 鎖定</string>
     <string name="backup_part_secrets_needs_pin">需要備份 PIN</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">如果您之後登入 Nuvio，同步的設定可能會取代已還原的設定。</string>
     <string name="backup_restore_button">還原</string>
     <string name="backup_pin_create_heading">為密碼和金鑰設定 PIN</string>
-    <string name="backup_pin_create_support">至少 6 位數字。Arc 無法找回它，但備份中的其他內容不需要它也能還原。</string>
+    <string name="backup_pin_create_support">6 到 16 位數字。如果有人複製了這個檔案，較長的 PIN 能更好地保護你的登入資訊。Arc 無法找回它，但備份中的其他內容不需要它也能還原。</string>
     <string name="backup_pin_create_back">按返回鍵可不含密碼進行備份</string>
     <string name="backup_pin_confirm_heading">再次輸入 PIN</string>
     <string name="backup_pin_confirm_support">輸入相同的數字以確認。</string>

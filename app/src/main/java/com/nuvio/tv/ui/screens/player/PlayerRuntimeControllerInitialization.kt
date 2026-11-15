@@ -1,7 +1,6 @@
 package com.nuvio.tv.ui.screens.player
 
 import com.nuvio.tv.core.build.IssueReports
-import com.nuvio.tv.core.player.dvmkv.DtsStreamType
 import com.nuvio.tv.core.util.TtffTrace
 import com.nuvio.tv.core.logging.diagnosticStreamUrl
 import com.nuvio.tv.core.logging.redactedUrlForLog
@@ -70,7 +69,9 @@ import androidx.media3.ui.PlayerView
 import com.nuvio.tv.R
 import com.nuvio.tv.core.player.DolbyVisionCodecFallback
 import com.nuvio.tv.core.player.DolbyVisionBaseLayerPolicy
+import com.nuvio.tv.core.player.AfrSettle
 import com.nuvio.tv.core.player.BitrateAwareLoadControl
+import com.nuvio.tv.core.player.FrameRateUtils
 import com.nuvio.tv.core.player.BufferAhead
 import com.nuvio.tv.core.player.BufferBudgetControl
 import com.nuvio.tv.core.player.BufferMemoryKeeper
@@ -109,7 +110,6 @@ import androidx.media3.common.Tracks
 import com.nuvio.tv.core.player.PlaceholderStreamPolicy
 
 
-private const val MPV_AFR_SETTLE_DELAY_MS = 2_000L
 // Absolute cap on how long playback start may wait for the AFR
 // preflight. In-probe timeouts (NextLib 6s + extractor 4s budgets) are advisory
 // against blocked native calls; the extractor also has a force-release
@@ -282,7 +282,10 @@ private fun PlayerRuntimeController.disposeExoPlayerBeforeRebuild(): Boolean {
         runCatching { player.clearVideoSurface() }
         runCatching { player.releaseAssHandlerCompat() }
         val releaseStartMs = android.os.SystemClock.elapsedRealtime()
+        // A release that runs out of time reports a timeout error from inside release(); it belongs to this player.
+        isReleasingPlayer = true
         runCatching { player.release() }
+        isReleasingPlayer = false
         val releaseMs = android.os.SystemClock.elapsedRealtime() - releaseStartMs
         Log.i(
             PlayerRuntimeController.TAG,
@@ -298,8 +301,36 @@ private fun PlayerRuntimeController.disposeExoPlayerBeforeRebuild(): Boolean {
     return releasedExistingPlayer
 }
 
-// AFR settle hold duration (Exo parity with mpvDelayStartAfterAfrSwitch).
-private const val AFR_EXO_SETTLE_HOLD_MS = 2_000L
+/**
+ * Holds the start of [player] until the TV has settled after the pre-start mode switch (see [AfrSettle]).
+ * The first frame and READY both stand down meanwhile; this starts playback at the end if one of them has
+ * already arrived, otherwise the normal start site does it with the hold released.
+ */
+private fun PlayerRuntimeController.beginAfrSettleHold(player: ExoPlayer, userDelayMs: Long) {
+    afrSettleJob?.cancel()
+    afrSettleHolding = true
+    val token = ++afrSettleToken
+    val requestedAt = FrameRateUtils.lastSwitchRequestedAtElapsed
+    afrSettleJob = scope.launch {
+        try {
+            AfrSettle.awaitSettled(context, requestedAt, userDelayMs)
+        } finally {
+            // A reused player for the next stream is the same object; only the newest hold may release.
+            if (token == afrSettleToken && _exoPlayer === player) {
+                afrSettleHolding = false
+                val started = if (isTunnelingActiveForCurrentPlayback) {
+                    player.playbackState == Player.STATE_READY
+                } else {
+                    hasRenderedFirstFrame
+                }
+                if (started && !userPausedManually && !isReleasingPlayer && !afrTrackSwitchInFlight) {
+                    player.playWhenReady = true
+                    player.play()
+                }
+            }
+        }
+    }
+}
 
 /**
  * Applies a [PlayerStartupPlaybackPolicy] start action through the fork's AFR gates:
@@ -318,21 +349,13 @@ private const val AFR_EXO_SETTLE_HOLD_MS = 2_000L
 private fun PlayerRuntimeController.startPlaybackThroughAfrGates(
     player: ExoPlayer,
     setPlayWhenReady: Boolean,
-    callPlay: Boolean,
-    holdForAfrSettle: Boolean
+    callPlay: Boolean
 ) {
     if (!setPlayWhenReady && !callPlay) return
     if (afrTrackSwitchInFlight) return
-    if (holdForAfrSettle) {
-        scope.launch {
-            kotlinx.coroutines.delay(AFR_EXO_SETTLE_HOLD_MS)
-            if (_exoPlayer === player && !userPausedManually && !isReleasingPlayer) {
-                player.playWhenReady = true
-                player.play()
-            }
-        }
-        return
-    }
+    // Every start stands down during the settle wait, also the READY that follows an early first frame;
+    // the settle job starts playback when it ends.
+    if (afrSettleHolding) return
     if (setPlayWhenReady) {
         player.playWhenReady = true
     }
@@ -620,8 +643,12 @@ internal fun PlayerRuntimeController.initializePlayer(
                         }
                     if (initializationGeneration != playbackRecoveryGate.generation) return@launch
                     if (mpvDelayStartAfterAfrSwitch) {
-                        Log.d(PlayerRuntimeController.TAG, "AFR display mode switched; delaying MPV start by ${MPV_AFR_SETTLE_DELAY_MS}ms")
-                        delay(MPV_AFR_SETTLE_DELAY_MS)
+                        val waitedMs = AfrSettle.awaitSettled(
+                            context,
+                            FrameRateUtils.lastSwitchRequestedAtElapsed,
+                            playerSettings.afrSettleDelaySeconds * 1000L
+                        )
+                        Log.d(PlayerRuntimeController.TAG, "AFR display mode switched; MPV start held until ${waitedMs}ms after the request")
                     }
                     setLoadingStatus(
                         phase = "mpv_buffering",
@@ -875,6 +902,8 @@ internal fun PlayerRuntimeController.initializePlayer(
             var builtCeilingMb = 0
             // The back buffer is read once when the player is built, before this stream's size arrives from the server.
             val fileBitrateAtBuild = fileBitrateBeforeBuild(url)
+            val oneGbBox = BufferSizing.isOneGbBox(context)
+            val sizedFloorMb = BufferSizing.sizedFloorMb(oneGbBox, fileBitrateAtBuild)
             // A 4K decoder on a 2 GB box without a video memory pool the app can read (a Fire TV Stick) takes its
             // pictures from app memory: the sizing keeps more for it.
             val fourKInAppMemory =
@@ -897,7 +926,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                     0
                 }
                 val sizing = NuvioExoPlayerPerformanceHelper.sizeTargetFromFreeMemory(
-                    BufferSizing.read(context), chunkWindowMb, heldBufferMb, fourKInAppMemory
+                    BufferSizing.read(context), chunkWindowMb, heldBufferMb, fourKInAppMemory, sizedFloorMb
                 )
                 Log.i(
                     PlayerRuntimeController.TAG,
@@ -935,8 +964,11 @@ internal fun PlayerRuntimeController.initializePlayer(
                 val budgetMbEffective = if (budgetManaged) {
                     val boxMb = MemoryBudget.autoBudgetMb
                     val free = if (MemoryBudget.offHeapBuffers) BufferSizing.read(context) else null
-                    currentManagedBudgetMb = BufferSizing.sizedBudgetMb(boxMb, free, 0, heldBufferMb, fourKInAppMemory)
-                    sizing = BufferSizing.describe(boxMb, currentManagedBudgetMb, free, 0, heldBufferMb, fourKInAppMemory) + " "
+                    currentManagedBudgetMb =
+                        BufferSizing.sizedBudgetMb(boxMb, free, 0, heldBufferMb, fourKInAppMemory, sizedFloorMb)
+                    sizing = BufferSizing.describe(
+                        boxMb, currentManagedBudgetMb, free, 0, heldBufferMb, fourKInAppMemory, sizedFloorMb
+                    ) + " "
                     unsizedBudgetMb = (boxMb - currentParallelChunkOverheadMb).coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
                     (currentManagedBudgetMb - currentParallelChunkOverheadMb).coerceAtLeast(MemoryBudget.MIN_BUFFER_MB)
                 } else {
@@ -1546,13 +1578,14 @@ internal fun PlayerRuntimeController.initializePlayer(
                             },
                             dv5Enabled = playerSettings.dv5ToDv81Enabled,
                             manualDv81 = manualDv81Selected && !dv7Mode1Forced,
-                            autoMode2 = autoDv81Mode2 && !dv7Mode1Forced
+                            autoMode2 = autoDv81Mode2 && !dv7Mode1Forced,
+                            relabelUnlabelledP5 = DolbyVisionBaseLayerPolicy.decodesProfile5()
                         ),
                         stripDvRpu = stripDvRpuEnabled,
                         stripHdr10PlusSei = stripHdr10PlusSei,
                         injectHdr10Sei = playerSettings.injectHdr10MetadataOnStrip,
                         autoSyncObservesText = autoSyncObservesText
-                    )
+                    ).let { MkvFrameTimingExtractorsFactory(it, startMkvFrameTiming()) }
             // The thumbnail tap wraps the outermost factory. The libass path takes the unwrapped one and wraps
             // after its own Matroska swap.
             val effectiveExtractorsFactory: ExtractorsFactory =
@@ -1679,6 +1712,9 @@ internal fun PlayerRuntimeController.initializePlayer(
             if (disposeExoPlayerBeforeRebuild()) {
                 delay(PLAYER_REBUILD_SETTLE_DELAY_MS)
             }
+            // A player released a moment ago, here or by the last player screen, may still be closing with its
+            // decoder and buffer. Building on top of it is how failing sources pile players up.
+            com.nuvio.tv.core.player.PlayerStrays.awaitGone()
 
             if (initializationGeneration != playbackRecoveryGate.generation) return@launch
             // Left the foreground while preparing: build on return instead of claiming a decoder
@@ -1714,6 +1750,16 @@ internal fun PlayerRuntimeController.initializePlayer(
             }
             } // end rebuild branch of the reuse fork
             lastExoConstructionFingerprint = constructionFingerprint
+            com.nuvio.tv.core.player.PlaybackMemoryFacts.onExoBuilt(
+                nativeMemory = playerSettings.nuvioPerformanceModeEnabled,
+                buffer = when {
+                    playerSettings.nuvioPerformanceModeEnabled ->
+                        if (NuvioExoPlayerPerformanceHelper.targetIsAutomatic) "automatic" else "custom"
+                    playerSettings.bufferEngineEnabled -> if (playerSettings.bufferBudgetManaged) "automatic" else "custom"
+                    else -> "stock"
+                },
+                allocator = _loadControl?.allocator as? androidx.media3.exoplayer.upstream.DefaultAllocator,
+            )
             attachBufferMemoryKeeper(
                 if (reuseLivePlayer) bufferMemoryKeeper?.control?.takeIf { it === _loadControl } else builtBudgetControl,
                 BufferMemoryKeeper.budgetManaged(
@@ -1721,6 +1767,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                     budgetManaged = playerSettings.bufferBudgetManaged
                 ),
                 ceilingMb = builtCeilingMb,
+                floorMb = sizedFloorMb,
+                oneGbBox = oneGbBox,
             )
             (_loadControl as? BufferBudgetControl)?.let {
                 Log.i(PlayerRuntimeController.TAG, "BUFFER_TOPUP: ${it.topUp.describe()} reused=$reuseLivePlayer")
@@ -1860,6 +1908,12 @@ internal fun PlayerRuntimeController.initializePlayer(
                 var afrSettleHoldPending =
                     exoDelayStartAfterAfrSwitch && !startPaused && !userPausedManually
                 exoDelayStartAfterAfrSwitch = false
+                afrSettleJob?.cancel()
+                afrSettleToken++
+                afrSettleHolding = false
+                if (afrSettleHoldPending) {
+                    beginAfrSettleHold(this, playerSettings.afrSettleDelaySeconds * 1000L)
+                }
                 playWhenReady = false
                 if (deferOpen) deferFilmOpen(initialResumePosition) else prepare()
 
@@ -1921,7 +1975,8 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 isBuffering = if (NuvioExoPlayerPerformanceHelper.shouldSuppressBufferingUi(
                                     suppressBufferingUiForSeek, seekBufferingUiDeferred, isBuffering
                                 )) false else isBuffering,
-                                playbackEnded = naturalEnded
+                                playbackEnded = naturalEnded ||
+                                    (playbackState == Player.STATE_IDLE && exoSourceEndReached)
                             )
                         }
                         updateAudioControlAvailability()
@@ -2070,8 +2125,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                     startPlaybackThroughAfrGates(
                                         player = this@apply,
                                         setPlayWhenReady = action.setPlayWhenReady,
-                                        callPlay = action.callPlay,
-                                        holdForAfrSettle = afrSettleHoldPending
+                                        callPlay = action.callPlay
                                     )
                                     afrSettleHoldPending = false
                                     finishLoadingDiagnostics("first_frame_ready")
@@ -2089,8 +2143,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                     startPlaybackThroughAfrGates(
                                         player = this@apply,
                                         setPlayWhenReady = action.setPlayWhenReady,
-                                        callPlay = action.callPlay,
-                                        holdForAfrSettle = afrSettleHoldPending
+                                        callPlay = action.callPlay
                                     )
                                     afrSettleHoldPending = false
                                 }
@@ -2098,8 +2151,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                     startPlaybackThroughAfrGates(
                                         player = this@apply,
                                         setPlayWhenReady = action.setPlayWhenReady,
-                                        callPlay = action.callPlay,
-                                        holdForAfrSettle = false
+                                        callPlay = action.callPlay
                                     )
                                 }
                                 is PlayerStartupPlaybackPolicy.ReadyAction.PostFirstFrameResume -> {
@@ -2110,8 +2162,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                     startPlaybackThroughAfrGates(
                                         player = this@apply,
                                         setPlayWhenReady = false,
-                                        callPlay = action.callPlay,
-                                        holdForAfrSettle = false
+                                        callPlay = action.callPlay
                                     )
                                 }
                                 PlayerStartupPlaybackPolicy.ReadyAction.None -> Unit
@@ -2233,7 +2284,10 @@ internal fun PlayerRuntimeController.initializePlayer(
                             repeatMode = Player.REPEAT_MODE_ONE
                             com.nuvio.tv.core.formatcheck.FormatCheckSession.onFirstFrame()
                         }
-                        if (isFirstFrame) playerSession.firstFrame()
+                        if (isFirstFrame) {
+                            playerSession.firstFrame()
+                            OutsideFailureStreak.shared.reset()
+                        }
                         logSeekReady("first_frame")
                         if (isFirstFrame) {
                             DrawingMemory.releaseForFilm(
@@ -2260,7 +2314,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         // While a track-format AFR switch is settling, hold
                         // the start; resumePlaybackAfterTrackAfrIfHeld() starts
                         // playback when the gate releases (deadline-bounded).
-                        if (!startPaused && !userPausedManually && !afrTrackSwitchInFlight) {
+                        if (!startPaused && !userPausedManually && !afrTrackSwitchInFlight && !afrSettleHolding) {
                             playWhenReady = true
                             play()
                         }
@@ -2289,6 +2343,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         cancelTunnelAvSyncWatchdog()
                         val detailedError = error.toDisplayMessage(context)
                         cancelStableProgressReset()
+                        if (finishOnSourceErrorAtEnd(this@apply, error)) return
 
                         if (Vc1VideoFormatHeuristics.isVc1PlaybackFailure(
                                 error = error,
@@ -2363,6 +2418,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                             retryCurrentStreamWithoutNativeFel(currentPosition)
                             return
                         }
+                        if (handleNetworkDropError(error, currentPosition)) return
                         val autoRecoveryBudgetAvailable = consumeAutoRecoveryBudget(detailedError)
                         if (autoRecoveryBudgetAvailable) {
 
@@ -2539,6 +2595,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         // both same-URL retries on a doomed link. Checked before the
                         // engine failover: a dead URL is dead on either engine.
                         if (tryFreshLinkForReusedLink(error, detailedError)) return
+                        if (tryFreshLinkForRefusedLink(error, detailedError)) return
 
                         if (isDeadSourceHttpError(error) && attemptDeadSourceFailover(error, detailedError)) {
                             return
@@ -2557,6 +2614,15 @@ internal fun PlayerRuntimeController.initializePlayer(
                             savedPosition = currentPosition,
                             paused = pausedByUser
                         )) {
+                            return
+                        }
+
+                        // A link that has likely expired is fetched again before anything else is tried on it.
+                        val linkError = ReusedLinkRefresh.isLinkError(
+                            error.findInvalidResponseCodeException()?.responseCode,
+                            isDeadSourcePlaybackError(error)
+                        )
+                        if (tryRefreshExpiredLinkAfterError(detailedError, linkError)) {
                             return
                         }
 
@@ -2643,13 +2709,15 @@ internal fun PlayerRuntimeController.initializePlayer(
                              error.errorCode == PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES ||
                              error.errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED ||
                              error.errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED)
+                        val card = errorCardFor(error)
                         _uiState.update {
                             it.copy(
                                 // Wiring-gap fix: surface the mapped, human-readable
                                 // message (toDisplayMessage) instead of the raw
                                 // extractor dump; detailedError still flows to
                                 // diagnostics and the issue report above.
-                                error = error.toDisplayMessage(context),
+                                error = card?.message ?: error.toDisplayMessage(context),
+                                errorCard = card,
                                 showSwitchToMpvErrorAction = canSwitchToMpvOnFatal,
                                 showLoadingOverlay = false,
                                 showPauseOverlay = false,
@@ -2679,7 +2747,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         // Records whether audio is passed through, decoded to PCM,
                         // or transcoded, for the Audio Path row.
                         val sourceMime = this@apply.audioFormat?.sampleMimeType
-                        val sourceCodec = DtsStreamType.of(this@apply.audioFormat)?.label
+                        val sourceCodec = bitstreamAudioLabel(this@apply.audioFormat)
                             ?: describeAudioMime(sourceMime)
                         // The only transcode this app performs is
                         // x -> AC-3 (denied-codec handling / Force AC-3). When the
@@ -2734,6 +2802,13 @@ internal fun PlayerRuntimeController.initializePlayer(
                             C.ENCODING_PCM_FLOAT -> false
                             else -> true
                         }
+                        com.nuvio.tv.core.player.PlaybackMemoryFacts.onAudioOutput(
+                            when {
+                                sinkPath == "AC-3 transcode" -> "ac3 transcode"
+                                bypassing -> "passthrough"
+                                else -> null
+                            }
+                        )
                         if (bypassing != isAudioOutputBypassing) {
                             isAudioOutputBypassing = bypassing
                             updateAudioControlAvailability()
@@ -2747,6 +2822,21 @@ internal fun PlayerRuntimeController.initializePlayer(
                         if (passthroughGroupOfEncoding(audioTrackConfig.encoding) != null) {
                             com.nuvio.tv.ui.screens.player.iec.LiveDirectAudioPlayback.noteOwnTrackClosed()
                         }
+                        com.nuvio.tv.core.report.PlaybackRecorder.event(
+                            com.nuvio.tv.core.report.RecorderEvent.AUDIO_OUTPUT,
+                            "released encoding=${audioTrackConfig.encoding} rateHz=${audioTrackConfig.sampleRate}"
+                        )
+                    }
+
+                    override fun onAudioPositionAdvancing(
+                        eventTime: AnalyticsListener.EventTime,
+                        playoutStartSystemTimeMs: Long
+                    ) {
+                        val sinceMs = System.currentTimeMillis() - playoutStartSystemTimeMs
+                        com.nuvio.tv.core.report.PlaybackRecorder.event(
+                            com.nuvio.tv.core.report.RecorderEvent.AUDIO_OUTPUT,
+                            "position_advancing startedAgoMs=$sinceMs"
+                        )
                     }
 
                     override fun onPlaybackStateChanged(eventTime: AnalyticsListener.EventTime, state: Int) {
@@ -2788,7 +2878,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                                 val source = this@apply.audioFormat
                                 val sinkFormat = playbackSpeedAwareAudioSink?.activeInputFormat
                                 if (source?.sampleMimeType != null && sinkFormat?.sampleMimeType != null) {
-                                    val src = DtsStreamType.of(source)?.label
+                                    val src = bitstreamAudioLabel(source)
                                         ?: describeAudioMime(source.sampleMimeType)
                                     val detail = buildString {
                                         when {
@@ -2857,6 +2947,9 @@ internal fun PlayerRuntimeController.initializePlayer(
                         initializationDurationMs: Long
                     ) {
                         if (_exoPlayer !== this@apply) return
+                        com.nuvio.tv.core.player.PlaybackMemoryFacts.onVideoDecoder(
+                            decoderName, isSoftwareVideoDecoderName(decoderName, softwareOnlyDecoderNames)
+                        )
                         com.nuvio.tv.core.formatcheck.FormatCheckSession.onDecoder(decoderName)
                         currentDiagnostics = currentDiagnostics.copy(dv81DecoderName = decoderName)
                         playbackAnalyticsDiagnostics.onVideoDecoderInitialized(
@@ -2886,6 +2979,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         // Ignore callbacks from an already replaced player.
                         if (_exoPlayer === this@apply) {
                             _uiState.update { it.copy(isHdrVideo = isHdrVideoFormat(format)) }
+                            com.nuvio.tv.core.player.PlaybackMemoryFacts.onVideoFormat(format.sampleMimeType, format.width, format.height)
                         }
                         playbackAnalyticsDiagnostics.onVideoInputFormatChanged(
                             eventTime = eventTime,
@@ -2935,6 +3029,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         initializedTimestampMs: Long,
                         initializationDurationMs: Long
                     ) {
+                        if (_exoPlayer === this@apply) com.nuvio.tv.core.player.PlaybackMemoryFacts.onAudioDecoder(decoderName)
                         playbackAnalyticsDiagnostics.onAudioDecoderInitialized(
                             eventTime = eventTime,
                             decoderName = decoderName,
@@ -2951,6 +3046,7 @@ internal fun PlayerRuntimeController.initializePlayer(
                         format: Format,
                         decoderReuseEvaluation: DecoderReuseEvaluation?
                     ) {
+                        if (_exoPlayer === this@apply) com.nuvio.tv.core.player.PlaybackMemoryFacts.onAudioFormat(format.sampleMimeType)
                         playbackAnalyticsDiagnostics.onAudioInputFormatChanged(
                             eventTime = eventTime,
                             format = format,
@@ -2975,6 +3071,10 @@ internal fun PlayerRuntimeController.initializePlayer(
 
                     override fun onAudioSinkError(eventTime: AnalyticsListener.EventTime, audioSinkError: Exception) {
                         if (_exoPlayer !== this@apply) return
+                        sinkErrorLimiter.line(
+                            SystemClock.elapsedRealtime(),
+                            com.nuvio.tv.core.report.PlaybackOutputLines.sinkError(audioSinkError)
+                        )?.let { com.nuvio.tv.core.report.PlaybackRecorder.event(com.nuvio.tv.core.report.RecorderEvent.AUDIO_OUTPUT, it) }
                         playbackRecoveryGate.noteAudioSinkError(SystemClock.elapsedRealtime())
                     }
 
@@ -3282,6 +3382,7 @@ internal fun PlayerRuntimeController.resetLoadingOverlayForNewStream() {
     endDetectionArmed = false
     mpvEofSeenClear = false
     exoEndOverrunHandled = false
+    exoSourceEndReached = false
     hasMarkedCurrentEpisodeCompleted = false
     // The placeholder probe is a per-stream measurement, not a
     // per-screen one: the reuse path re-enters initializePlayer on the
@@ -3289,6 +3390,9 @@ internal fun PlayerRuntimeController.resetLoadingOverlayForNewStream() {
     // stream of a binge and stay inert on every transition after it.
     placeholderProbeDone = false
     placeholderRejectedForCurrentStream = false
+    PlaybackByteCounter.firstLengthListener = { url, length ->
+        Handler(Looper.getMainLooper()).post { onFirstMediaLength(url, length) }
+    }
     shouldEnforceAutoplayOnFirstReady = true
     userPausedManually = false
     scrubHoldPaused = false
@@ -3499,6 +3603,12 @@ private class SubtitleOffsetRenderersFactory(
                 DefaultAudioSink.Builder()
                     .setAudioCapabilities(AudioOutputRouteDetector.bluetoothPcmOnlyCapabilities())
             }
+            forceOpticalPassthrough -> {
+                val pinned = buildStableAudioCapabilities(context, true)
+                pinnedOutputEncodings = PassthroughOutputReturn.encodingsOf(pinned)
+                DefaultAudioSink.Builder()
+                    .setAudioCapabilities(pinned)
+            }
             isTelevision -> {
                 val pinned = PassthroughOutputReturn.capabilities(context)
                 pinnedOutputEncodings = PassthroughOutputReturn.encodingsOf(pinned)
@@ -3537,8 +3647,10 @@ private class SubtitleOffsetRenderersFactory(
             Log.w(PlayerRuntimeController.TAG, "STHRESH: DIRECT start threshold -> $reducedStartThresholdFrames frames")
         }
         var speedAwareSink: PlaybackSpeedAwareAudioSink? = null
+        val smallBox = BufferSizing.isSmallBox(NuvioExoPlayerPerformanceHelper.getDevicePhysicalRamBytes(context))
         val iecAudioSink = IecPassthroughAudioSink(
             sink = baseAudioSink,
+            trueHdBufferTargetMs = com.nuvio.tv.ui.screens.player.iec.IecStallMargin.trueHdBufferMs(smallBox),
             hbrIecEnabled = !useSystemPassthrough && !forceOpticalPassthrough && !bluetoothForcePcm && !iecOff,
             onIecBecameReady = {
                 Handler(Looper.getMainLooper()).post {
@@ -4039,6 +4151,9 @@ private fun friendlyVideoHdrType(
     dvConversionOccurred: Boolean
 ): String? {
     val isDolbyVisionMime = mimeType?.lowercase() == MimeTypes.VIDEO_DOLBY_VISION
+    val baseLayerDefault = "HDR10".takeIf {
+        isDolbyVisionMime || mimeType?.lowercase() == MimeTypes.VIDEO_H265
+    }
     fun fromTransfer(): String? = when (colorTransfer) {
         C.COLOR_TRANSFER_ST2084 -> "HDR10"
         C.COLOR_TRANSFER_HLG -> "HLG"
@@ -4047,9 +4162,9 @@ private fun friendlyVideoHdrType(
     }
     return when {
         // Ignore DV data: output is HDR10/SDR, never Dolby Vision.
-        effectiveModeName == "HDR10_BASE_LAYER" -> fromTransfer() ?: "HDR10"
+        effectiveModeName == "HDR10_BASE_LAYER" -> fromTransfer() ?: baseLayerDefault
         // DV RPU stripped: output is HDR10 base layer, never Dolby Vision.
-        effectiveModeName == "STRIP_DV" -> fromTransfer() ?: "HDR10"
+        effectiveModeName == "STRIP_DV" -> fromTransfer() ?: baseLayerDefault
         // DV8.1 conversion, but only label it DV if a conversion actually ran. AUTO arms
         // this mode for every file on a DV display, so plain SDR/HDR10 lands here too.
         effectiveModeName == "DV81_LIBDOVI" && dvConversionOccurred -> "Dolby Vision"

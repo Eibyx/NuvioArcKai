@@ -67,6 +67,9 @@ private fun PlayerRuntimeController.seedFrameRateFromPrewarmedHead(url: String, 
     )
 }
 
+internal val PlayerRuntimeController.afrAllowSeamlessSwitch: Boolean
+    get() = lastAppliedPlayerSettings?.afrAllowSeamlessSwitch == true
+
 internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
     url: String,
     headers: Map<String, String>,
@@ -118,7 +121,7 @@ internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
             detectedFrameRateSource = FrameRateSource.PROBE
         )
     }
-    val prefer23976ProbeBias = cached.raw in 23.95f..23.999f
+    val prefer23976ProbeBias = FrameRateUtils.prefers23976(cached.raw)
     val targetFrameRate = FrameRateUtils.refineFrameRateForDisplay(
         activity = activity,
         detectedFps = cached.snapped,
@@ -138,7 +141,8 @@ internal suspend fun PlayerRuntimeController.runAfrCachePreflightIfEnabled(
         frameRate = targetFrameRate,
         videoWidth = cached.videoWidth,
         videoHeight = cached.videoHeight,
-        resolutionMatchingEnabled = resolutionMatchingEnabled
+        resolutionMatchingEnabled = resolutionMatchingEnabled,
+        allowSeamlessSwitch = afrAllowSeamlessSwitch
     )
     if (isStale()) return
 
@@ -228,7 +232,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
                     detectedFrameRateSource = FrameRateSource.PROBE
                 )
             }
-            val prefer23976ProbeBias = cached.raw in 23.95f..23.999f
+            val prefer23976ProbeBias = FrameRateUtils.prefers23976(cached.raw)
             val targetFrameRate = FrameRateUtils.refineFrameRateForDisplay(
                 activity = activity,
                 detectedFps = cached.snapped,
@@ -248,7 +252,8 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
                 frameRate = targetFrameRate,
                 videoWidth = cached.videoWidth,
                 videoHeight = cached.videoHeight,
-                resolutionMatchingEnabled = resolutionMatchingEnabled
+                resolutionMatchingEnabled = resolutionMatchingEnabled,
+                allowSeamlessSwitch = afrAllowSeamlessSwitch
             )
             if (isStale()) return
 
@@ -363,7 +368,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             )
         }
 
-        val prefer23976ProbeBias = detection.raw in 23.95f..23.999f
+        val prefer23976ProbeBias = FrameRateUtils.prefers23976(detection.raw)
         val targetFrameRate = FrameRateUtils.refineFrameRateForDisplay(
             activity = activity,
             detectedFps = detection.snapped,
@@ -383,7 +388,8 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
             frameRate = targetFrameRate,
             videoWidth = detection.videoWidth,
             videoHeight = detection.videoHeight,
-            resolutionMatchingEnabled = resolutionMatchingEnabled
+            resolutionMatchingEnabled = resolutionMatchingEnabled,
+            allowSeamlessSwitch = afrAllowSeamlessSwitch
         )
         if (isStale()) return
 

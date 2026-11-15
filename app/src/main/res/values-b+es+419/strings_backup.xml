@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Nombres e imágenes</string>
     <string name="backup_part_settings">Configuración de Arc</string>
     <string name="backup_part_settings_sub">Scout, miniaturas, DNS, botones del control remoto y más</string>
+    <string name="backup_part_history">Biblioteca e historial de reproducción</string>
+    <string name="backup_part_history_sub">Títulos guardados, Seguir Viendo y marcas de visto</string>
+    <string name="backup_part_history_signed_in">Tu cuenta de Nuvio ya los guarda. Solo se restauran en un dispositivo sin sesión iniciada.</string>
+    <string name="backup_part_history_counts">Títulos guardados: %1$d. Vistos: %2$d. En curso: %3$d.</string>
+    <string name="backup_supporter">Estado de colaborador</string>
+    <string name="backup_supporter_yes">Sí. Se conservan los colores e iconos de colaborador.</string>
+    <string name="backup_supporter_no">No</string>
     <string name="backup_part_secrets">Contraseñas y claves</string>
     <string name="backup_part_secrets_saved">Protegidas con tu PIN</string>
     <string name="backup_part_secrets_needs_pin">Requiere el PIN de la copia</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Si después inicias sesión en Nuvio, tu configuración sincronizada puede reemplazar la restaurada.</string>
     <string name="backup_restore_button">Restaurar</string>
     <string name="backup_pin_create_heading">Elige un PIN para contraseñas y claves</string>
-    <string name="backup_pin_create_support">Al menos 6 dígitos. Arc no puede recuperarlo, pero el resto de la copia se restaura igual sin él.</string>
+    <string name="backup_pin_create_support">De 6 a 16 dígitos. Un PIN más largo protege mejor tus inicios de sesión si alguien copia el archivo. Arc no puede recuperar el PIN, pero el resto de la copia se restaura igual sin él.</string>
     <string name="backup_pin_create_back">Presiona atrás para hacer la copia sin contraseñas</string>
     <string name="backup_pin_confirm_heading">Ingresa el PIN otra vez</string>
     <string name="backup_pin_confirm_support">Los mismos dígitos, para asegurarnos.</string>

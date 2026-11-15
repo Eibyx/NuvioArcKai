@@ -8,6 +8,7 @@ import kotlin.random.Random
 object ScoutMixes {
     val available: Boolean get() = BuildConfig.SCOUT_ENABLED
     const val NAME_LIMIT = 60
+    const val READY_PREFIX = "ready_"
 
     fun canHold(type: String?): Boolean =
         type.equals("series", ignoreCase = true) || type.equals("tv", ignoreCase = true) ||
@@ -39,8 +40,19 @@ data class ScoutMix(
     val shows: List<ScoutMixShow> = emptyList(),
     val unwatchedOnly: Boolean = true,
     val keepPlaying: Boolean = true,
-    val autoName: Boolean = true
+    val autoName: Boolean = true,
+    /** What a ready-made mix is made from; it is rebuilt from this each week. Null for a mix the viewer made. */
+    val recipe: String? = null,
+    val builtAt: Long = 0L,
+    /** For a mix of chosen episodes: the only episodes each show (by id) may offer, as season to episode. */
+    val only: Map<String, Set<Pair<Int, Int>>> = emptyMap(),
+    /** The ready-made mix this one was saved from, so Scout can show it as saved. */
+    val savedFrom: String? = null,
+    /** Which version of the rules filled this mix; a kept one from older rules is filled again. */
+    val rules: Int = 0
 ) {
+    val readyMade: Boolean get() = id.startsWith(ScoutMixes.READY_PREFIX)
+
     fun holds(show: ScoutMixShow): Boolean = shows.any { it.sameShow(show) }
     fun adding(show: ScoutMixShow): ScoutMix = if (holds(show)) this else copy(shows = shows + show)
     fun removing(show: ScoutMixShow): ScoutMix = copy(shows = shows.filterNot { it.sameShow(show) })
@@ -56,6 +68,17 @@ class ScoutMixEpisodes(
     val progress: Map<Pair<Int, Int>, WatchProgress> = emptyMap()
 )
 
+/** A show in a mix of chosen episodes offers only those episodes. Null keeps them all. */
+internal fun ScoutMixEpisodes.keptTo(allowed: Set<Pair<Int, Int>>?): ScoutMixEpisodes {
+    if (allowed == null) return this
+    val kept = meta.videos.filter { video ->
+        val season = video.season ?: return@filter false
+        val episode = video.episode ?: return@filter false
+        (season to episode) in allowed
+    }
+    return ScoutMixEpisodes(meta.copy(videos = kept), watched, progress)
+}
+
 sealed interface ScoutMixPick {
     data class Episode(val show: ScoutMixShow, val meta: Meta, val video: Video) : ScoutMixPick {
         val key: ScoutMixEpisodeKey get() = meta.id to video.id
@@ -68,6 +91,7 @@ sealed interface ScoutMixPick {
 /**
  * Shows are tried in a shuffled order, so each is as likely as any other whatever its length, and only as many are looked
  * up as the pick needs. The show just played goes last. Episodes already played stay out until nothing else is left.
+ * [resume], an episode stopped partway, comes first when the page opens.
  */
 internal suspend fun pickScoutMixEpisode(
     shows: List<ScoutMixShow>,
@@ -77,11 +101,18 @@ internal suspend fun pickScoutMixEpisode(
     current: ScoutMixEpisodeKey? = null,
     lastShowId: String? = null,
     random: Random = Random.Default,
+    resume: Pair<ScoutMixShow, WatchProgress>? = null,
     episodes: suspend (ScoutMixShow) -> ScoutMixEpisodes?
 ): ScoutMixPick {
     if (shows.isEmpty()) return ScoutMixPick.NoShows
     val order = shows.shuffled(random).sortedBy { it.id == lastShowId }
     val loaded = HashMap<String, ScoutMixEpisodes?>()
+    if (resume != null && played.isEmpty() && current == null) {
+        val (show, partway) = resume
+        val offer = episodes(show).also { loaded[show.id] = it }
+        val video = offer?.meta?.videos?.firstOrNull { it.season == partway.season && it.episode == partway.episode }
+        if (offer != null && video != null) return ScoutMixPick.Episode(show, offer.meta, video)
+    }
     val passes = if (unwatchedOnly) {
         listOf(played + setOfNotNull(current), played)
     } else {

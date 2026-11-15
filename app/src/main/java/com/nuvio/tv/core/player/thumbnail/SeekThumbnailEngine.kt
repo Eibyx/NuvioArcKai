@@ -18,11 +18,13 @@ import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.nuvio.tv.core.debrid.ThumbnailCopyDebridEntryPoint
 import com.nuvio.tv.core.player.PlayerSessionTracker
 import com.nuvio.tv.data.local.ImagePerformancePreferences
 import com.nuvio.tv.data.mediaserver.ServerThumbnailSource
 import com.nuvio.tv.ui.screens.player.ParallelRangeDataSource
 import com.nuvio.tv.ui.screens.player.SlowStartServer
+import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -179,6 +181,7 @@ object SeekThumbnails {
 
     /** Player screen closed: an unfinished 4K coverage pass carries on for a few minutes, anything else stops. */
     fun playerClosed() {
+        openDeferred = false
         prepareUi.value = PrepareUi.Hidden
         dropEarlyRow()
         stopServer(keep = false)
@@ -714,6 +717,10 @@ object SeekThumbnails {
                     ?.filter { it.absolutePath != active }?.forEach { it.deleteRecursively() }
             }
                 .onFailure { Log.w(TAG, "startup housekeeping failed: ${it.javaClass.simpleName}") }
+            runCatching {   // TorBox copies an earlier run added for thumbnails and could not remove
+                val debrid = EntryPointAccessors.fromApplication(app, ThumbnailCopyDebridEntryPoint::class.java)
+                if (debrid.thumbnailCopyAdded().hasRecords()) debrid.thumbnailCopyDebrid().sweepLeftovers()
+            }
         }
     }
 
@@ -784,6 +791,8 @@ object SeekThumbnails {
             const val LATTICE_4K_MAX_BYTES = 500L * 1024 * 1024
             const val SCRUB_REQUEST_ALLOWANCE = 250
             const val IDLE_TRIM_MS = 10_000L
+            /** With nothing to make, the player is still looked at this often, for the position the store keeps. */
+            const val IDLE_SAMPLE_MS = 10_000L
             const val MAX_ATTEMPTS_PER_KEYFRAME = 2
             /** Network failures in a row before no new thumbnails are fetched; the ones made keep showing. */
             const val MAX_FETCH_FAILURES = 5
@@ -898,7 +907,6 @@ object SeekThumbnails {
         private var latticeStrides = PrepareGrid.LATTICE_1080P
         /** The before-play grid in slots: what the generating screen and the paused progress hint count. */
         private var screenStride = 3
-        private var beforePlay = ThumbsBeforePlay.FASTER
         private var fallbackSlots = MIN_FALLBACK_SLOTS
         /** UI thread: the strip's stride in slots and when it was last worked out. */
         private var stripStride = 0
@@ -1209,7 +1217,6 @@ object SeekThumbnails {
             ConnectionLedger.app.notePlayingUrl(source.url)
             val first = sample() ?: awaitPlayerBack() ?: return
             lastDurationMs = first.durationMs
-            beforePlay = runCatching { SeekThumbnailPreferences.beforePlay(context) }.getOrDefault(ThumbsBeforePlay.FASTER)
             // A saved store shows its thumbnails before any network access; its size is checked against the server's below.
             var known = openKnownStore()
             known?.let {
@@ -1257,10 +1264,10 @@ object SeekThumbnails {
                     Log.i(TAG, "prepare: start now pressed while the player opened the stream - not holding")
                 } else if (mode != ThumbPrepareMode.OFF) {
                     if (beginPrepareOnMain()) {
-                        giveUp.beforePlay = if (preparePausedPlayer) "shown (${beforePlayName()})"
-                            else "shown, playback already paused (${beforePlayName()})"
+                        giveUp.beforePlay = if (preparePausedPlayer) "shown"
+                            else "shown, playback already paused"
                         showPrepare(PrepareUi.Checking)
-                        Log.i(TAG, "prepare: generating screen up ($mode, $beforePlay)")
+                        Log.i(TAG, "prepare: generating screen up ($mode)")
                         letGoEarlyForHardware()
                     }
                 }
@@ -1430,7 +1437,7 @@ object SeekThumbnails {
             val bps = if (durationMs > 0) fileLength * 8_000L / durationMs else 0L
             if (fourK) remux = bps >= REMUX_MIN_BITS_PER_SECOND
             val base = PrepareGrid.base(fourK, remux, MemoryGovernor.isStrongBox, bps >= HEAVY_1080P_MIN_BITS_PER_SECOND)
-            screenStride = PrepareGrid.screenStride(beforePlay, fourK, remux, base.last())
+            screenStride = PrepareGrid.screenStride(fourK, remux, base.last())
             latticeStrides = PrepareGrid.strides(base, screenStride)
             fallbackSlots = maxOf(MIN_FALLBACK_SLOTS, latticeStrides.last() / 2)
             st.noteDuration(durationMs)
@@ -1782,9 +1789,8 @@ object SeekThumbnails {
             val anchorMs = sample()?.positionMs?.takeIf { it > 0 } ?: lastPositionMs
             var anchorSlot = slotOf(anchorMs)
             prepareAnchorMs = anchorSlot * SPACING_MS
-            // Full makes the fine detail around the start first; the quicker choices make the screen's grid first
-            // while the screen is up, and go back to the detail around the playhead once it is gone.
-            fun gridFirst() = if (beforePlay != ThumbsBeforePlay.FULL && prepareStage in 1..4) prepareStride() else 0
+            // The screen's grid comes first while the screen is up, then the detail around the playhead once it is gone.
+            fun gridFirst() = if (prepareStage in 1..4) prepareStride() else 0
             var orderedGridFirst = gridFirst()
             fun order(anchor: Int) = SeekGrid.latticeOrder(slotKeyframe.size, latticeStrides, anchor,
                 beforeSlots = (LOCAL_BEFORE_MS / SPACING_MS).toInt(), afterSlots = (LOCAL_AFTER_MS / SPACING_MS).toInt(),
@@ -1797,6 +1803,7 @@ object SeekThumbnails {
             var neighbourCenter = -1
             var neighbours: List<Int> = emptyList()
             var lastWorkAt = SystemClock.elapsedRealtime()
+            var idleSampledAt = 0L
             val st = store ?: return
             laneChange(laneCtl.onPhase(phase()))
             Log.i(TAG, "decode lanes start=${laneCtl.lanes} ceiling=${laneCtl.ceiling()} " +
@@ -1957,7 +1964,11 @@ object SeekThumbnails {
                             buffers.releaseIdle()
                         }
                     } else {
-                        if (prepareStage in 1..4) sample()
+                        val idleNow = SystemClock.elapsedRealtime()
+                        if (prepareStage in 1..4 || idleNow - idleSampledAt >= IDLE_SAMPLE_MS) {
+                            idleSampledAt = idleNow
+                            sample()
+                        }
                         if (copyWaits) {
                             closeDecoders()
                             buffers.releaseIdle()
@@ -2070,7 +2081,6 @@ object SeekThumbnails {
                     continue
                 }
                 refusalQuietLogged = false
-                lastPositionMs = ps.positionMs
                 lastSampledPlaying = ps.isPlaying
                 val small4K = fourK && !MemoryGovernor.isStrongBox
                 if (PrepareHandover.waitsForBuffering(ps.buffering, prepareStage in 1..4, ps.playWhenReady, small4K)) {
@@ -4199,6 +4209,8 @@ object SeekThumbnails {
                 if (kotlin.math.abs(ps.positionMs - expected) > REANCHOR_JUMP_MS) reanchorToMs = ps.positionMs
             }
             trackPosMs = ps.positionMs
+            // A player that is closing reports 0: the last real position stays.
+            if (ps.positionMs > 0L) lastPositionMs = ps.positionMs
             trackAtMs = now
             trackPlaying = ps.isPlaying
             sampledPlaying = ps.isPlaying
@@ -4411,7 +4423,7 @@ object SeekThumbnails {
                             watchPrepareScreen()
                             startYield()
                             sampledPlaying = false
-                            giveUp.beforePlay = "shown after the first frame (${beforePlayName()})"
+                            giveUp.beforePlay = "shown after the first frame"
                             postPrepareUi(this@Session, PrepareUi.Checking)
                             Log.i(TAG, "prepare: playback held after the first frame (${waited} ms after the first ask)")
                             return@launch
@@ -4550,7 +4562,11 @@ object SeekThumbnails {
             val (recent, endSeq) = synchronized(recentMade) { recentMade.toList() to madeSeq }
             val left = (maxOf(latticeWorkLeft, total - done, 0) * perThumb).toInt()
             val shownTotal = maxOf(screenTotal, total)
-            val copyCounts = copy?.ended != true && borrow?.failed != true
+            val copyCounts = PrepareHandover.copyCounts(
+                copyEnded = copy?.ended != false,
+                confirmed = borrow?.let { it.copy === copy && it.confirmed } == true,
+                failed = borrow?.failed == true,
+            )
             val shownDone = PrepareHandover.shownDone(
                 done = if (done >= total) shownTotal else minOf(maxOf(screenDone, done), shownTotal),
                 total = shownTotal,
@@ -4722,8 +4738,6 @@ object SeekThumbnails {
             ))
         }
 
-        private fun beforePlayName() = beforePlay.name.lowercase().replaceFirstChar { it.uppercase() }
-
         private fun finish() {
             if (afterPlayback) ConnectionLedger.app.setUnhurried(false)
             val noneMade = synchronized(recentMade) { madeSeq } == 0
@@ -4743,6 +4757,7 @@ object SeekThumbnails {
             monitorJob?.cancel()
             dropReserve("session end")
             copy?.stop("the thumbnail session ended")
+            headStart?.release()
             dropBorrow()
             if (fourK && !MemoryGovernor.isStrongBox) synchronized(pacer) {
                 Log.i(TAG, "4K pace at session end: pace ${pacer.paceMs / 1000} s, drops counted ${pacer.countedDrops} " +
@@ -4757,7 +4772,7 @@ object SeekThumbnails {
             runCatching { closeDecoders() }
             decodeScope.cancel()
             store?.let { st ->
-                if (lastDurationMs > 0) st.watchedFraction = (lastPositionMs.toFloat() / lastDurationMs).coerceIn(0f, 1f)
+                st.noteUsed(if (lastDurationMs > 0) (lastPositionMs.toFloat() / lastDurationMs).coerceIn(0f, 1f) else 0f)
                 st.flush()
                 runCatching { ThumbStore.housekeeping(context, activeKey = st.key) }
             }

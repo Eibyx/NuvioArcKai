@@ -31,6 +31,7 @@
     <string name="scout_mixes_remix">Trộn lại</string>
     <string name="scout_mixes_unwatched_only">Chỉ chưa xem</string>
     <string name="scout_mixes_keep_playing">Tiếp tục phát</string>
+    <string name="scout_mixes_pick_sources">Chọn nguồn giúp tôi</string>
     <string name="scout_mixes_edit">Sửa bản trộn</string>
     <string name="scout_mixes_in_this_mix">Trong bản trộn này</string>
     <string name="scout_mixes_next_in">Tiếp theo trong %1$s</string>
@@ -52,4 +53,8 @@
     <string name="scout_mixes_delete_title">Xóa %1$s?</string>
     <string name="scout_mixes_delete_detail">Loạt phim và lịch sử xem của bạn vẫn giữ nguyên</string>
     <string name="scout_mixes_delete_confirm">Xóa</string>
+    <string name="scout_mixes_menu_subtitle">Tác vụ bản trộn</string>
+    <string name="scout_mixes_menu_open">Mở bản trộn</string>
+    <string name="scout_mixes_menu_remove">Xóa khỏi bản trộn của tôi</string>
+    <string name="scout_mixes_menu_hide">Ẩn đến năm sau</string>
 </resources>

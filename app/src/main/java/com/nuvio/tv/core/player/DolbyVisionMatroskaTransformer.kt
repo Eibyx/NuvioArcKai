@@ -1,6 +1,7 @@
 package com.nuvio.tv.core.player
 
 import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.container.DolbyVisionConfig
@@ -196,6 +197,23 @@ internal class DolbyVisionMatroskaTransformer(
         return config.shouldConvert(profile)
     }
 
+    override fun probesFirstSample(codecs: String?, dolbyVisionConfigBytes: ByteArray?): Boolean =
+        config.relabelUnlabelledP5 && UnlabelledDolbyVision.isCandidate(null, codecs, dolbyVisionConfigBytes)
+
+    override fun relabelFromFirstSample(
+        format: Format,
+        sampleLengthDelimitedData: ByteArray,
+        sampleLength: Int,
+        nalUnitLengthFieldLength: Int
+    ): Format? {
+        val relabelled = UnlabelledDolbyVision.relabel(
+            format, sampleLengthDelimitedData, sampleLength, nalUnitLengthFieldLength
+        ) ?: return null
+        config.stats.recordSourceProfile(5)
+        android.util.Log.i(TAG, "Unlabelled Dolby Vision Profile 5 track, playing as ${relabelled.codecs}")
+        return relabelled
+    }
+
     override fun onHevcSample(
         sampleSizeBytes: Int,
         blockAdditionalData: ByteArray?,
@@ -310,6 +328,17 @@ internal class DolbyVisionMatroskaTransformer(
     private fun finishScratch(): ByteArray {
         lastTransformedLength = scratch.size()
         return scratch.backingArray()
+    }
+
+    private val av1StripOut = ExposedByteArrayOutputStream(256 * 1024)
+
+    override fun transformAv1Sample(sample: ByteArray, sampleLength: Int): ByteArray? {
+        if (!stripHdr10PlusSei) return null
+        av1StripOut.reset()
+        val written = Av1Hdr10PlusStripper.stripHdr10PlusObus(sample, sampleLength, av1StripOut)
+        if (written < 0) return null
+        lastTransformedLength = written
+        return av1StripOut.backingArray()
     }
 
     override fun onDolbyVisionCodecString(

@@ -5,6 +5,7 @@ import android.util.Log
 import com.nuvio.tv.BuildConfig
 import com.nuvio.tv.core.profile.ProfileManager
 import com.nuvio.tv.core.tmdb.TmdbService
+import com.nuvio.tv.core.util.ArcDispatchers
 import com.nuvio.tv.data.local.ScoutStore
 import com.nuvio.tv.data.local.TmdbSettingsDataStore
 import com.nuvio.tv.data.local.WatchedItemsPreferences
@@ -12,6 +13,7 @@ import com.nuvio.tv.data.remote.api.TmdbApi
 import com.nuvio.tv.data.remote.api.TmdbDiscoverResult
 import com.nuvio.tv.data.remote.api.TmdbRecommendationResult
 import com.nuvio.tv.domain.model.SCOUT_MIN_SEEDS
+import com.nuvio.tv.domain.model.SCOUT_POOL_VERSION
 import com.nuvio.tv.domain.model.ScoutBecause
 import com.nuvio.tv.domain.model.ScoutExclusions
 import com.nuvio.tv.domain.model.ScoutPick
@@ -61,9 +63,24 @@ private const val TOP_UP_WEIGHT = 0.02
 private const val GEM_MIN_VOTES = 150
 private const val GEM_MIN_AVERAGE = 7.2
 private const val POPULAR_MIN_VOTES = 500
+private const val KIDS_TV_MIN_VOTES = 50
+private const val KIDS_TOP_UP_PAGES = 4
+private const val TASTE_ROW_ITEMS = 30
+private const val CERTIFICATION_COUNTRY = "US"
+private const val TV_LEFT_OUT = "10763,10764,10766,10767"
+private const val KIDS_MOVIE_LEFT_OUT = "27,53,80,10752"
+private const val KIDS_TV_LEFT_OUT = "$TV_LEFT_OUT,80,10768"
 private const val MEMBER_POOL_MAX_AGE_MS = 7L * 24 * 60 * 60 * 1000
 private const val CHECK_EVERY_MS = 60L * 60 * 1000
 private const val RATING_SETTLE_MS = 3_000L
+private const val LIMIT_MARK = "|limit="
+
+/** A profile's rating limit is part of what its picks were built for; profiles without one keep their old signature. */
+internal fun scoutLimitSignature(history: String, limitCode: String): String =
+    if (limitCode.isEmpty()) history else history + LIMIT_MARK + limitCode
+
+internal fun scoutLimitChanged(pool: ScoutPool?, limitCode: String): Boolean =
+    pool != null && pool.historySignature.substringAfterLast(LIMIT_MARK, "") != limitCode
 
 /** Builds the picks on this box, about once a day, from what the profile watched and rated. */
 @Singleton
@@ -74,13 +91,16 @@ class ScoutEngine @Inject constructor(
     private val tmdbSettings: TmdbSettingsDataStore,
     private val watchProgress: dagger.Lazy<WatchProgressRepository>,
     private val watchedItems: WatchedItemsPreferences,
+    private val progressOf: dagger.Lazy<com.nuvio.tv.data.local.WatchProgressPreferences>,
     private val store: ScoutStore,
     private val profileManager: ProfileManager,
     private val folderSupport: ScoutFolderSupport,
     private val picksBuilder: ScoutPicksBuilder,
-    private val moodCheck: dagger.Lazy<ScoutMoodCheck>
+    private val moodCheck: dagger.Lazy<ScoutMoodCheck>,
+    private val ratingLimits: dagger.Lazy<com.nuvio.tv.core.ratinglimit.RatingLimitGate>
 ) {
     private val adapter = Moshi.Builder().build().adapter(ScoutPool::class.java)
+    private val recapList = ScoutAnimeRecapList(context, tmdbApi)
     private val refreshLock = Mutex()
     private val _pool = MutableStateFlow<ScoutPool?>(null)
     val pool: StateFlow<ScoutPool?> = _pool.asStateFlow()
@@ -108,6 +128,10 @@ class ScoutEngine @Inject constructor(
                         refreshIfDue()
                     }
                 }
+                runCatching { ratingLimits.get() }.getOrNull()?.let { gate ->
+                    gate.limitFor(profileId)
+                    launch { gate.limits.map { it[profileId] }.distinctUntilChanged().drop(1).collectLatest { refreshIfDue() } }
+                }
                 while (true) {
                     refreshIfDue()
                     moodCheck.get().runIfDue()
@@ -126,18 +150,21 @@ class ScoutEngine @Inject constructor(
     }
 
     suspend fun refreshIfDue(now: Long = System.currentTimeMillis()) = refreshLock.withLock {
-        withContext(Dispatchers.IO) {
+        withContext(ArcDispatchers.background) {
             val profileId = profileManager.activeProfileId.value
             showSaved(profileId)
             val profile = store.current()
             val watched = watchProgress.get().tasteHistory.first()
             val started = watchProgress.get().allProgress.first()
             val signals = scoutSignals(watched, started, profile.ratings.values, now)
-            val seeds = scoutSignalSeeds(signals)
-            val signature = scoutHistorySignature(seeds, profile.settings.leaveOutGenres)
-            if (!scoutShouldRefresh(_pool.value, signature, now)) return@withContext
+            val watching = scoutWatchingSeeds(started, signals)
+            val seeds = scoutSignalSeeds(signals, watching)
+            val limitCode = runCatching { ratingLimits.get().limitFor(profileId)?.code }.getOrNull().orEmpty()
+            val signature = scoutLimitSignature(scoutHistorySignature(seeds, profile.settings.leaveOutGenres, profile.settings.leaveOutLanguages), limitCode)
+            val limitChanged = scoutLimitChanged(_pool.value, limitCode)
+            if (!limitChanged && !scoutShouldRefresh(_pool.value, signature, now)) return@withContext
             try {
-                val built = build(seeds, profile, signature, now, signals = signals)
+                val built = build(seeds, profile, signature, now, signals = signals + watching.filter { it in seeds }, ageTitles = signals + watching, profileId = profileId)
                 if (built.picked.isEmpty() || profileManager.activeProfileId.value != profileId) return@withContext
                 _pool.value = built
                 file(profileId).apply { parentFile?.mkdirs() }.writeText(adapter.toJson(built))
@@ -150,16 +177,21 @@ class ScoutEngine @Inject constructor(
     }
 
     /** Another profile on this box: its saved picks, built once if it has none, and what it has seen. */
-    suspend fun memberFor(profileId: Int, now: Long = System.currentTimeMillis()): ScoutGroupMember = withContext(Dispatchers.IO) {
+    suspend fun memberFor(profileId: Int, now: Long = System.currentTimeMillis()): ScoutGroupMember = withContext(ArcDispatchers.background) {
         val profile = store.profileOf(profileId)
         val watched = watchedItems.getAllItems(profileId)
-        val exclusions = exclusionsOf(profile, watched, emptyList())
+        val started = runCatching { progressOf.get().observeAllProgress(profileId).first() }.getOrDefault(emptyList())
+        val exclusions = exclusionsOf(profile, watched, started)
         val saved = runCatching { adapter.fromJson(file(profileId).readText()) }.getOrNull()
-        if (saved != null && now - saved.builtAt < MEMBER_POOL_MAX_AGE_MS) return@withContext ScoutGroupMember(saved, exclusions)
-        val seeds = scoutSeeds(watched, profile.ratings.values)
+        if (saved != null && saved.version >= SCOUT_POOL_VERSION && now - saved.builtAt < MEMBER_POOL_MAX_AGE_MS) {
+            return@withContext ScoutGroupMember(saved, exclusions)
+        }
+        val finished = scoutSeeds(watched, profile.ratings.values)
+        val watching = scoutWatchingSeeds(started, finished)
+        val seeds = scoutSignalSeeds(finished, watching)
         if (seeds.isEmpty()) return@withContext ScoutGroupMember(saved, exclusions)
         val built = try {
-            build(seeds, profile, scoutHistorySignature(seeds, profile.settings.leaveOutGenres), now, exclusions)
+            build(seeds, profile, scoutHistorySignature(seeds, profile.settings.leaveOutGenres, profile.settings.leaveOutLanguages), now, exclusions, ageTitles = finished + watching, profileId = profileId)
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
@@ -174,10 +206,29 @@ class ScoutEngine @Inject constructor(
         }
     }
 
-    private suspend fun build(seeds: List<ScoutSeed>, profile: ScoutProfile, signature: String, now: Long, known: ScoutExclusions? = null, signals: List<ScoutSeed> = seeds): ScoutPool {
+    private suspend fun build(
+        seeds: List<ScoutSeed>,
+        profile: ScoutProfile,
+        signature: String,
+        now: Long,
+        known: ScoutExclusions? = null,
+        signals: List<ScoutSeed> = seeds,
+        ageTitles: List<ScoutSeed> = signals,
+        profileId: Int = profileManager.activeProfileId.value
+    ): ScoutPool {
         val language = tmdbSettings.settings.first().language
         val exclusions = known ?: exclusions(profile)
         val gate = Semaphore(MAX_CONCURRENT_REQUESTS)
+        val read = try {
+            picksBuilder.ageCeiling(ageTitles, now, profileId)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            Log.w(TAG, "No age read: ${error.javaClass.simpleName}")
+            null
+        }
+        val limit = runCatching { ratingLimits.get().limitFor(profileId)?.scoutCeiling }.getOrNull()
+        val ceiling = listOfNotNull(read, limit).minOrNull()
         val resolved = coroutineScope {
             seeds.map { seed ->
                 async { gate.withPermit { seed to recommendations(seed, language) } }
@@ -189,41 +240,87 @@ class ScoutEngine @Inject constructor(
         val full = exclusions.copy(tmdbKeys = exclusions.tmdbKeys + blockedSeeds)
         val results = resolved.map { (seed, result) -> seed to result?.second.orEmpty() }.toMutableList()
 
+        val rated = HashSet<String>()
+        var levels = if (ceiling == null) emptyMap() else picksBuilder.knownAgeLevels(now)
+        fun fits(pick: ScoutPick) = pick.key in rated || scoutWithinCeiling(pick, levels[pick.key], ceiling)
+
         val positive = seeds.count { it.weight > 0 }
         var picked = scoutRank(results, full)
-        if (positive < SCOUT_MIN_SEEDS || picked.size < TOP_UP_BELOW) {
-            val popular = discover(false, language, sortBy = "popularity.desc", votes = POPULAR_MIN_VOTES) +
-                discover(true, language, sortBy = "popularity.desc", votes = POPULAR_MIN_VOTES)
+        if (positive < SCOUT_MIN_SEEDS || picked.count(::fits) < TOP_UP_BELOW) {
+            val popular = if (ceiling == null) {
+                discover(false, language, sortBy = "popularity.desc", votes = POPULAR_MIN_VOTES) +
+                    discover(true, language, sortBy = "popularity.desc", votes = POPULAR_MIN_VOTES)
+            } else {
+                val found = ArrayList<ScoutPick>()
+                val suitable = picked.filter(::fits).mapTo(HashSet()) { it.key }
+                var page = 1
+                while (page <= KIDS_TOP_UP_PAGES && suitable.size < TOP_UP_BELOW) {
+                    val films = discover(false, language, sortBy = "popularity.desc", votes = POPULAR_MIN_VOTES,
+                        certification = scoutCertificationAtMost(ceiling), without = KIDS_MOVIE_LEFT_OUT, page = page)
+                    rated += films.map { it.key }
+                    val shows = discover(true, language, sortBy = "popularity.desc", votes = KIDS_TV_MIN_VOTES,
+                        genres = scoutKidsTvGenres(ceiling), without = KIDS_TV_LEFT_OUT, page = page)
+                    if (films.isEmpty() && shows.isEmpty()) break
+                    found += films + shows
+                    (films + shows).filterNot(full::blocks).filter(::fits).forEach { suitable += it.key }
+                    page++
+                }
+                found
+            }
             results += ScoutSeed("", false, "", TOP_UP_WEIGHT, null) to popular
             picked = scoutRank(results, full).map { if (it.seedName.isNullOrBlank()) it.copy(seedName = null) else it }
         }
 
-        val because = seeds.filter { it.weight > 0 && it.finishedOrder != null }
-            .sortedBy { it.finishedOrder }
-            .take(BECAUSE_ROWS)
-            .mapNotNull { seed ->
-                val own = results.firstOrNull { it.first.contentId == seed.contentId }?.second.orEmpty()
-                val picks = own.filterNot(full::blocks).take(BECAUSE_ITEMS)
-                if (picks.isEmpty()) null else ScoutBecause(seed.name, picks)
-            }
-
-        val tasteGenres = picked.take(50).flatMap { it.genres }.groupingBy { it }.eachCount()
+        val tasteGenres = picked.filter(::fits).take(50).flatMap { it.genres }.groupingBy { it }.eachCount()
             .entries.sortedByDescending { it.value }.take(3).joinToString("|") { it.key.toString() }
-        val gems = (discover(false, language, "vote_average.desc", GEM_MIN_VOTES, SCOUT_GEM_MAX_VOTES, GEM_MIN_AVERAGE, tasteGenres) +
-            discover(true, language, "vote_average.desc", GEM_MIN_VOTES / 2, SCOUT_GEM_MAX_VOTES_TV, GEM_MIN_AVERAGE, tasteGenres))
-            .filterNot(full::blocks)
-            .take(GEM_ITEMS)
+        val gemFilms = discover(false, language, "vote_average.desc", GEM_MIN_VOTES, SCOUT_GEM_MAX_VOTES, GEM_MIN_AVERAGE, tasteGenres,
+            certification = ceiling?.let(::scoutCertificationAtMost), without = if (ceiling == null) null else KIDS_MOVIE_LEFT_OUT)
+        if (ceiling != null) rated += gemFilms.map { it.key }
+        val gemSeries = if (ceiling == null) {
+            discover(true, language, "vote_average.desc", GEM_MIN_VOTES / 2, SCOUT_GEM_MAX_VOTES_TV, GEM_MIN_AVERAGE, tasteGenres)
+        } else {
+            discover(true, language, "vote_average.desc", GEM_MIN_VOTES / 2, SCOUT_GEM_MAX_VOTES_TV, GEM_MIN_AVERAGE, scoutKidsTvGenres(ceiling), without = KIDS_TV_LEFT_OUT)
+        }
 
         val improved = if (known != null) null else try {
-            picksBuilder.improve(signals, profile.ratings.values, results, full, now, language)
+            picksBuilder.improve(signals, profile.ratings.values, results, full, now, language, ceiling)
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
             Log.w(TAG, "Picks kept simple: ${error.javaClass.simpleName}")
             null
         }
+        if (ceiling != null) levels = picksBuilder.knownAgeLevels(now)
 
-        return ScoutPool(now, signature, improved?.picked?.takeIf { it.isNotEmpty() } ?: picked, because, gems, improved?.rows.orEmpty(), improved?.newForYou.orEmpty(), improved?.trendingForYou.orEmpty())
+        val because = seeds.filter { it.weight > 0 && it.finishedOrder != null }
+            .sortedBy { it.finishedOrder }
+            .take(BECAUSE_ROWS)
+            .mapNotNull { seed ->
+                val own = results.firstOrNull { it.first.contentId == seed.contentId }?.second.orEmpty()
+                val picks = own.filterNot(full::blocks).filter(::fits).take(BECAUSE_ITEMS)
+                if (picks.isEmpty()) null else ScoutBecause(seed.name, picks)
+            }
+        val gems = (gemFilms + gemSeries).filterNot(full::blocks).filter(::fits).take(GEM_ITEMS)
+        val suitable = (improved?.picked?.takeIf { it.isNotEmpty() } ?: picked).filter(::fits)
+        val rows = improved?.rows.orEmpty().map { row ->
+            val kept = row.picks.filter(::fits)
+            row.copy(picks = if (ceiling == null) kept else scoutTopUpRow(kept, suitable, row.genre, TASTE_ROW_ITEMS))
+        }.filter { it.picks.size >= SCOUT_TASTE_ROW_MIN_PICKS }
+
+        return ScoutPool(
+            builtAt = now,
+            historySignature = signature,
+            picked = suitable,
+            because = because,
+            gems = gems,
+            tasteRows = rows,
+            newForYou = improved?.newForYou.orEmpty().filter(::fits),
+            trendingForYou = improved?.trendingForYou.orEmpty().filter(::fits),
+            version = SCOUT_POOL_VERSION
+        ).also { pool ->
+            Log.i(TAG, "Built profile=$profileId ceiling=$ceiling picked=${pool.picked.size} because=${pool.because.size} " +
+                "gems=${pool.gems.size} rows=${pool.tasteRows.size}/${improved?.rows?.size ?: 0} new=${pool.newForYou.size} trending=${pool.trendingForYou.size}")
+        }
     }
 
     /** Forgets the picks; the next refresh builds them again from what is left. */
@@ -259,7 +356,7 @@ class ScoutEngine @Inject constructor(
                 val tv = type.trim().lowercase() != "movie"
                 (if (tv) "tv:" else "movie:") + tmdb
             }
-        return ScoutExclusions(names = names.toSet(), tmdbKeys = ids.toSet() + listedKeys, genres = profile.settings.leaveOutGenres)
+        return ScoutExclusions(names = names.toSet(), tmdbKeys = ids.toSet() + listedKeys, genres = profile.settings.leaveOutGenres, languages = scoutLeaveOutLanguageCodes(profile.settings.leaveOutLanguages), recaps = recapList.keys())
     }
 
     private suspend fun recommendations(seed: ScoutSeed, language: String): Pair<Int, List<ScoutPick>>? {
@@ -279,21 +376,36 @@ class ScoutEngine @Inject constructor(
         votes: Int,
         votesMax: Int? = null,
         average: Double? = null,
-        genres: String? = null
+        genres: String? = null,
+        certification: String? = null,
+        without: String? = null,
+        page: Int = 1
     ): List<ScoutPick> {
         val body = runCatching {
             if (tv) tmdbApi.discoverTv(
-                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language = language, sortBy = sortBy, voteCountGte = votes,
+                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language = language, page = page, sortBy = sortBy, voteCountGte = votes,
                 voteCountLte = votesMax, voteAverageGte = average, withGenres = genres?.ifBlank { null },
-                withoutGenres = "10763,10764,10766,10767"
+                withoutGenres = without ?: TV_LEFT_OUT
             ) else tmdbApi.discoverMovies(
-                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language = language, sortBy = sortBy, voteCountGte = votes,
-                voteCountLte = votesMax, voteAverageGte = average, withGenres = genres?.ifBlank { null }
+                apiKey = com.nuvio.tv.core.tmdb.TmdbApiKey.current(), language = language, page = page, sortBy = sortBy, voteCountGte = votes,
+                voteCountLte = votesMax, voteAverageGte = average, withGenres = genres?.ifBlank { null },
+                withoutGenres = without, certificationCountry = certification?.let { CERTIFICATION_COUNTRY },
+                certificationLte = certification
             )
         }.getOrNull()?.body()
         return body?.results.orEmpty().mapNotNull { it.toPick(tv) }
     }
 }
+
+/** The highest US film rating at or under an age ceiling. */
+internal fun scoutCertificationAtMost(ceiling: Int): String = when {
+    ceiling <= 0 -> "G"
+    ceiling == 1 -> "PG"
+    else -> "PG-13"
+}
+
+/** TV discover has no rating filter, so a ceiling picks kids shows, and family shows from PG up. */
+internal fun scoutKidsTvGenres(ceiling: Int): String = if (ceiling <= 0) "10762" else "10762|10751"
 
 private fun image(path: String?, size: String) = path?.takeIf { it.isNotBlank() }?.let { "https://image.tmdb.org/t/p/$size$it" }
 
@@ -313,7 +425,8 @@ internal fun TmdbRecommendationResult.toPick(seedTv: Boolean): ScoutPick? {
         released = (if (tv) firstAirDate else releaseDate)?.takeIf { it.isNotBlank() },
         rating = voteAverage?.toFloat(),
         votes = voteCount,
-        genres = genreIds.orEmpty()
+        genres = genreIds.orEmpty(),
+        language = originalLanguage
     )
 }
 
@@ -327,5 +440,7 @@ internal fun TmdbDiscoverResult.toPick(tv: Boolean): ScoutPick? = ScoutPick(
     released = (if (tv) firstAirDate else releaseDate)?.takeIf { it.isNotBlank() },
     rating = voteAverage?.toFloat(),
     votes = voteCount,
-    genres = genreIds.orEmpty()
+    genres = genreIds.orEmpty(),
+    language = originalLanguage,
+    origin = originCountry.orEmpty()
 )

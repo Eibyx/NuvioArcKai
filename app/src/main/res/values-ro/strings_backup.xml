@@ -23,6 +23,13 @@
     <string name="backup_part_profiles_sub">Nume și imagini</string>
     <string name="backup_part_settings">Setări Arc</string>
     <string name="backup_part_settings_sub">Scout, miniaturi, DNS, butoane telecomandă și altele</string>
+    <string name="backup_part_history">Bibliotecă și istoric de vizionare</string>
+    <string name="backup_part_history_sub">Titluri salvate, Continuă vizionarea și marcaje de vizionare</string>
+    <string name="backup_part_history_signed_in">Contul tău Nuvio le păstrează deja. Se restaurează doar pe un dispozitiv neconectat.</string>
+    <string name="backup_part_history_counts">Titluri salvate: %1$d. Vizionate: %2$d. În curs: %3$d.</string>
+    <string name="backup_supporter">Statut de susținător</string>
+    <string name="backup_supporter_yes">Da. Culorile și pictogramele de susținător se păstrează.</string>
+    <string name="backup_supporter_no">Nu</string>
     <string name="backup_part_secrets">Parole și chei</string>
     <string name="backup_part_secrets_saved">Protejate cu PIN-ul tău</string>
     <string name="backup_part_secrets_needs_pin">Necesită PIN-ul backupului</string>
@@ -41,7 +48,7 @@
     <string name="backup_restore_signin_note">Dacă te conectezi ulterior la Nuvio, setările sincronizate pot înlocui setările restaurate.</string>
     <string name="backup_restore_button">Restaurează</string>
     <string name="backup_pin_create_heading">Alege un PIN pentru parole și chei</string>
-    <string name="backup_pin_create_support">Cel puțin 6 cifre. Arc nu îl poate recupera, dar restul backupului se restaurează și fără el.</string>
+    <string name="backup_pin_create_support">Între 6 și 16 cifre. Un PIN mai lung îți protejează mai bine datele de conectare dacă cineva copiază fișierul. Arc nu poate recupera PIN-ul, dar restul backupului se restaurează și fără el.</string>
     <string name="backup_pin_create_back">Apasă Înapoi pentru a face backup fără parole</string>
     <string name="backup_pin_confirm_heading">Introdu din nou PIN-ul</string>
     <string name="backup_pin_confirm_support">Aceleași cifre, pentru siguranță.</string>

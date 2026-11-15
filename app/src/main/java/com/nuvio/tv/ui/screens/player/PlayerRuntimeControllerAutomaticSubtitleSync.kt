@@ -1,5 +1,6 @@
 package com.nuvio.tv.ui.screens.player
 
+import com.nuvio.tv.core.report.ReportBusy
 import android.content.Context
 import android.os.Handler
 import android.os.Looper
@@ -178,7 +179,7 @@ internal fun PlayerRuntimeController.maybeRunAutomaticSubtitleSync(
                     "lang=${selectedSubtitle.lang} candidates=${candidatesAtStart.size}",
             )
             var analysisOutcome: AutoSyncAnalysisOutcome? = null
-            suspend fun search(withAlternatives: Boolean) = AutomaticSubtitleSync.findTimelineRetime(
+            suspend fun search(withAlternatives: Boolean) = ReportBusy.during(ReportBusy.SUBTITLE_SYNC) { AutomaticSubtitleSync.findTimelineRetime(
                 sourceKey = sourceUrlAtStart,
                 sourceHeaders = sourceHeadersAtStart,
                 selectedSubtitleUrl = selectedUrl,
@@ -197,7 +198,7 @@ internal fun PlayerRuntimeController.maybeRunAutomaticSubtitleSync(
                 },
                 onReferenceReady = {},
                 onAnalysisOutcome = { outcome -> analysisOutcome = outcome },
-            )
+            ) }
             var resolved = search(
                 withAlternatives = candidateScope == AutoSyncCandidateScope.STARTUP_SEARCH,
             )
@@ -337,7 +338,7 @@ private fun PlayerRuntimeController.runMpvAutomaticSubtitleSync(
                     "lang=${selectedSubtitle.lang} candidates=${candidatesAtStart.size}",
             )
             var analysisOutcome: AutoSyncAnalysisOutcome? = null
-            suspend fun search(withAlternatives: Boolean) = AutomaticSubtitleSync.findTimelineRetime(
+            suspend fun search(withAlternatives: Boolean) = ReportBusy.during(ReportBusy.SUBTITLE_SYNC) { AutomaticSubtitleSync.findTimelineRetime(
                 sourceKey = sourceUrlAtStart,
                 sourceHeaders = sourceHeadersAtStart,
                 selectedSubtitleUrl = selectedUrl,
@@ -355,7 +356,7 @@ private fun PlayerRuntimeController.runMpvAutomaticSubtitleSync(
                 },
                 onAnalysisOutcome = { outcome -> analysisOutcome = outcome },
                 allowLiveReference = false,
-            )
+            ) }
             var resolved = search(
                 withAlternatives = candidateScope == AutoSyncCandidateScope.STARTUP_SEARCH,
             )
@@ -486,7 +487,7 @@ private fun PlayerRuntimeController.runLibassAutomaticSubtitleSync(
             )
             var analysisOutcome: AutoSyncAnalysisOutcome? = null
             var startupSearch = candidateScope == AutoSyncCandidateScope.STARTUP_SEARCH
-            suspend fun search(ass: Boolean) = AutomaticSubtitleSync.findTimelineRetime(
+            suspend fun search(ass: Boolean) = ReportBusy.during(ReportBusy.SUBTITLE_SYNC) { AutomaticSubtitleSync.findTimelineRetime(
                 sourceKey = sourceUrlAtStart,
                 sourceHeaders = sourceHeadersAtStart,
                 selectedSubtitleUrl = selectedUrl,
@@ -507,7 +508,7 @@ private fun PlayerRuntimeController.runLibassAutomaticSubtitleSync(
                     null
                 },
                 onAnalysisOutcome = { outcome -> analysisOutcome = outcome },
-            )
+            ) }
             var resolved = search(ass = true)
             if (
                 resolved == null && stillRelevant() &&

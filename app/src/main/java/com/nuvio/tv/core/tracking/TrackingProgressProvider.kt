@@ -14,6 +14,15 @@ interface TrackingProgressProvider {
     val remoteProgressLoaded: Flow<Boolean>
     val nextUpSeeds: Flow<List<WatchProgress>>
     val watchedMovieIds: Flow<Set<String>>
+
+    /**
+     * The ids in [watchedMovieIds] that the provider itself reports or has accepted, without
+     * optimistic entries it has not confirmed. A single item marked watched while this provider is
+     * the source stays a pending local mark until it shows up here.
+     */
+    val reportedWatchedMovieIds: Flow<Set<String>>
+        get() = watchedMovieIds
+
     val ownsCompletedHistoryProjection: Boolean
         get() = false
     val clearsLocalProgressOnSelection: Boolean
@@ -24,6 +33,7 @@ interface TrackingProgressProvider {
         get() = watchedItems
 
     fun episodeProgress(contentId: String): Flow<Map<Pair<Int, Int>, WatchProgress>>
+    fun loadedEpisodeProgress(contentId: String): Map<Pair<Int, Int>, WatchProgress>? = null
     fun airedEpisodeOrder(contentId: String): Flow<List<Pair<Int, Int>>>
     fun isWatched(
         contentId: String,

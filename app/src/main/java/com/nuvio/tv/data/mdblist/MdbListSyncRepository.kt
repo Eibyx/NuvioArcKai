@@ -29,9 +29,11 @@ class MdbListSyncRepository(
     private val coroutineScope: CoroutineScope,
     private val now: () -> Long = System::currentTimeMillis,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val playerOpen: () -> Boolean = { false },
+    private val encode: (MdbListSyncSnapshot) -> String = { defaultJson.encodeToString(it) },
     private val remote: (MdbListAuthScope) -> MdbListSyncRemote = { MdbListHttpSyncRemote(api, it) }
 ) {
-    private val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+    private val json = defaultJson
     private val mutex = Mutex()
     private val gate = TrackingRefreshGate()
     private val mutableState = MutableStateFlow(MdbListSyncState())
@@ -94,7 +96,8 @@ class MdbListSyncRepository(
                         scope = scope,
                         isLoading = false,
                         error = error.toMdbListSyncError(),
-                        retryAtEpochMs = (error as? MdbListApiException)?.retryAtEpochMs,
+                        retryAtEpochMs = (error as? MdbListApiException)?.retryAtEpochMs
+                            ?: (attemptedAt + AUTOMATIC_INTERVAL_MS).takeIf { error is MdbListSaveMemoryException },
                         attemptedAtEpochMs = attemptedAt
                     )
                 }
@@ -140,8 +143,17 @@ class MdbListSyncRepository(
         storage.loadPlayback(scope.profileId)
             ?.takeIf(String::isNotBlank)
             ?.let { storagePlayback ->
-                decodePlaybackOverride(storagePlayback, persistedSnapshot, accountId)?.let { playback ->
-                    snapshot = snapshot.copy(playback = playback)
+                decodePlaybackOverride(storagePlayback, persistedSnapshot, accountId)?.let { override ->
+                    snapshot = snapshot.copy(playback = override.playback)
+                    override.check?.let { check ->
+                        snapshot = snapshot.copy(
+                            activities = check.activities,
+                            watermark = check.watermark,
+                            checkedAtEpochMs = check.checkedAtEpochMs,
+                            isInitialized = check.isInitialized,
+                            invalidatedBuckets = check.invalidatedBuckets
+                        )
+                    }
                 }
             }
         checkScope(scope)
@@ -166,8 +178,13 @@ class MdbListSyncRepository(
             previous.checkedAtEpochMs == snapshot.checkedAtEpochMs &&
             previous.isInitialized == snapshot.isInitialized &&
             previous.accountId == snapshot.accountId
-        val storedSnapshot = if (onlyPlaybackChanged) {
-            snapshot
+        val historyUnchanged = previous != null &&
+            previous.watched === snapshot.watched &&
+            previous.dropped === snapshot.dropped &&
+            previous.library === snapshot.library &&
+            previous.accountId == snapshot.accountId
+        val storedSnapshot = if (historyUnchanged) {
+            snapshot.copy(storageRevision = previous?.storageRevision)
         } else {
             snapshot.copy(storageRevision = UUID.randomUUID().toString())
         }
@@ -177,17 +194,28 @@ class MdbListSyncRepository(
         } else if (onlyPlaybackChanged && currentProjection !== MdbListProgressProjection.Empty) {
             currentProjection.withUpdatedPlayback(snapshot.playback)
         } else MdbListProgressProjection(storedSnapshot)
-        if (onlyPlaybackChanged) {
+        if (historyUnchanged) {
             val playbackPayload = json.encodeToString(
                 MdbListPlaybackOverride(
                     accountId = storedSnapshot.accountId,
                     storageRevision = storedSnapshot.storageRevision,
-                    playback = storedSnapshot.playback
+                    playback = storedSnapshot.playback,
+                    check = MdbListCheckState(
+                        activities = storedSnapshot.activities,
+                        watermark = storedSnapshot.watermark,
+                        checkedAtEpochMs = storedSnapshot.checkedAtEpochMs,
+                        isInitialized = storedSnapshot.isInitialized,
+                        invalidatedBuckets = storedSnapshot.invalidatedBuckets
+                    )
                 )
             )
             storage.savePlayback(scope.profileId, playbackPayload) { checkScope(scope) }
         } else {
-            val payload = json.encodeToString(storedSnapshot)
+            val payload = try {
+                encode(storedSnapshot)
+            } catch (_: OutOfMemoryError) {
+                throw MdbListSaveMemoryException()
+            }
             storage.save(scope.profileId, payload) { checkScope(scope) }
         }
         checkScope(scope)
@@ -199,18 +227,19 @@ class MdbListSyncRepository(
         payload: String,
         persistedSnapshot: MdbListSyncSnapshot?,
         accountId: Long
-    ): List<MdbListPlayback>? {
+    ): MdbListPlaybackOverride? {
         val override = runCatching {
             json.decodeFromString<MdbListPlaybackOverride>(payload)
         }.getOrNull()
         if (override != null) {
-            return override.playback.takeIf {
+            return override.takeIf {
                 persistedSnapshot != null && override.accountId == accountId &&
                     override.storageRevision == persistedSnapshot.storageRevision
             }
         }
         return runCatching { json.decodeFromString<List<MdbListPlayback>>(payload) }.getOrNull()
             ?.takeIf { persistedSnapshot != null && persistedSnapshot.storageRevision == null }
+            ?.let { MdbListPlaybackOverride(accountId, null, it) }
     }
 
     private fun shouldRefresh(intent: TrackingRefreshIntent): Boolean {
@@ -218,6 +247,7 @@ class MdbListSyncRepository(
         val now = now()
         if (current.retryAtEpochMs?.let { it > now } == true) return false
         if (intent != TrackingRefreshIntent.AUTOMATIC) return true
+        if (playerOpen()) return false
         if (current.error != null) return current.attemptedAtEpochMs?.let { now - it !in 0 until ERROR_RETRY_MS } ?: true
         if (current.snapshot?.invalidatedBuckets?.isNotEmpty() == true) return true
         return current.snapshot?.checkedAtEpochMs?.let { now - it !in 0 until AUTOMATIC_INTERVAL_MS } ?: true
@@ -239,14 +269,28 @@ class MdbListSyncRepository(
     }
 
     companion object {
+        private val defaultJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         const val AUTOMATIC_INTERVAL_MS = 15L * 60 * 1_000
         const val ERROR_RETRY_MS = 60_000L
     }
 }
 
+/** Playback, and the last check when only that changed, kept apart so the history itself is not rewritten. */
 @Serializable
 private data class MdbListPlaybackOverride(
     val accountId: Long,
     val storageRevision: String? = null,
-    val playback: List<MdbListPlayback>
+    val playback: List<MdbListPlayback>,
+    val check: MdbListCheckState? = null
 )
+
+@Serializable
+private data class MdbListCheckState(
+    val activities: MdbListActivities? = null,
+    val watermark: String? = null,
+    val checkedAtEpochMs: Long? = null,
+    val isInitialized: Boolean = false,
+    val invalidatedBuckets: Set<MdbListSyncBucket> = emptySet()
+)
+
+internal class MdbListSaveMemoryException : Exception("Not enough memory to save MDBList data")
