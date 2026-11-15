@@ -38,17 +38,17 @@ internal object StartupWatchdogDecision {
         tracksRead: Boolean,
         hasVideoTrack: Boolean,
         videoSelected: Boolean,
-        /**
-         * Kai: wait while the player is still loading (not READY), whatever the server, up to the
-         * ceiling. Only a player that is READY without a picture is treated as a hung decoder early.
-         */
-        patientStart: Boolean = false,
         playbackThreadAnswers: Boolean = true,
         videoFileWithUnreadPicture: Boolean = false,
         videoDecoderOpened: Boolean = false,
         openRequestAgeMs: Long? = null,
         loadErrorSeen: Boolean = false,
         readWaitGiven: Boolean = false,
+        /**
+         * Kai (last, so Arc's positional callers keep their order): wait while the player is still loading (not READY), whatever the server, up to the
+         * ceiling. Only a player that is READY without a picture is treated as a hung decoder early.
+         */
+        patientStart: Boolean = false,
     ): Step {
         val anotherIntervalFits = elapsedMs + intervalMs <= ceilingMs
         if (slowStart && bufferedAheadMs == 0L && !ready && anotherIntervalFits) return Step.WaitForData
