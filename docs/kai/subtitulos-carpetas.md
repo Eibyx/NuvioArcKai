@@ -134,3 +134,13 @@ cancelaron a propósito (antes de publicar) para incluir los IDs de TMDB en disc
 APK verificado: SHA-256 `5590c0ee5a9747d8658639224ae337f609fe545496ac631a682ed7106414d7fe` (coincide con `SHA256SUMS.txt`),
 mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 6 /
 `1.1.0-nt.stable-kai.6`, solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
+
+### Pre-release 1.2.0-kai.1 publicada (base Nuvio Arc 1.2.0-arc.1)
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.2.0-kai.1 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43784568460 (rama `kai/arc-1.2.0`, commit `16a64aa7`). La ejecución
+43781063506 falló por una carrera real en `MetaRepositoryImpl` (consultas compartidas que quedaban «en curso»), arreglada en
+`16a64aa7` con prueba nueva que falla sin el arreglo.
+APK verificado: SHA-256 `9ade379683aa560f9dce2c5a82136a3a0e07c0fe7023b829fb1a7988b4f773e4` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 7 / `1.2.0-kai.1`,
+solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
