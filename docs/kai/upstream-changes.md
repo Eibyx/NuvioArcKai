@@ -101,3 +101,4 @@ Rama `kai/arc-1.2.0`, `git merge` de `ysosrs123/NuvioTV-Fork` `main` (`343b2759`
 | `ui/screens/detail/MetaDetailsViewModel.kt`, `PlayerRuntimeController.kt`, `stream/StreamScreenViewModel.kt`, `NuvioApplication.kt` | Parámetros y llamadas de ambos. |
 | `ui/screens/settings/ScoutSettingsContent.kt` | Rama `ANILIST` en el `when` de rastreadores. |
 | `data/repository/TraktAuthService.kt`, `TraktAuthServiceTest.kt` | `clientCredentials` interno (por defecto, las claves de la compilación); las dos pruebas de renovación usan claves falsas porque Kai se compila sin Trakt. Mismas comprobaciones que en Arc. Autorizado por el usuario. |
+| `data/repository/MetaRepositoryImpl.kt` | Arreglo de carrera (también en Arc): las consultas compartidas empiezan `LAZY` y se arrancan tras guardarse en el mapa; antes, una que fallaba al instante podía quedar «en curso» para siempre. Prueba nueva `MetaRepositoryInFlightRaceTest` (falla sin el arreglo). |

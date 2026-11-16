@@ -601,7 +601,7 @@ class MetaRepositoryImpl @Inject constructor(
 
         var created: Deferred<MetaLookupResult>? = null
         val deferred = inFlightAddonMeta.getOrPut(flightKey) {
-            repositoryScope.async {
+            repositoryScope.async(start = kotlinx.coroutines.CoroutineStart.LAZY) {
                 try {
                     // Kept here rather than in the enclosing flow's lists: this
                     // Deferred is shared, so only its creator would see those, and
@@ -710,7 +710,10 @@ class MetaRepositoryImpl @Inject constructor(
                 }
             }.also { created = it }
         }
-        if (deferred !== created) noteJoined(deferred, caller)
+        // Kai: the lookup starts only once it is in the map. Started eagerly, a lookup that failed at once
+        // could remove its entry before getOrPut stored it, leaving a finished failure "in flight" that
+        // every later request joined, so the title was never asked again that session.
+        if (deferred === created) deferred.start() else noteJoined(deferred, caller)
 
         emit(lookupOutcome(deferred.await(), requestedType, id))
     }
@@ -789,7 +792,7 @@ class MetaRepositoryImpl @Inject constructor(
         val host = addonHost(addon.baseUrl)
         var created: Deferred<Meta?>? = null
         val deferred = inFlightPrimaryMeta.getOrPut(cacheKey) {
-            repositoryScope.async {
+            repositoryScope.async(start = kotlinx.coroutines.CoroutineStart.LAZY) {
                 try {
                     holdWhilePlayerOpen(caller)
                     if (rateLimits.isPaused(host)) {
@@ -824,7 +827,10 @@ class MetaRepositoryImpl @Inject constructor(
                 }
             }.also { created = it }
         }
-        if (deferred !== created) noteJoined(deferred, caller)
+        // Kai: the lookup starts only once it is in the map. Started eagerly, a lookup that failed at once
+        // could remove its entry before getOrPut stored it, leaving a finished failure "in flight" that
+        // every later request joined, so the title was never asked again that session.
+        if (deferred === created) deferred.start() else noteJoined(deferred, caller)
 
         val meta = deferred.await()
         if (meta != null) {
