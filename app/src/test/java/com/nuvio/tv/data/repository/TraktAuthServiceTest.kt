@@ -38,6 +38,8 @@ class TraktAuthServiceTest {
             traktAuthDataStore = traktAuthDataStore,
             authSessionNoticeDataStore = authSessionNoticeDataStore
         )
+        // Fake app keys: the refresh path needs some, and NuvioArcKai builds carry none.
+        service.clientCredentials = TraktClientCredentials("test-client-id", "test-client-secret")
 
         assertFalse(service.refreshTokenIfNeeded(force = true))
         assertEquals(2_000L, currentTime)
@@ -85,6 +87,8 @@ class TraktAuthServiceTest {
             traktAuthDataStore = traktAuthDataStore,
             authSessionNoticeDataStore = authSessionNoticeDataStore
         )
+        // Fake app keys: the refresh path needs some, and NuvioArcKai builds carry none.
+        service.clientCredentials = TraktClientCredentials("test-client-id", "test-client-secret")
 
         assertFalse(service.refreshTokenIfNeeded(force = true))
         assertFalse(service.refreshTokenIfNeeded(force = true))

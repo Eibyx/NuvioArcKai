@@ -41,6 +41,13 @@ class TraktAuthService @Inject constructor(
     private val traktAuthDataStore: TraktAuthDataStore,
     private val authSessionNoticeDataStore: AuthSessionNoticeDataStore
 ) {
+    /**
+     * Trakt app id and secret. NuvioArcKai builds carry none (Trakt is off there), so tests that exercise the
+     * token refresh set fake ones instead of depending on the build's keys.
+     */
+    internal var clientCredentials: TraktClientCredentials =
+        TraktClientCredentials(BuildConfig.TRAKT_CLIENT_ID, BuildConfig.TRAKT_CLIENT_SECRET)
+
     private val refreshLeewaySeconds = 60L
     private val refreshFatalRetryDelayMs = 2_000L
     private val writeRequestMutex = Mutex()
@@ -119,7 +126,7 @@ class TraktAuthService @Inject constructor(
     }
 
     fun hasRequiredCredentials(): Boolean {
-        return BuildConfig.TRAKT_CLIENT_ID.isNotBlank() && BuildConfig.TRAKT_CLIENT_SECRET.isNotBlank()
+        return clientCredentials.id.isNotBlank() && clientCredentials.secret.isNotBlank()
     }
 
     suspend fun getCurrentAuthState(): TraktAuthState = traktAuthDataStore.getCurrentState()
@@ -158,7 +165,7 @@ class TraktAuthService @Inject constructor(
         // Retry-After header when the server supplies a short back-off.
         suspend fun requestOnce(): Response<TraktDeviceCodeResponseDto> =
             traktApi.requestDeviceCode(
-                TraktDeviceCodeRequestDto(clientId = BuildConfig.TRAKT_CLIENT_ID)
+                TraktDeviceCodeRequestDto(clientId = clientCredentials.id)
             )
 
         var response = try {
@@ -213,8 +220,8 @@ class TraktAuthService @Inject constructor(
             traktApi.requestDeviceToken(
                 TraktDeviceTokenRequestDto(
                     code = deviceCode,
-                    clientId = BuildConfig.TRAKT_CLIENT_ID,
-                    clientSecret = BuildConfig.TRAKT_CLIENT_SECRET
+                    clientId = clientCredentials.id,
+                    clientSecret = clientCredentials.secret
                 )
             )
         } catch (e: IOException) {
@@ -278,8 +285,8 @@ class TraktAuthService @Inject constructor(
                     traktApi.refreshToken(
                         TraktRefreshTokenRequestDto(
                             refreshToken = refreshToken,
-                            clientId = BuildConfig.TRAKT_CLIENT_ID,
-                            clientSecret = BuildConfig.TRAKT_CLIENT_SECRET,
+                            clientId = clientCredentials.id,
+                            clientSecret = clientCredentials.secret,
                             redirectUri = traktRedirectUri()
                         )
                     )
@@ -325,8 +332,8 @@ class TraktAuthService @Inject constructor(
                     traktApi.revokeToken(
                         TraktRevokeRequestDto(
                             token = accessToken,
-                            clientId = BuildConfig.TRAKT_CLIENT_ID,
-                            clientSecret = BuildConfig.TRAKT_CLIENT_SECRET
+                            clientId = clientCredentials.id,
+                            clientSecret = clientCredentials.secret
                         )
                     )
                 }
@@ -572,4 +579,8 @@ class TraktAuthService @Inject constructor(
         traktAuthDataStore.clearAuth()
         tripCircuit("Token refresh returned $statusCode")
     }
+}
+
+internal data class TraktClientCredentials(val id: String, val secret: String) {
+    override fun toString(): String = "TraktClientCredentials(id=${if (id.isBlank()) "none" else "set"}, secret=<hidden>)"
 }

@@ -85,3 +85,19 @@ Nuevos: `core/tmdb/TmdbApiKey.kt`, `core/sync/AccountTmdbKeyStore.kt` (cifrado p
 
 Archivos nuevos: `core/subtitlelibrary/*`, `ui/screens/player/{LibraryFontRegistry,MpvLibraryFonts,PlayerRuntimeControllerSubtitleLibrary,SubtitleLibraryPlayerUi}.kt`,
 `ui/screens/settings/SubtitleFolders{Dialog,ViewModel}.kt`, `res/values{,-es}/strings_kai_subtitles.xml`.
+
+## Fusión con Nuvio Arc 1.2.0-arc.1 (15-nov-2026)
+
+Rama `kai/arc-1.2.0`, `git merge` de `ysosrs123/NuvioTV-Fork` `main` (`343b2759`, etiqueta `1.2.0-arc.1`, 145 commits sobre 1.1.0-nt.stable).
+
+| Archivo | Cómo se resolvió |
+| --- | --- |
+| `core/tmdb/TmdbService.kt` | Versión de Arc (su `TmdbIdStore` guarda los IDs en disco) + clave TMDB de la cuenta. Se borró `ImdbTmdbIdStore` de kai.6. |
+| `core/scout/ScoutEngine.kt`, `ScoutAnimeRecaps.kt`, `core/ratinglimit/RatingLimitGate.kt` | Código de Arc con `TmdbApiKey.current()` en vez de `BuildConfig.TMDB_API_KEY`. |
+| `ui/screens/player/NuvioMpvSurfaceView.kt`, `MpvLibraryFonts.kt` | Carpeta activa de Kai; ahora vuelve a copiar las fuentes cuando cambian las importadas de Arc. |
+| `ui/screens/player/PlayerLibassCompat.kt` | Caché de libass de Arc + registro de fuentes de carpeta de Kai. |
+| `ui/screens/player/StartupWatchdogDecision.kt`, `PlayerRuntimeControllerObservers.kt` | Parámetros nuevos de Arc primero (la prueba de Arc los pasa por posición), `patientStart` al final; la espera paciente solo si el hilo de reproducción responde. |
+| `ui/screens/home/HomeViewModelContinueWatching.kt` | Escalonado de Kai para poca RAM sobre el código de Arc. |
+| `ui/screens/detail/MetaDetailsViewModel.kt`, `PlayerRuntimeController.kt`, `stream/StreamScreenViewModel.kt`, `NuvioApplication.kt` | Parámetros y llamadas de ambos. |
+| `ui/screens/settings/ScoutSettingsContent.kt` | Rama `ANILIST` en el `when` de rastreadores. |
+| `data/repository/TraktAuthService.kt`, `TraktAuthServiceTest.kt` | `clientCredentials` interno (por defecto, las claves de la compilación); las dos pruebas de renovación usan claves falsas porque Kai se compila sin Trakt. Mismas comprobaciones que en Arc. Autorizado por el usuario. |
