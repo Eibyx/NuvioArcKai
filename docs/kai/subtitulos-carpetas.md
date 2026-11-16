@@ -144,3 +144,11 @@ https://github.com/Eibyx/NuvioArcKai/actions/runs/43784568460 (rama `kai/arc-1.2
 APK verificado: SHA-256 `9ade379683aa560f9dce2c5a82136a3a0e07c0fe7023b829fb1a7988b4f773e4` (coincide con `SHA256SUMS.txt`),
 mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 7 / `1.2.0-kai.1`,
 solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes.
+
+### Release 1.2.0 publicada (release normal, no pre-release, a petición del usuario)
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.2.0 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/43805163784 (rama `kai/arc-1.2.0`, commit `d8e58013`, `prerelease=false`).
+APK verificado: SHA-256 `2deafe78bc4598b0a67e7e8bb8091d8b2d61c26a005f8ade39e14c014f56a9a2` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 8 / `1.2.0`,
+solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes. Mismo código que 1.2.0-kai.1 salvo el nombre de versión.
