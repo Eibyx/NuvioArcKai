@@ -9,4 +9,11 @@
     <string name="kai_connection_choice_recommended">recommended</string>
     <string name="kai_connection_choice_in_use">in use</string>
     <string name="kai_connection_choice_applied">Now using %1$s</string>
+    <string name="kai_service_test_section">Network test by service</string>
+    <string name="kai_service_test_title">Test the streaming service</string>
+    <string name="kai_service_test_subtitle">Measures %1$s with 1, 2 and 3 connections on the last video you watched, then lets you pick</string>
+    <string name="kai_service_test_no_stream">Play something first: the test measures the service that served it (for example TorBox\'s CDN)</string>
+    <string name="kai_service_test_running">Testing: %1$s · press OK to stop</string>
+    <string name="kai_service_test_header">%1$s · tested %2$s on %3$s</string>
+    <string name="kai_service_test_cdn">Server: %1$s</string>
 </resources>

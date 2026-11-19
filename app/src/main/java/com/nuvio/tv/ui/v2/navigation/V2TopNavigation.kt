@@ -105,7 +105,18 @@ fun V2TopNavigation(
                 navigationContent(true)
             }
         }
-        if (visible) {
+        val keStyle = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current?.keStyle == true
+        if (visible && keStyle) {
+            KeTopBar(
+                items = items, selectedRoute = selectedRoute, profile = profile,
+                routeFocus = routeFocus, contentFocus = contentFocus,
+                onNavFocused = { navFocused = it },
+                onRouteFocused = { lastRoute = it },
+                onNavigate = { route -> onNavigate(route); returnToContent = true },
+                onSwitchProfile = onSwitchProfile,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        } else if (visible) {
             NuvioGlassSurface(GlassRole.NAVIGATION,
                 Modifier.align(Alignment.TopCenter).padding(horizontal = 36.dp, vertical = 10.dp).fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)) {

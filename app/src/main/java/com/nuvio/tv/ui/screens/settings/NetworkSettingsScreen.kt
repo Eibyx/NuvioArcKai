@@ -237,6 +237,45 @@ fun AdvancedSettingsContent(
             playback = com.nuvio.tv.ui.screens.player.NuvioExoPlayerPerformanceHelper.downloadWindow(dvPlayerSettings, context))
     }
 
+    // Kai: one place that writes the 1 / 2 / 3 connections choice (same setters as the sliders).
+    fun applyConnections(option: KaiConnectionChoice.Option) {
+        scope.launch {
+            if (option.connections <= 1) {
+                playbackVm.setUseParallelConnections(false)
+            } else {
+                playbackVm.setParallelNetworkEnabled(true)
+                playbackVm.setUseParallelConnections(true)
+                playbackVm.setParallelConnectionCount(option.connections)
+                playbackVm.setParallelChunkSizeKb(option.chunkMb * 1024)
+            }
+        }
+    }
+
+    // Kai: KE's per-service table. A finished stream test is kept under the service that served
+    // the bytes (e.g. TorBox's CDN), with speeds and host names only.
+    val savedServiceTests by remember(context) { com.nuvio.tv.data.local.KaiServiceNetworkStore.flow(context) }
+        .collectAsStateWithLifecycle(initialValue = emptyList())
+    val streamServiceKey = com.nuvio.tv.core.network.KaiServiceNetwork.serviceKeyOf(
+        streamDiagnostic.endpoint ?: lastStreamUrl?.let { android.net.Uri.parse(it).host })
+    LaunchedEffect(streamDiagnostic, streamDiagnostic.status) {
+        val key = streamServiceKey
+        if (streamDiagnostic.status != "Done" || key == null) return@LaunchedEffect
+        if (streamDiagnostic.baselineMbps == null && streamDiagnostic.measured.isEmpty()) return@LaunchedEffect
+        com.nuvio.tv.data.local.KaiServiceNetworkStore.save(context, com.nuvio.tv.data.local.KaiServiceTest(
+            serviceKey = key,
+            cdnHost = streamDiagnostic.endpoint?.substringBefore(':'),
+            testedAtMs = System.currentTimeMillis(),
+            networkLabel = context.getString(when (getConnectionType(context)) {
+                NetworkConnectionKind.Wifi -> R.string.network_connection_wifi
+                NetworkConnectionKind.Ethernet -> R.string.network_connection_ethernet
+                NetworkConnectionKind.Offline -> R.string.network_connection_offline
+            }),
+            baselineMbps = streamDiagnostic.baselineMbps,
+            passes = streamDiagnostic.measured.map { com.nuvio.tv.data.local.KaiServicePass(it.connections, it.chunkMb, it.mbps) },
+            filmMbps = streamDiagnostic.bitrate?.takeIf { it > 0 }?.let { it / 1_000_000.0 }
+        ))
+    }
+
     fun runSpeedTest() {
         connectionType = getConnectionType(context)
         val label = context.getString(when (connectionType) {
@@ -502,6 +541,54 @@ fun AdvancedSettingsContent(
             if (showLogs) AppLogsDialog(onDismiss = { showLogs = false })
         }
 
+        item(key = "kai_service_network") {
+            SettingsGroupCard(
+                modifier = Modifier.fillMaxWidth(),
+                title = stringResource(R.string.kai_service_test_section)
+            ) {
+                val running = streamDiagnostic.run.running
+                val hasStream = !lastStreamUrl.isNullOrBlank()
+                val serviceName = streamServiceKey?.let(com.nuvio.tv.core.network.KaiServiceNetwork::displayName)
+                SettingsActionRow(
+                    title = stringResource(R.string.kai_service_test_title),
+                    subtitle = when {
+                        !hasStream -> stringResource(R.string.kai_service_test_no_stream)
+                        running -> stringResource(R.string.kai_service_test_running, streamDiagnostic.status)
+                        else -> stringResource(R.string.kai_service_test_subtitle, serviceName ?: stringResource(R.string.stream_quality_unknown))
+                    },
+                    value = if (running) stringResource(R.string.action_cancel) else null,
+                    enabled = hasStream,
+                    onClick = {
+                        if (running) streamDiagnostic.cancel()
+                        else runStreamDiagnostics(StreamDiagnosticMode.ADVANCED)
+                    }
+                )
+                val inUse = KaiConnectionChoice.currentCount(
+                    dvPlayerSettings.useParallelConnections && dvPlayerSettings.parallelNetworkEnabled,
+                    dvPlayerSettings.parallelConnectionCount)
+                savedServiceTests.forEach { test ->
+                    Column(modifier = Modifier.padding(horizontal = NuvioTheme.spacing.xs),
+                        verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.xs)) {
+                        val tested = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+                            .format(java.util.Date(test.testedAtMs))
+                        Text(
+                            text = stringResource(R.string.kai_service_test_header,
+                                com.nuvio.tv.core.network.KaiServiceNetwork.displayName(test.serviceKey), tested, test.networkLabel),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = NuvioTheme.colors.TextPrimary
+                        )
+                        test.cdnHost?.let { host ->
+                            Text(text = stringResource(R.string.kai_service_test_cdn, host),
+                                style = MaterialTheme.typography.bodySmall, color = NuvioTheme.colors.TextSecondary)
+                        }
+                        val options = KaiConnectionChoice.options(test.baselineMbps,
+                            test.passes.map { StreamSweepEngine.MeasuredPass(it.connections, it.chunkMb, it.mbps) }, test.filmMbps)
+                        KaiConnectionChoiceRow(options, inUse) { option -> applyConnections(option) }
+                    }
+                }
+            }
+        }
+
         item(key = "network_tests") {
             SettingsGroupCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -708,18 +795,7 @@ fun AdvancedSettingsContent(
                                 val filmMbps = streamDiagnostic.bitrate?.takeIf { it > 0 }?.let { it / 1_000_000.0 }
                                 val choiceOptions = KaiConnectionChoice.options(streamDiagnostic.baselineMbps, streamDiagnostic.measured, filmMbps)
                                 val inUse = KaiConnectionChoice.currentCount(dvPlayerSettings.useParallelConnections && dvPlayerSettings.parallelNetworkEnabled, dvPlayerSettings.parallelConnectionCount)
-                                KaiConnectionChoiceRow(choiceOptions, inUse) { option ->
-                                    scope.launch {
-                                        if (option.connections <= 1) {
-                                            playbackVm.setUseParallelConnections(false)
-                                        } else {
-                                            playbackVm.setParallelNetworkEnabled(true)
-                                            playbackVm.setUseParallelConnections(true)
-                                            playbackVm.setParallelConnectionCount(option.connections)
-                                            playbackVm.setParallelChunkSizeKb(option.chunkMb * 1024)
-                                        }
-                                    }
-                                }
+                                KaiConnectionChoiceRow(choiceOptions, inUse) { option -> applyConnections(option) }
                             }
 
                             if (streamDiagnostic.status == "Done") {
