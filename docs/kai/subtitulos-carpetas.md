@@ -163,3 +163,12 @@ APK verificado: SHA-256 `a72dd1238aff1a6dbe73c297d608c5e67f0ddf9bac08ca49e52eeb5
 mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 9 / `1.2.1`,
 solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes. Contiene Arc 1.2.0-arc.3, elección 1/2/3 conexiones tras la
 prueba de red, TV en vivo (Reshaped) y estilo Nuvio KE. NO VERIFICADO en el televisor.
+
+### Release 1.2.2 publicada (release normal, no pre-release)
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.2.2 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/44566819076 (rama `kai/arc-1.2.0-arc3`, commit `bfe05098`, `prerelease=false`).
+La ejecución 44564446590 (commit `a1dc2313`) se canceló a propósito para incluir la barra de KE y la prueba de red por servicio.
+APK verificado: SHA-256 `eac948cb3d727a10300239d1675b8727b326bdfa00d626f51901e7147b4d96b1` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 10 / `1.2.2`,
+solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes. NO VERIFICADO en el televisor.
