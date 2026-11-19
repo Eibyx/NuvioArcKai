@@ -153,8 +153,8 @@ android {
         minSdk = 24
         targetSdk = 36
         // Kai has its own version line on top of Arc's; the code only ever grows.
-        versionCode = providers.gradleProperty("arcVersionCode").orNull?.toIntOrNull() ?: 8
-        versionName = providers.gradleProperty("arcVersionName").orNull ?: "1.2.0"
+        versionCode = providers.gradleProperty("arcVersionCode").orNull?.toIntOrNull() ?: 9
+        versionName = providers.gradleProperty("arcVersionName").orNull ?: "1.2.1"
         // Optional -PnuvioAppIdSuffix=.name installs a local test build next to the main app.
         providers.gradleProperty("nuvioAppIdSuffix").orNull?.takeIf { it.isNotBlank() }?.let {
             applicationIdSuffix = it
@@ -652,6 +652,8 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    // Kai: XML pull parser for the Live TV guide tests (from Nuvio Reshaped)
+    testImplementation("net.sf.kxml:kxml2:2.3.0")
     testImplementation("junit:junit:4.13.2")
     // NuvioArcKai: the cloud storage and AniList tests ported from NuvioTvLiteOG use kotlin.test (test classpath only).
     testImplementation(kotlin("test"))

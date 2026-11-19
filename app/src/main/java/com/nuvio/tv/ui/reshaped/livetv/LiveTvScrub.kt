@@ -63,7 +63,16 @@ internal object LiveTvScrubSteps {
     const val LIVE_MARGIN_MS = 45_000L
 
     /** The player's own steps for a held ◀▶ (10 s growing to a minute), so rewinding feels the same. */
-    fun stepMs(repeatCount: Int): Long = PlayerScrubRates.stepMsForKeyRepeat(repeatCount)
+    fun stepMs(repeatCount: Int): Long {
+        // Kai: Arc's player glides instead of stepping, so Reshaped's step ladder lives here.
+        val count = repeatCount.coerceAtLeast(0)
+        return when {
+            count >= 15 -> 60_000L
+            count >= 8 -> 30_000L
+            count >= 3 -> 20_000L
+            else -> PlayerScrubRates.STEP_SHORT_MS
+        }
+    }
 
     /**
      * Where a held ◀ from [fromMs] to [toMs] stops: at the start of a show it would pass (the

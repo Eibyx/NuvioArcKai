@@ -1,5 +1,7 @@
 package com.nuvio.tv.ui.screens.player
 
+import com.nuvio.tv.ui.reshaped.livetv.skipAfrPreflightForLiveTv // Kai: Live TV hook
+
 import android.os.Build
 import android.os.SystemClock
 import android.util.Log
@@ -194,7 +196,7 @@ internal suspend fun PlayerRuntimeController.runAfrPreflightIfEnabled(
         return
     }
 
-    if (com.nuvio.tv.ui.reshaped.livetv.skipAfrPreflightForLiveTv(url)) return // Kai: Live TV hook (from Nuvio Reshaped): Live TV matches from the playing track
+    if (skipAfrPreflightForLiveTv(url)) return // Kai: Live TV hook (from Nuvio Reshaped): Live TV matches from the playing track
     val activity = currentHostActivity()
     if (activity == null) {
         Log.w(PlayerRuntimeController.TAG, "AFR preflight skipped: host activity unavailable")

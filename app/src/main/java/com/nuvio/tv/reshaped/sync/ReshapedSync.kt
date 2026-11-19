@@ -6,4 +6,5 @@ package com.nuvio.tv.reshaped.sync
  */
 object ReshapedSync {
     fun onLocalChange() = Unit
+    fun onLiveTvOpened() = Unit
 }

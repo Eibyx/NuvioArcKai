@@ -1,5 +1,7 @@
 package com.nuvio.tv.ui.screens.player
 
+import com.nuvio.tv.ui.reshaped.livetv.keepPlayerForLiveTvZap // Kai: Live TV hook
+
 import android.content.Intent
 import android.net.Uri
 import android.os.SystemClock
@@ -1144,7 +1146,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     // A channel or catch-up pick starts a different timeline, unlike an alternate VOD source.
     val isLiveTvSwitch = com.nuvio.tv.reshaped.livetv.LiveTvPlaybackRegistry.isLiveTv(currentStreamUrl) ||
         com.nuvio.tv.reshaped.livetv.LiveTvPlaybackRegistry.isLiveTv(url) // Kai: Live TV hook (from Nuvio Reshaped)
-    if (!com.nuvio.tv.ui.reshaped.livetv.keepPlayerForLiveTvZap(url)) releasePlayer(flushPlaybackState = false) // Kai: Live TV hook (from Nuvio Reshaped): zaps keep the player
+    if (!keepPlayerForLiveTvZap(url)) releasePlayer(flushPlaybackState = false) // Kai: Live TV hook (from Nuvio Reshaped): zaps keep the player
 
     val wasAutoPlayed = currentEpisodeAutoPlayed
     applySelectedStreamState(
