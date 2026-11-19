@@ -1297,12 +1297,13 @@ open class MainActivity : ComponentActivity() {
                             .distinctUntilChanged()
                     }
                     val scoutInMenu by scoutInMenuFlow.collectAsState(initial = com.nuvio.tv.domain.model.ScoutFeature.available)
-                    val rootRoutes = remember(discoverLocation, calendarInMenu, scoutInMenu) {
+                    val liveTvMenuItem = com.nuvio.tv.ui.reshaped.livetv.rememberLiveTvMenuItem(currentRoute, navController) // Kai: Live TV hook (from Nuvio Reshaped): menu entry
+                    val rootRoutes = remember(discoverLocation, calendarInMenu, scoutInMenu, liveTvMenuItem) {
                         appRootRoutes(
                             discoverInSidebar = discoverLocation == DiscoverLocation.IN_SIDEBAR,
                             calendarInMenu = calendarInMenu,
                             scoutInMenu = scoutInMenu
-                        )
+                        ) + listOfNotNull(liveTvMenuItem?.route)
                     }
 
                     SideEffect {
@@ -1335,7 +1336,8 @@ open class MainActivity : ComponentActivity() {
                         strNavCalendar,
                         discoverLocation,
                         calendarInMenu,
-                        scoutInMenu
+                        scoutInMenu,
+                        liveTvMenuItem
                     ) {
                         buildList {
                             add(
@@ -1371,6 +1373,7 @@ open class MainActivity : ComponentActivity() {
                                     iconRes = R.raw.sidebar_library
                                 )
                             )
+                            liveTvMenuItem?.let(::add) // Kai: Live TV hook (from Nuvio Reshaped): menu entry
                             if (calendarInMenu) {
                                 add(
                                     DrawerItem(

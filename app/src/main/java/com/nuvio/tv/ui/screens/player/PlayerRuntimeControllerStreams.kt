@@ -1141,7 +1141,10 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     )
 
     resetLoadingOverlayForNewStream()
-    releasePlayer(flushPlaybackState = false)
+    // A channel or catch-up pick starts a different timeline, unlike an alternate VOD source.
+    val isLiveTvSwitch = com.nuvio.tv.reshaped.livetv.LiveTvPlaybackRegistry.isLiveTv(currentStreamUrl) ||
+        com.nuvio.tv.reshaped.livetv.LiveTvPlaybackRegistry.isLiveTv(url) // Kai: Live TV hook (from Nuvio Reshaped)
+    if (!com.nuvio.tv.ui.reshaped.livetv.keepPlayerForLiveTvZap(url)) releasePlayer(flushPlaybackState = false) // Kai: Live TV hook (from Nuvio Reshaped): zaps keep the player
 
     val wasAutoPlayed = currentEpisodeAutoPlayed
     applySelectedStreamState(
@@ -1202,7 +1205,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
     showStreamSourceIndicator(stream)
     resetPostPlayOverlayState(clearEpisode = false)
 
-    val carriedStartMs = SourceFailoverSelection.startPositionMs(automatic, _uiState.value.pendingSeekPosition)
+    val carriedStartMs = if (isLiveTvSwitch) null else SourceFailoverSelection.startPositionMs(automatic, _uiState.value.pendingSeekPosition)
     _exoPlayer?.let { player ->
         scope.launch {
             try {
@@ -1266,7 +1269,7 @@ internal fun PlayerRuntimeController.switchToSourceStream(
         }
     }
 
-    if (carriedStartMs == null) loadSavedProgressFor(currentSeason, currentEpisode)
+    if (carriedStartMs == null && !isLiveTvSwitch) loadSavedProgressFor(currentSeason, currentEpisode)
 }
 
 internal fun PlayerRuntimeController.dismissEpisodesPanel() {

@@ -1382,6 +1382,10 @@ private fun PlaybackNavHost(
             )
         }
 
+        rootComposable(com.nuvio.tv.reshaped.livetv.LIVE_TV_ROUTE) { // Kai: Live TV hook (from Nuvio Reshaped)
+            com.nuvio.tv.ui.reshaped.livetv.LiveTvScreen(onPlay = { navController.navigate(it) }, showBuiltInHeader = !hideBuiltInHeaders)
+        }
+
         rootComposable(Screen.Library.route) {
             LibraryScreen(
                 showBuiltInHeader = !hideBuiltInHeaders,

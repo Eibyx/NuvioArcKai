@@ -283,6 +283,7 @@ fun PlayerScreen(
     val context = LocalContext.current
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val containerFocusRequester = remember { FocusRequester() }
+    val liveTvPlayer = com.nuvio.tv.ui.reshaped.livetv.rememberLiveTvPlayer(viewModel.controller, containerFocusRequester) // Kai: Live TV hook (from Nuvio Reshaped)
     val playPauseFocusRequester = remember { FocusRequester() }
     val progressBarFocusRequester = remember { FocusRequester() }
     val episodesFocusRequester = remember { FocusRequester() }
@@ -1162,6 +1163,7 @@ fun PlayerScreen(
             .onFocusChanged { focusOnControl[0] = it.hasFocus && !it.isFocused }
             .focusable(enabled = uiState.error == null)
             .onPreviewKeyEvent { keyEvent ->
+                if (liveTvPlayer.onPreviewKey(keyEvent.nativeKeyEvent, uiState)) return@onPreviewKeyEvent true // Kai: Live TV hook (from Nuvio Reshaped)
                 if (PauseOnTimeline.firstPress(keyEvent.nativeKeyEvent.action, keyEvent.nativeKeyEvent.repeatCount)) {
                     keyPresses[0]++
                 }
@@ -1421,7 +1423,8 @@ fun PlayerScreen(
                         shouldConfirmNextEpisodeOnEnd ||
                         uiState.postPlayMode is PostPlayMode.StillWatching ||
                         postPlayRecommendationState.isVisible ||
-                        uiState.error != null
+                        uiState.error != null ||
+                        liveTvPlayer.panelOpen // Kai: Live TV hook (from Nuvio Reshaped): channel list
                 if (panelOrDialogOpen) return@onKeyEvent false
 
                 if (keyEvent.nativeKeyEvent.action == KeyEvent.ACTION_UP) {
@@ -2860,6 +2863,8 @@ fun PlayerScreen(
                     }
                 )
             }
+
+            com.nuvio.tv.ui.reshaped.livetv.LiveTvPlayerOverlay(liveTvPlayer, uiState) // Kai: Live TV hook (from Nuvio Reshaped)
 
             if (uiState.showSpeedDialog) {
                 SpeedSelectionDialog(

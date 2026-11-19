@@ -488,6 +488,9 @@ fun AdvancedSettingsContent(
             UiDiagnosticsSettingsRow()
         }
 
+        // Kai: Live TV (IPTV), off by default.
+        liveTvSettingsItems()
+
         // Kai: the in-app log viewer (as in NuvioMobileKai).
         item(key = "kai_app_logs") {
             var showLogs by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }

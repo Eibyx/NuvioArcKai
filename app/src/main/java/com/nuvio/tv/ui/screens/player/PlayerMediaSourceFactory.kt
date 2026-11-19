@@ -374,6 +374,7 @@ internal class PlayerMediaSourceFactory(
         cacheKey: String? = null
     ): MediaSource {
         notePlaybackStart(url)
+        val loadErrorHandlingPolicy = com.nuvio.tv.reshaped.livetv.LiveTvLoadErrors.policyFor(url, this.loadErrorHandlingPolicy) // Kai: Live TV hook (from Nuvio Reshaped): Live TV retries refusals
         val sanitizedHeaders = sanitizeHeaders(headers)
         val chunkSessionShape = resolveChunkSessionShape(
             url = url,
@@ -512,7 +513,8 @@ internal class PlayerMediaSourceFactory(
 
         // 2. VOD disk cache (opt-in).
         val useVodCache = ENABLE_VOD_CACHE && vodCacheEnabled && !isHls && !isDash && shouldUseVodCache(url) &&
-            url !in vodCacheBypassUrls
+            url !in vodCacheBypassUrls &&
+            !com.nuvio.tv.reshaped.livetv.LiveTvPlaybackRegistry.isLiveTv(url) // Kai: Live TV hook (from Nuvio Reshaped): Live TV is never cached
         // A playback started inside the delay window would have its own data swept out from under it.
         pendingEvictionJob?.cancel()
         pendingEvictionJob = null

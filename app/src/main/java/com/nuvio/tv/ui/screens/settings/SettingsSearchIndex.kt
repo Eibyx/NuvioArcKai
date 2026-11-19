@@ -232,6 +232,9 @@ internal val SETTINGS_SEARCH_ENTRIES: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.sub_addon_subtitles, R.string.sub_addon_subtitles_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.sub_prefer_addon_subtitles, R.string.sub_prefer_addon_subtitles_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.sub_strip_sdh, R.string.sub_strip_sdh_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.SUBTITLES, modes = SettingsSearchModes.ADVANCED),
+    SettingsSearchEntry(R.string.settings_live_tv_title, R.string.settings_live_tv_description, SettingsCategory.ADVANCED, modes = SettingsSearchModes.ADVANCED, keywords = listOf("iptv", "m3u", "xtream", "stalker", "canales", "tv en vivo")),
+    SettingsSearchEntry(R.string.settings_live_tv_previews_title, R.string.settings_live_tv_previews_description, SettingsCategory.ADVANCED, modes = SettingsSearchModes.ADVANCED),
+    SettingsSearchEntry(R.string.settings_live_tv_preview_sound_title, R.string.settings_live_tv_preview_sound_description, SettingsCategory.ADVANCED, modes = SettingsSearchModes.ADVANCED),
     SettingsSearchEntry(R.string.kai_logs_title, R.string.kai_logs_desc, SettingsCategory.ADVANCED, modes = SettingsSearchModes.ADVANCED, keywords = listOf("logs", "registros", "diagnóstico", "debug")),
     SettingsSearchEntry(R.string.kai_format_fallback_title, R.string.kai_format_fallback_desc, SettingsCategory.PLAYBACK, playback = PlaybackSection.PLAYER, modes = SettingsSearchModes.ADVANCED, keywords = listOf("mpv", "exoplayer", "hi10p")),
     // Kai: "Mis carpetas de subtítulos" (its rows live in SubtitleFoldersDialog, opened from the Subtitles page).
