@@ -55,6 +55,7 @@ class KaiAniListCompletionHookTest {
             trackingHistoryWriters = TrackingHistoryWriterRegistry(emptySet()),
             mutationStore = mockk<WatchStateMutationStore>(relaxed = true),
             serverWatched = mockk(relaxed = true),
+            addonEventDispatcher = mockk(relaxed = true),
             aniList = aniList
         )
     }

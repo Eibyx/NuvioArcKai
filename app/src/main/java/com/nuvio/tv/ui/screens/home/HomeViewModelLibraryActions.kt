@@ -12,6 +12,9 @@ import com.nuvio.tv.domain.model.ListMembershipChanges
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.domain.model.WatchProgress
 import com.nuvio.tv.domain.model.isSeriesLikeType
+import com.nuvio.tv.ui.components.posteroptions.TitleAlias
+import com.nuvio.tv.ui.components.posteroptions.isInLibraryOrAlias
+import com.nuvio.tv.ui.components.posteroptions.toggleDefaultMerging
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -77,11 +80,14 @@ internal fun HomeViewModel.observeLibraryState() {
     }
 }
 
-fun HomeViewModel.refreshPosterLibraryStatus(item: MetaPreview) {
+fun HomeViewModel.refreshPosterLibraryStatus(item: MetaPreview, addonBaseUrl: String? = null) {
     val statusKey = homeItemStatusKey(item.id, item.apiType)
     viewModelScope.launch {
         runCatching {
-            val isInLibrary = libraryRepository.isInLibrary(item.id, item.apiType).first()
+            val saved = posterTitleIdentity.resolve(item, addonBaseUrl)
+            val isInLibrary = libraryRepository
+                .isInLibraryOrAlias(saved.id, saved.apiType, TitleAlias.between(saved, item))
+                .first()
             _uiState.update { state ->
                 if (state.posterLibraryMembership[statusKey] == isInLibrary) state
                 else state.copy(
@@ -101,13 +107,15 @@ fun HomeViewModel.togglePosterLibrary(item: MetaPreview, addonBaseUrl: String?) 
     }
 
     viewModelScope.launch {
+        val saved = runCatching { posterTitleIdentity.resolve(item, addonBaseUrl) }.getOrDefault(item)
+        val alias = TitleAlias.between(saved, item)
         runCatching {
-            libraryRepository.toggleDefault(item.toLibraryEntryInput(addonBaseUrl))
+            libraryRepository.toggleDefaultMerging(saved.toLibraryEntryInput(addonBaseUrl), alias)
         }.onFailure { error ->
-            Log.w(HomeViewModel.TAG, "Failed to toggle poster library for ${item.id}: ${error.message}")
+            Log.w(HomeViewModel.TAG, "Failed to toggle poster library for ${saved.id}: ${error.message}")
         }
         runCatching {
-            val isNowInLibrary = libraryRepository.isInLibrary(item.id, item.apiType).first()
+            val isNowInLibrary = libraryRepository.isInLibraryOrAlias(saved.id, saved.apiType, alias).first()
             _uiState.update { state ->
                 state.copy(
                     posterLibraryMembership = state.posterLibraryMembership + (statusKey to isNowInLibrary)
@@ -125,8 +133,8 @@ fun HomeViewModel.openPosterListPicker(item: MetaPreview, addonBaseUrl: String?)
         togglePosterLibrary(item, addonBaseUrl)
         return
     }
-    val input = item.toLibraryEntryInput(addonBaseUrl)
-    activePosterListPickerInput = input
+    activePosterListPickerInput = null
+    activePosterListPickerStatusKey = homeItemStatusKey(item.id, item.apiType)
 
     _uiState.update { state ->
         state.copy(
@@ -145,6 +153,9 @@ fun HomeViewModel.openPosterListPicker(item: MetaPreview, addonBaseUrl: String?)
 
     viewModelScope.launch {
         runCatching {
+            val saved = posterTitleIdentity.resolve(item, addonBaseUrl)
+            val input = saved.toLibraryEntryInput(addonBaseUrl)
+            activePosterListPickerInput = input
             libraryRepository.getMembershipSnapshot(input)
         }.onSuccess { snapshot ->
             _uiState.update { state ->
@@ -281,6 +292,7 @@ fun HomeViewModel.cancelPosterListPickerRemoval() {
 
 fun HomeViewModel.dismissPosterListPicker() {
     activePosterListPickerInput = null
+    activePosterListPickerStatusKey = null
     pendingPosterListPickerChanges = null
     _uiState.update { state ->
         state.copy(
@@ -295,15 +307,15 @@ fun HomeViewModel.dismissPosterListPicker() {
 }
 
 private fun HomeViewModel.closePosterListPickerAfterSave(changes: ListMembershipChanges) {
-    val savedInput = activePosterListPickerInput
+    val statusKey = activePosterListPickerStatusKey
+        ?: activePosterListPickerInput?.let { homeItemStatusKey(it.itemId, it.itemType) }
     val anyListSelected = changes.desiredMembership.values.any { it }
     activePosterListPickerInput = null
+    activePosterListPickerStatusKey = null
     pendingPosterListPickerChanges = null
     _uiState.update { state ->
-        val updatedMembership = savedInput?.let { input ->
-            state.posterLibraryMembership + (
-                homeItemStatusKey(input.itemId, input.itemType) to anyListSelected
-            )
+        val updatedMembership = statusKey?.let { key ->
+            state.posterLibraryMembership + (key to anyListSelected)
         } ?: state.posterLibraryMembership
         state.copy(
             showPosterListPicker = false,
@@ -362,7 +374,7 @@ private fun buildCompletedMovieProgress(item: MetaPreview): WatchProgress {
     )
 }
 
-fun HomeViewModel.togglePosterSeriesWatched(item: MetaPreview) {
+fun HomeViewModel.togglePosterSeriesWatched(item: MetaPreview, addonBaseUrl: String? = null) {
     val isSeries = item.apiType.equals("series", ignoreCase = true) ||
         item.apiType.equals("tv", ignoreCase = true) ||
         item.apiType.equals("anime", ignoreCase = true)
@@ -383,9 +395,9 @@ fun HomeViewModel.togglePosterSeriesWatched(item: MetaPreview) {
     viewModelScope.launch {
         runCatching {
             if (currentlyWatched) {
-                unmarkSeriesWatched(item)
+                unmarkSeriesWatched(item, addonBaseUrl)
             } else {
-                markSeriesWatched(item)
+                markSeriesWatched(item, addonBaseUrl)
             }
         }.onFailure { error ->
             Log.w(HomeViewModel.TAG, "Failed to toggle series watched for ${item.id}: ${error.message}")
@@ -402,8 +414,8 @@ fun HomeViewModel.togglePosterSeriesWatched(item: MetaPreview) {
     }
 }
 
-private suspend fun HomeViewModel.markSeriesWatched(item: MetaPreview) {
-    val episodes = fetchSeriesEpisodes(item)
+private suspend fun HomeViewModel.markSeriesWatched(item: MetaPreview, addonBaseUrl: String?) {
+    val episodes = fetchSeriesEpisodes(item, addonBaseUrl)
     // Without episodes the only mark left is a show-level one, which trackers answer by marking
     // every episode watched. Fail instead so the optimistic badge is reverted.
     check(episodes.isNotEmpty()) { "No episodes found for ${item.id}" }
@@ -433,8 +445,8 @@ private suspend fun HomeViewModel.markSeriesWatched(item: MetaPreview) {
     )
 }
 
-private suspend fun HomeViewModel.unmarkSeriesWatched(item: MetaPreview) {
-    val episodes = fetchSeriesEpisodes(item)
+private suspend fun HomeViewModel.unmarkSeriesWatched(item: MetaPreview, addonBaseUrl: String?) {
+    val episodes = fetchSeriesEpisodes(item, addonBaseUrl)
     if (episodes.isEmpty()) {
         watchProgressRepository.removeFromHistory(item.id, videoId = item.imdbId, wholeSeries = true)
         return
@@ -451,16 +463,19 @@ private suspend fun HomeViewModel.unmarkSeriesWatched(item: MetaPreview) {
     )
 }
 
-private suspend fun HomeViewModel.fetchSeriesEpisodes(item: MetaPreview): List<com.nuvio.tv.domain.model.Video> {
+private suspend fun HomeViewModel.fetchSeriesEpisodes(
+    item: MetaPreview,
+    addonBaseUrl: String?
+): List<com.nuvio.tv.domain.model.Video> {
     val type = if (item.apiType.equals("tv", ignoreCase = true)) "series" else item.apiType
-    var episodes: List<com.nuvio.tv.domain.model.Video> = emptyList()
-    metaRepository.getMetaFromPrimaryAddon(type, item.id)
-        .collect { networkResult ->
-            if (networkResult is com.nuvio.tv.core.network.NetworkResult.Success) {
-                episodes = networkResult.data.watchableEpisodes()
-            }
-        }
-    return episodes
+    return com.nuvio.tv.ui.components.posteroptions.lookUpSeriesEpisodes(
+        metaRepository = metaRepository,
+        item = item,
+        type = type,
+        addonBaseUrl = addonBaseUrl,
+        resolve = { posterTitleIdentity.resolve(it, addonBaseUrl) },
+        pick = { it.watchableEpisodes() }
+    )
 }
 
 private fun MetaPreview.toLibraryEntryInput(addonBaseUrl: String?): LibraryEntryInput {

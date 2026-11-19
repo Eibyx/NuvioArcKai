@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kai_connection_choice_title">Connections to use</string>
+    <string name="kai_connection_choice_subtitle">Pick how many connections download at once. One uses the least memory.</string>
+    <string name="kai_connection_choice_one">1 connection</string>
+    <string name="kai_connection_choice_many">%1$d connections</string>
+    <string name="kai_connection_choice_speed">%1$s Mbps</string>
+    <string name="kai_connection_choice_not_measured">not measured</string>
+    <string name="kai_connection_choice_recommended">recommended</string>
+    <string name="kai_connection_choice_in_use">in use</string>
+    <string name="kai_connection_choice_applied">Now using %1$s</string>
+</resources>

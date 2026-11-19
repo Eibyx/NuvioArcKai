@@ -30,6 +30,7 @@ import com.nuvio.tv.data.local.StreamAutoPlaySource
 import com.nuvio.tv.data.local.AudioOutputChannels
 import com.nuvio.tv.data.local.AutoSkipSegmentType
 import com.nuvio.tv.data.local.MpvHardwareDecodeMode
+import com.nuvio.tv.data.local.MpvDirectDecodeMode
 import com.nuvio.tv.data.local.SubtitleOrganizationMode
 import com.nuvio.tv.data.local.TrailerSettings
 import com.nuvio.tv.data.local.TrailerSettingsDataStore
@@ -344,6 +345,10 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setMpvHardwareDecodeMode(mode)
     }
 
+    suspend fun setMpvDirectDecodeMode(mode: MpvDirectDecodeMode) {
+        playerSettingsDataStore.setMpvDirectDecodeMode(mode)
+    }
+
     suspend fun setMpvHi10pGnextSoftwareFallbackEnabled(enabled: Boolean) {
         playerSettingsDataStore.setMpvHi10pGnextSoftwareFallbackEnabled(enabled)
     }
@@ -351,6 +356,10 @@ class PlaybackSettingsViewModel @Inject constructor(
 
     suspend fun setDv5ToDv81Enabled(enabled: Boolean) {
         playerSettingsDataStore.setDv5ToDv81Enabled(enabled)
+    }
+
+    suspend fun setDvOutputBoxHdr10(enabled: Boolean) {
+        playerSettingsDataStore.setDvOutputBoxHdr10(enabled)
     }
 
     suspend fun setDv7HandlingMode(mode: Dv7HandlingMode) {

@@ -49,6 +49,28 @@ class StartupWatchdogDecisionTest {
     }
 
     @Test
+    fun soundPlayingAfterTheVideoRestartWithAFedDecoderMovesOnToTheOtherPlayer() {
+        // Shield, DV 8.6 on an HDR10 TV: the sound plays, 42 s buffered, decoder open, the restart did not help.
+        assertEquals(Step.Fire("video_never_decoded"), step(elapsedMs = 40_000L, bufferedAheadMs = 42_000L,
+            lastBufferedAheadMs = 42_000L, ready = true, playing = true, positionMs = 30_000L, lastPositionMs = 10_000L,
+            videoRestarted = true, videoDecoderOpened = true))
+        // Before the restart it restarts first.
+        assertEquals(Step.RestartVideo, step(elapsedMs = 20_000L, bufferedAheadMs = 42_000L,
+            lastBufferedAheadMs = 42_000L, ready = true, playing = true, positionMs = 10_000L, lastPositionMs = 0L,
+            videoDecoderOpened = true))
+        // Paused, little buffered, or no decoder open: still the decoder message.
+        assertEquals(Step.Fire("decoder_unresponsive"), step(elapsedMs = 40_000L, bufferedAheadMs = 42_000L,
+            lastBufferedAheadMs = 42_000L, ready = true, playing = true, positionMs = 10_000L, lastPositionMs = 10_000L,
+            videoRestarted = true, videoDecoderOpened = true))
+        assertEquals(Step.Fire("decoder_unresponsive"), step(elapsedMs = 40_000L, bufferedAheadMs = 4_000L,
+            lastBufferedAheadMs = 4_000L, ready = true, playing = true, positionMs = 30_000L, lastPositionMs = 10_000L,
+            videoRestarted = true, videoDecoderOpened = true))
+        assertEquals(Step.Fire("decoder_unresponsive"), step(elapsedMs = 40_000L, bufferedAheadMs = 42_000L,
+            lastBufferedAheadMs = 42_000L, ready = true, playing = true, positionMs = 30_000L, lastPositionMs = 10_000L,
+            videoRestarted = true))
+    }
+
+    @Test
     fun aRequestStillInsideItsReadWaitGetsOneMoreInterval() {
         // Resume point answered 12 s ago, nothing buffered yet, no load error.
         assertEquals(Step.WaitForRead, step(openRequestAgeMs = 12_000L, videoDecoderOpened = true))
@@ -58,7 +80,7 @@ class StartupWatchdogDecisionTest {
         assertEquals(Step.Fire("no_data_buffered"), step(openRequestAgeMs = 12_000L, loadErrorSeen = true))
         assertEquals(Step.Fire("no_data_buffered"), step(openRequestAgeMs = 16_000L))
         assertEquals(Step.Fire("no_data_buffered"), step(openRequestAgeMs = null))
-        assertEquals(Step.Fire("no_data_buffered"), step(elapsedMs = 41_000L, ceilingMs = 60_000L, openRequestAgeMs = 12_000L))
+        assertEquals(Step.Fire("no_data_buffered"), step(elapsedMs = 60_000L, ceilingMs = 60_000L, openRequestAgeMs = 12_000L))
         // A stuck player thread is not a slow server.
         assertEquals(Step.Fire("decoder_unresponsive"), step(openRequestAgeMs = 12_000L, playbackThreadAnswers = false))
     }
@@ -68,7 +90,15 @@ class StartupWatchdogDecisionTest {
         // Headers read, resume point at 282 s still on its way from the NAS.
         assertEquals(Step.WaitForData, step(slowStart = true, ceilingMs = 80_000L, positionMs = 282_049L, lastPositionMs = 282_049L))
         // Past the ceiling it gives up, and says the stream did not deliver.
-        assertEquals(Step.Fire("no_data_buffered"), step(elapsedMs = 61_000L, slowStart = true, ceilingMs = 80_000L))
+        assertEquals(Step.Fire("no_data_buffered"), step(elapsedMs = 80_000L, slowStart = true, ceilingMs = 80_000L))
+    }
+
+    @Test
+    fun aCheckThatLandsLateStillGetsTheLastWait() {
+        assertEquals(Step.WaitForData, step(elapsedMs = 60_050L, slowStart = true, ceilingMs = 80_000L))
+        assertEquals(Step.Extend, step(elapsedMs = 40_050L, ceilingMs = 60_000L, bufferedAheadMs = 9_000L, lastBufferedAheadMs = 4_000L))
+        assertEquals(Step.Fire("no_data_buffered"), step(elapsedMs = 80_100L, slowStart = true, ceilingMs = 80_000L))
+        assertEquals(Step.Fire("no_data_buffered"), step(elapsedMs = 79_900L, slowStart = true, ceilingMs = 80_000L))
     }
 
     @Test

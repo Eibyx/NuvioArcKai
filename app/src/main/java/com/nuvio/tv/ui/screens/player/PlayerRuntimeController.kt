@@ -1,6 +1,9 @@
 package com.nuvio.tv.ui.screens.player
 
 import com.nuvio.tv.core.tracking.TrackingProviderId
+import com.nuvio.tv.data.repository.AddonEventDispatcher
+import com.nuvio.tv.data.repository.AddonPlayerAction
+import com.nuvio.tv.data.repository.AddonPlayerEventTarget
 import android.app.Activity
 import androidx.compose.runtime.mutableStateOf
 import android.content.Context
@@ -29,6 +32,7 @@ import com.nuvio.tv.core.torrent.TorrentService
 import com.nuvio.tv.data.local.AutoSkipSegmentType
 import com.nuvio.tv.data.local.InternalPlayerEngine
 import com.nuvio.tv.data.local.MpvHardwareDecodeMode
+import com.nuvio.tv.data.local.MpvDirectDecodeMode
 import com.nuvio.tv.data.local.NextEpisodeThresholdMode
 import com.nuvio.tv.data.local.AudioDelayRouteDataStore
 import com.nuvio.tv.data.local.PlayerSettings
@@ -85,6 +89,7 @@ class PlayerRuntimeController(
     internal val subtitleRepository: com.nuvio.tv.domain.repository.SubtitleRepository,
     internal val parentalGuideRepository: ParentalGuideRepository,
     internal val trackingScrobbleCoordinator: TrackingScrobbleCoordinator,
+    internal val addonEventDispatcher: AddonEventDispatcher,
     internal val traktEpisodeMappingService: TraktEpisodeMappingService,
     internal val skipIntroRepository: SkipIntroRepository,
     internal val playerSettingsDataStore: PlayerSettingsDataStore,
@@ -354,7 +359,9 @@ class PlayerRuntimeController(
     fun getCurrentHeaders(): Map<String, String> = currentHeaders
 
     fun stopAndRelease() {
+        com.nuvio.tv.core.image.PictureMemoryRelease.cancelDuringFilm()
         PlayerPlaybackNetworking.cancelSelectedPlaybackPrewarm(currentStreamUrl, currentHeaders)
+        streamRepository.stopNextEpisodePluginSearches()
         // The diagnostics record persists at FIRST FRAME, and on a mid-episode
         // back-out no later persist runs at all (the natural-end path is skipped),
         // so under AFR - where the first frame renders during the settle, before
@@ -563,6 +570,7 @@ class PlayerRuntimeController(
     internal var lateVideoResyncFailed: Boolean = false
     internal var stallWatchdogJob: Job? = null
     internal var startupWatchdogJob: Job? = null
+    internal var startupWatchdogCardUrl: String? = null
     internal var seekSourceLogJob: Job? = null
     internal var hideControlsJob: Job? = null
     internal var hideSeekOverlayJob: Job? = null
@@ -600,6 +608,7 @@ class PlayerRuntimeController(
     internal var nextEpisodeAutoPlayJob: Job? = null
     internal var mixCardPositionMs: Long = 0L
     internal var debridResolveJob: Job? = null
+    internal var serverReplacePrepareRunning = false
     internal var stillWatchingPromptJob: Job? = null
     internal var startupLoadingReportJob: Job? = null
     internal var sourceStreamsJob: Job? = null
@@ -643,6 +652,7 @@ class PlayerRuntimeController(
     internal val saveThresholdMs = 5000L
     internal var hasMarkedCurrentEpisodeCompleted: Boolean = false
     internal var lastKnownDuration: Long = 0L
+    internal var resumeStartToCheck: Long = 0L
 
     internal var playbackStartedForParentalGuide = false
     internal var hasRenderedFirstFrame = false
@@ -817,6 +827,7 @@ class PlayerRuntimeController(
         PlayerSettings.DEFAULT_STILL_WATCHING_EPISODE_THRESHOLD
     internal var mpvHi10pGnextSoftwareFallbackEnabledSetting: Boolean = false
     internal var mpvHardwareDecodeModeSetting: MpvHardwareDecodeMode = MpvHardwareDecodeMode.AUTO_SAFE
+    internal var mpvDirectDecodeModeSetting: MpvDirectDecodeMode = MpvDirectDecodeMode.AUTOMATIC
     internal var mpvPreferredAudioLanguages: List<String> = emptyList()
     internal var currentStreamBingeGroup: String? = navigationArgs.bingeGroup
     internal var recordedPluginPlayIdentity: String? = null
@@ -998,6 +1009,8 @@ class PlayerRuntimeController(
     internal val mpvFormatFallbackStreamUrls: MutableSet<String> = mutableSetOf()
     /** Streams MPV must decode in software: the box's hardware decoder can't take them. */
     internal val mpvSoftwareDecodeStreamUrls: MutableSet<String> = mutableSetOf()
+    internal val mpvDecodedSoundStreamUrls: MutableSet<String> = mutableSetOf()
+    internal val mpvNoProgressCheck = MpvNoProgressCheck()
     internal val safeAudioForcedStreamUrls: MutableSet<String> = mutableSetOf()
     // Own IEC output failures per stream; from the second one, rebuilds leave HD audio to the system sink.
     internal val iecFailureStrikes: MutableMap<String, Int> = mutableMapOf()
@@ -1011,6 +1024,7 @@ class PlayerRuntimeController(
     // 404/410): auto-failover skips them and the source panel greys them out.
     internal val deadSourceStreamUrls: MutableSet<String> = mutableSetOf()
     internal var deadSourceFailoverCount: Int = 0
+    internal var heldFailoverCard: HeldFailoverCard? = null
     /** A saved link that failed has had its source asked for a fresh link once. */
     internal var freshLinkForReusedLinkTried: Boolean = false
     /** Media server versions already asked again after a 404/410 since this play started. */
@@ -1036,6 +1050,8 @@ class PlayerRuntimeController(
     internal var pendingSeekTelemetryReadyAssumed: Boolean = false
 
     internal var currentScrobbleItem: TrackingMediaReference? = null
+    internal var activeAddonPlayerEventTarget: AddonPlayerEventTarget? = null
+    internal var lastAddonPlayerAction: AddonPlayerAction? = null
     internal var currentTraktEpisodeMapping: EpisodeMappingEntry? = null
     internal var currentTraktEpisodeMappingKey: String? = null
     internal var hasSentScrobbleStartForCurrentItem: Boolean = false
@@ -1067,6 +1083,9 @@ class PlayerRuntimeController(
     internal var torrentStreamJob: Job? = null
     internal var torrentStateObserverJob: Job? = null
     internal var torrentMetadataWatchJob: Job? = null
+    internal var torrentErrorRecoveryHash: String? = null
+    internal val torrentRecoveryStartGuard = TorrentRecoveryStartGuard()
+    internal var lastTorrentRetryTarget: TorrentRetryTarget? = null
     internal var isTorrentStream: Boolean = navigationArgs.infoHash != null && !initialStreamUrl.startsWith("http")
     internal var currentInfoHash: String? = navigationArgs.infoHash
     internal var currentFileIdx: Int? = navigationArgs.fileIdx
@@ -1187,6 +1206,7 @@ class PlayerRuntimeController(
     }
 
     fun onCleared() {
+        com.nuvio.tv.core.image.PictureMemoryRelease.cancelDuringFilm()
         scrubGlideJob?.cancel()
         seekSettleJob?.cancel()
         ScrubGlide.stop()

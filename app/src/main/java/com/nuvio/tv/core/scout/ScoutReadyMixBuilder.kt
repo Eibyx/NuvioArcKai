@@ -1,6 +1,7 @@
 package com.nuvio.tv.core.scout
 
 import android.content.Context
+import com.nuvio.tv.core.ratinglimit.ratingLimitGateOrNull
 import com.nuvio.tv.core.tmdb.TmdbService
 import com.nuvio.tv.core.util.withAppLocale
 import com.nuvio.tv.data.local.ScoutMixStore
@@ -29,7 +30,7 @@ internal const val SCOUT_READY_SHOWS = 15
 internal const val SCOUT_READY_FEWEST = 8
 internal const val SCOUT_READY_TOO_FEW = 4
 /** Raise when the way mixes are filled changes, so kept mixes are filled again at once rather than on Monday. */
-internal const val SCOUT_READY_RULES = 3
+internal const val SCOUT_READY_RULES = 4
 /** An occasion needs this many good episodes before its tile shows. */
 internal const val SCOUT_OCCASION_FEWEST = 15
 private const val PAGES = 3
@@ -114,6 +115,7 @@ class ScoutReadyMixBuilder @Inject constructor(
     private val previews = HashMap<String, Pair<LocalDate, ScoutMixPreview>>()
     private val previewLock = Mutex()
     private val building = Mutex()
+    private val emptyBuilds = ScoutEmptyBuilds()
     private val requests = Semaphore(AT_ONCE)
     @Volatile private var occasions: Map<String, List<ScoutOccasionEpisode>>? = null
 
@@ -144,7 +146,7 @@ class ScoutReadyMixBuilder @Inject constructor(
             best = ScoutMixPreview(found, step, found.size < SCOUT_READY_TOO_FEW)
             if (found.size >= SCOUT_READY_FEWEST) break
         }
-        previewLock.withLock { previews[cacheKey] = today to best }
+        if (best.picks.isNotEmpty()) previewLock.withLock { previews[cacheKey] = today to best }
         return best
     }
 
@@ -158,15 +160,19 @@ class ScoutReadyMixBuilder @Inject constructor(
             if (strict.size >= SCOUT_READY_FEWEST || (kind.looseKeywords == null && kind.keywords == null)) strict
             else (strict + search(recipe, years, widen, votes, pages, today, strict = false)).distinctBy { it.key }
         }
-        val limit = scoutLimit(context)
-        val exclusions = runCatching { finder.exclusions() }.getOrNull()
-            ?: return scoutKeepFitting(limit, found, SCOUT_READY_SHOWS + LIMIT_SPARE) { "tmdb:${it.tmdbId}" to "series" }
+        val exclusions = runCatching { finder.exclusions() }.getOrNull() ?: return fitting(recipe, found)
         val seed = scoutReadyWeekSeed(today)
         val ordered = withContext(Dispatchers.Default) {
             val byTaste = scoutOrderPicks(found, finder.pool(), exclusions, seed)
             scoutBlendOrder(found, byTaste, recipe.blend, seed)
         }
-        return scoutKeepFitting(limit, ordered, SCOUT_READY_SHOWS + LIMIT_SPARE) { "tmdb:${it.tmdbId}" to "series" }
+        return fitting(recipe, ordered)
+    }
+
+    private suspend fun fitting(recipe: ScoutMixRecipe, picks: List<ScoutPick>): List<ScoutPick> {
+        val limit = scoutLimit(context)
+        val check = if (recipe.family) scoutFamilyLimit(limit, ratingLimitGateOrNull(context)) else limit
+        return scoutKeepFitting(check, picks, SCOUT_READY_SHOWS + LIMIT_SPARE) { "tmdb:${it.tmdbId}" to "series" }
     }
 
     /** The best known of each kind where any episode works on its own, most votes first. */
@@ -208,17 +214,26 @@ class ScoutReadyMixBuilder @Inject constructor(
         val kept = stored?.fittingLimit(limit)
         val wantFamily = family ?: kept?.let { readyFamily(it) } ?: false
         if (kept != null && scoutReadyFresh(kept.builtAt) && kept.rules >= SCOUT_READY_RULES && readyFamily(kept) == wantFamily && kept.shows.isNotEmpty()) return@withLock kept
+        val emptyKey = listOf(profileId, id, wantFamily, limit?.code.orEmpty()).joinToString("|")
+        if (emptyBuilds.recent(emptyKey)) return@withLock kept
         val ready = ScoutReadyMixes.byId(id)
-        val built = withTimeoutOrNull(BUILD_TIMEOUT_MS) {
-            when {
-                ready?.occasion != null -> occasionMix(id, ready.occasion, wantFamily)
-                ready?.recipe != null -> recipeMix(id, local().getString(ready.nameRes), ready.recipe.copy(family = wantFamily), ready.years)
-                else -> ScoutMixRecipe.decode(kept?.recipe)?.let { recipeMix(id, name ?: kept?.name.orEmpty(), it.copy(family = wantFamily), null) }
-            }
+        val attempt = withTimeoutOrNull(BUILD_TIMEOUT_MS) {
+            listOfNotNull(
+                when {
+                    ready?.occasion != null -> occasionMix(id, ready.occasion, wantFamily)
+                    ready?.recipe != null -> recipeMix(id, local().getString(ready.nameRes), ready.recipe.copy(family = wantFamily), ready.years)
+                    else -> ScoutMixRecipe.decode(kept?.recipe)?.let { recipeMix(id, name ?: kept?.name.orEmpty(), it.copy(family = wantFamily), null) }
+                }
+            )
         } ?: return@withLock kept
+        val built = attempt.firstOrNull()
+        if (built == null) {
+            emptyBuilds.remember(emptyKey)
+            return@withLock kept
+        }
         val mix = kept?.let { built.copy(unwatchedOnly = it.unwatchedOnly, keepPlaying = it.keepPlaying) } ?: built
         store.putReady(mix)
-        mix.fittingLimit(limit)
+        mix.fittingLimit(limit).also { if (it.shows.isEmpty()) emptyBuilds.remember(emptyKey) }
     }
 
     /** A mix the viewer made from their own choices, kept in one slot that each new one replaces. */
@@ -328,5 +343,23 @@ internal fun parseScoutOccasions(text: String): Map<String, List<ScoutOccasionEp
                 backdrop = item.optString("bd").takeIf { it.isNotBlank() }?.let { "https://image.tmdb.org/t/p/w1280$it" }
             )
         }
+    }
+}
+
+/**
+ * Builds that came back with nothing, by profile, mix, family and rating limit. One is not tried again for a while,
+ * so opening it again does not rebuild it; the wait is short, as nothing may also mean the network was not up yet.
+ */
+internal class ScoutEmptyBuilds(private val now: () -> Long = System::currentTimeMillis) {
+    private val at = HashMap<String, Long>()
+
+    fun recent(key: String): Boolean = at[key]?.let { now() - it < WAIT_MS } == true
+
+    fun remember(key: String) {
+        at[key] = now()
+    }
+
+    companion object {
+        const val WAIT_MS = 30 * 60 * 1000L
     }
 }

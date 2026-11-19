@@ -31,12 +31,16 @@ internal class StreamDiagnosticState {
     var resultScope by mutableStateOf<String?>(null)
     var bitrate by mutableStateOf<Long?>(null)
     var bitrateIsMux by mutableStateOf(false)
+    /** Kai: what the test measured, for the 1 / 2 / 3 connections choice. */
+    var baselineMbps by mutableStateOf<Double?>(null)
+    var measured by mutableStateOf(listOf<StreamSweepEngine.MeasuredPass>())
 
     private var networkObservation: Any? = null
     private fun clear() {
         networkObservation = null
         status = "Idle"; rows = emptyList(); notes = emptyMap()
         error = null; verdict = null; endpoint = null; resultScope = null; bitrate = null; bitrateIsMux = false
+        baselineMbps = null; measured = emptyList()
     }
     fun cancel() { run.cancel(); clear() }
     fun invalidateNetwork(context: Context, identity: Any?) {
@@ -78,6 +82,7 @@ internal class StreamDiagnosticState {
                     if (error == null) {
                         endpoint = result.servingEndpoint
                         rows = listOf(label to result.mbps)
+                        baselineMbps = result.mbps
                         notes = mapOf(label to StreamSweepEngine.PassNote("", context.getString(
                             R.string.stream_test_baseline_scope, result.servingEndpoint.orEmpty(),
                             "%.1f".format(result.measuredBytes / (1024.0 * 1024)),
@@ -105,9 +110,11 @@ internal class StreamDiagnosticState {
                     }
                     if (!current()) return@execute
                     error = outcome.errorText; verdict = outcome.verdictText
+                    baselineMbps = outcome.baselineMbps.takeIf { it > 0 }; measured = outcome.measured
                 }
                 if (startNetwork == null || startNetwork != networkIdentity()) {
                     rows = emptyList(); notes = emptyMap(); endpoint = null; verdict = null
+                    baselineMbps = null; measured = emptyList()
                     error = context.getString(R.string.network_test_network_changed)
                 } else {
                     resultScope = context.getString(R.string.stream_diagnostic_observation, networkLabel,

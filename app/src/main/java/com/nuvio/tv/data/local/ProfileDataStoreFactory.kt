@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.preferencesDataStoreFile
 import com.nuvio.tv.domain.model.DiscoverLocation
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
@@ -19,7 +20,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.ConcurrentHashMap
@@ -49,6 +53,15 @@ internal fun isProfileScopedDataStoreFile(fileName: String): Boolean {
 }
 
 private const val SHADOW_PART_SUFFIX = ".part"
+
+/** Store data whose lookup runs on [lookupDispatcher], so a collector on the main thread never waits on store creation. */
+internal fun ProfileDataStoreFactory.dataOffMain(
+    profileId: Int,
+    featureName: String,
+    lookupDispatcher: CoroutineDispatcher
+): Flow<Preferences> = flow {
+    emitAll(withContext(lookupDispatcher) { get(profileId, featureName) }.data)
+}
 
 private class ScopedDataStore(
     val store: DataStore<Preferences>,
@@ -96,6 +109,9 @@ class ProfileDataStoreFactory @Inject constructor(
     internal val historyGenerationChanges: kotlinx.coroutines.flow.StateFlow<Long> get() = historyGenerations
     private val generationOwnedFeatures = setOf("watched_items_preferences", WATCH_PROGRESS_METADATA_FEATURE, WATCH_PROGRESS_RECENT_FEATURE, WATCH_PROGRESS_ARCHIVE_FEATURE)
     private var resetting = false
+
+    /** Whole tracker histories: a damaged file is fetched again from the tracker, so no backup copy is kept. */
+    private val noShadowFeatures = setOf("mdblist_sync", "simkl_sync", "wetrakr_sync")
     private val retiringProfiles = mutableSetOf<Int>()
 
     /** Set of DataStore file names that were reset due to corruption during this session. */
@@ -103,17 +119,42 @@ class ProfileDataStoreFactory @Inject constructor(
 
     fun get(profileId: Int, featureName: String): DataStore<Preferences> {
         val fileName = if (profileId == 1) featureName else "${featureName}_p$profileId"
+        synchronized(lock) { cachedStore(profileId, fileName)?.let { return it } }
+        // File system work stays outside the lock: slow storage must not hold up lookups of other stores.
+        val dataStoreDir = prepareStoreFile(fileName)
         synchronized(lock) {
-            if (profileId in deletedProfileIds || profileId in retiringProfiles) {
-                throw CancellationException("Profile store unavailable during retirement")
-            }
-            cache[fileName]?.let {
-                if (resetting && it.store is ProfileStoreLifetime) throw CancellationException("Profile store reset in progress")
-                return it.store
-            }
-            if (resetting) throw CancellationException("Profile store reset in progress")
-            return createAndCache(fileName).store
+            cachedStore(profileId, fileName)?.let { return it }
+            return createAndCache(fileName, dataStoreDir).store
         }
+    }
+
+    private fun cachedStore(profileId: Int, fileName: String): DataStore<Preferences>? {
+        if (profileId in deletedProfileIds || profileId in retiringProfiles) {
+            throw CancellationException("Profile store unavailable during retirement")
+        }
+        cache[fileName]?.let {
+            if (resetting && it.store is ProfileStoreLifetime) throw CancellationException("Profile store reset in progress")
+            return it.store
+        }
+        if (resetting) throw CancellationException("Profile store reset in progress")
+        return null
+    }
+
+    private fun prepareStoreFile(fileName: String): File {
+        // Ensure the datastore directory exists — prevents ENOENT on first read
+        // when a profile-scoped file hasn't been created yet.
+        val dataStoreDir = File(context.filesDir, "datastore")
+        if (!dataStoreDir.exists()) {
+            dataStoreDir.mkdirs()
+        }
+        // DataStore 1.1.x (okio-based) can throw FileNotFoundException if the file
+        // doesn't exist yet and a race condition occurs. Pre-create an empty file
+        // to avoid this edge case (DataStore will overwrite on first write).
+        val targetFile = File(dataStoreDir, "$fileName.preferences_pb")
+        if (!targetFile.exists()) {
+            try { targetFile.createNewFile() } catch (_: Exception) { }
+        }
+        return dataStoreDir
     }
 
     suspend fun clearProfile(profileId: Int) {
@@ -196,26 +237,13 @@ class ProfileDataStoreFactory @Inject constructor(
         Unit
     }
 
-    private fun createAndCache(fileName: String): ScopedDataStore {
+    private fun createAndCache(fileName: String, dataStoreDir: File): ScopedDataStore {
         val job = SupervisorJob()
         val scope = CoroutineScope(Dispatchers.IO + job)
         val migrations = if (fileName == "layout_settings" || fileName.startsWith("layout_settings_p")) {
             listOf(discoverLocationMigration)
         } else {
             emptyList()
-        }
-        // Ensure the datastore directory exists — prevents ENOENT on first read
-        // when a profile-scoped file hasn't been created yet.
-        val dataStoreDir = File(context.filesDir, "datastore")
-        if (!dataStoreDir.exists()) {
-            dataStoreDir.mkdirs()
-        }
-        // DataStore 1.1.x (okio-based) can throw FileNotFoundException if the file
-        // doesn't exist yet and a race condition occurs. Pre-create an empty file
-        // to avoid this edge case (DataStore will overwrite on first write).
-        val targetFile = File(dataStoreDir, "$fileName.preferences_pb")
-        if (!targetFile.exists()) {
-            try { targetFile.createNewFile() } catch (_: Exception) { }
         }
         val store = PreferenceDataStoreFactory.create(
             corruptionHandler = androidx.datastore.core.handlers.ReplaceFileCorruptionHandler { ex ->
@@ -235,10 +263,15 @@ class ProfileDataStoreFactory @Inject constructor(
             produceFile = { context.preferencesDataStoreFile(fileName) }
         )
 
-        // Wrap store to persist a shadow copy after each successful read.
-        // The shadow copy is written once on first data emission (app start),
-        // ensuring a consistent backup exists before any corruption can occur.
-        val wrappedStore = ShadowCopyDataStore(store, fileName, scope, this)
+        // Wrap store to persist a shadow copy: on the first read only when the copy is missing or older than the
+        // store, and after every edit that changed something.
+        val keepsShadow = noShadowFeatures.none { feature -> fileName == feature || fileName.startsWith("${feature}_p") }
+        val wrappedStore = if (keepsShadow) {
+            ShadowCopyDataStore(store, fileName, scope, this)
+        } else {
+            scope.launch { runCatching { File(dataStoreDir, "$fileName.preferences_pb.bak").delete() } }
+            store
+        }
 
         val owned = generationOwnedFeatures.any { feature -> fileName == feature || fileName.startsWith("${feature}_p") }
         val scoped = ScopedDataStore(if (owned) ProfileStoreLifetime(wrappedStore, historyGenerations) else wrappedStore, scope, job)
@@ -247,6 +280,13 @@ class ProfileDataStoreFactory @Inject constructor(
     }
 
     internal fun currentShadowGeneration(): Long = shadowGeneration
+
+    internal fun shadowCopyIsCurrent(fileName: String): Boolean {
+        val dataStoreDir = File(context.filesDir, "datastore")
+        val backupFile = File(dataStoreDir, "$fileName.preferences_pb.bak")
+        val storeFile = File(dataStoreDir, "$fileName.preferences_pb")
+        return backupFile.length() > 0L && backupFile.lastModified() > storeFile.lastModified()
+    }
 
     /** Writes [preferences] to the shadow copy without opening the live store file, which DataStore renames over. */
     internal suspend fun writeShadowCopy(fileName: String, preferences: Preferences, generation: Long) {
@@ -314,22 +354,36 @@ private class ShadowCopyDataStore(
     private var shadowWritten = false
     private val shadowMutex = Mutex()
 
+    @Volatile
+    private var firstReadChecked = false
+
     override val data: kotlinx.coroutines.flow.Flow<Preferences>
         get() = delegate.data.also {
-            if (!shadowWritten) launchShadowCopy()
+            if (!shadowWritten && !firstReadChecked) {
+                firstReadChecked = true
+                launchShadowCopy(onlyIfStale = true)
+            }
         }
 
     override suspend fun updateData(transform: suspend (t: Preferences) -> Preferences): Preferences {
-        val result = delegate.updateData(transform)
-        launchShadowCopy()
+        var before: Preferences? = null
+        val result = delegate.updateData { current ->
+            before = current
+            transform(current)
+        }
+        if (result !== before && result != before) launchShadowCopy()
         return result
     }
 
     // Each copy reads the newest data under the mutex, so a late copy never overwrites a newer one.
-    private fun launchShadowCopy() {
+    private fun launchShadowCopy(onlyIfStale: Boolean = false) {
         scope.launch(Dispatchers.IO) {
             try {
                 shadowMutex.withLock {
+                    if (onlyIfStale && (shadowWritten || factory.shadowCopyIsCurrent(fileName))) {
+                        shadowWritten = true
+                        return@withLock
+                    }
                     val generation = factory.currentShadowGeneration()
                     factory.writeShadowCopy(fileName, delegate.data.first(), generation)
                     shadowWritten = true
