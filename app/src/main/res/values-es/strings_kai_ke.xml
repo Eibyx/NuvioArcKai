@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="kai_ke_style_title">Estilo Nuvio KE</string>
+    <string name="kai_ke_style_subtitle">Barra arriba, colores de la imagen de cada título, cristal sin desenfoque, tarjetas de episodio de KE y el episodio enfocado arriba en la ficha de una serie</string>
+    <string name="kai_ke_episode_eyebrow">Episodio %1$d</string>
+    <string name="kai_ke_episode_eyebrow_season">Temporada %1$d · Episodio %2$d</string>
+</resources>

@@ -2092,6 +2092,9 @@ private fun MetaDetailsContent(
         byEpisodeId.keys.retainAll(episodesForSeason.map { it.id }.toSet())
         byEpisodeId
     }
+    // Kai: the episode in focus, for KE's header above the season tabs.
+    var keFocusedEpisode by remember(selectedSeason) { mutableStateOf<Video?>(null) }
+    val keStyleOn = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current?.keStyle == true
     val seasonDownFocusRequester = remember(selectedSeason, episodesForSeason, seasonEpisodeFocusRequesters, lastFocusedEpisodeIdBySeason[selectedSeason], nextToWatch, defaultSeriesVideo, pendingRestoreType, pendingRestoreEpisodeId) {
         val nextEpisodeId = if (pendingRestoreType == RestoreTarget.EPISODE) {
             null
@@ -2714,6 +2717,12 @@ private fun MetaDetailsContent(
                 if (showSeasonTabs) {
                     detailSection(key = "season_tabs", contentType = "season_tabs", immediate = revealSecondaryImmediately) {
                         Column {
+                            if (keStyleOn) {
+                                val headerEpisode = keFocusedEpisode
+                                    ?: episodesForSeason.firstOrNull { it.id == nextToWatch?.nextVideoId }
+                                    ?: episodesForSeason.firstOrNull()
+                                KeEpisodeHeader(headerEpisode, startInset = detailStartInset)
+                            }
                             Box(modifier = Modifier.padding(start = detailStartInset, end = NuvioTheme.spacing.xxxl)) {
                                 PanelEyebrow(text = stringResource(R.string.detail_eyebrow_episodes))
                             }
@@ -2791,6 +2800,7 @@ private fun MetaDetailsContent(
                                     }
                                 },
                                 onEpisodeFocused = { focusedEpisode ->
+                                    if (keStyleOn) keFocusedEpisode = focusedEpisode
                                     lastFocusedEpisodeIdBySeason[selectedSeason] = focusedEpisode.id
                                     onEpisodeFocusedForPrefetch(focusedEpisode)
                                     if (lastDetailDpadKey == KeyEvent.KEYCODE_DPAD_UP) {

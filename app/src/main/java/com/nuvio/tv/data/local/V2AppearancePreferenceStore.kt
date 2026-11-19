@@ -45,6 +45,7 @@ object V2AppearancePreferenceStore {
     private val glassPreset = stringPreferencesKey("glass_preset")
     private val transparency = intPreferencesKey("glass_transparency_percent")
     private val blurStrength = intPreferencesKey("glass_blur_strength_percent")
+    private val keStyle = booleanPreferencesKey("kai_ke_style")
 
     internal fun decode(p: androidx.datastore.preferences.core.Preferences): V2AppearancePreferences {
         val preset = GlassPreset.entries.firstOrNull { it.name == p[glassPreset] } ?: GlassPreset.BALANCED
@@ -61,7 +62,8 @@ object V2AppearancePreferenceStore {
             introSoundEnabled = p[introSound] ?: true,
             glassPreset = preset,
             glassTransparencyPercent = (p[transparency] ?: preset.transparencyPercent).coerceIn(0, 100),
-            glassBlurStrengthPercent = (p[blurStrength] ?: preset.blurStrengthPercent).coerceIn(0, 100)
+            glassBlurStrengthPercent = (p[blurStrength] ?: preset.blurStrengthPercent).coerceIn(0, 100),
+            keStyle = p[keStyle] ?: false
         )
     }
 
@@ -89,6 +91,7 @@ object V2AppearancePreferenceStore {
         p[glassPreset] = next.glassPreset.name
         p[transparency] = next.glassTransparencyPercent.coerceIn(0, 100)
         p[blurStrength] = next.glassBlurStrengthPercent.coerceIn(0, 100)
+        p[keStyle] = next.keStyle
     }
 }
 

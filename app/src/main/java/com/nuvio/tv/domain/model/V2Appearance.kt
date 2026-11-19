@@ -32,7 +32,9 @@ data class V2AppearancePreferences(
     val introSoundEnabled: Boolean = true,
     val glassPreset: GlassPreset = GlassPreset.BALANCED,
     val glassTransparencyPercent: Int = glassPreset.transparencyPercent,
-    val glassBlurStrengthPercent: Int = glassPreset.blurStrengthPercent
+    val glassBlurStrengthPercent: Int = glassPreset.blurStrengthPercent,
+    /** Kai: Nuvio KE's look (episode cards and the focused episode on the detail page). */
+    val keStyle: Boolean = false
 ) {
     fun withGlassPreset(preset: GlassPreset) = copy(
         glassPreset = preset,

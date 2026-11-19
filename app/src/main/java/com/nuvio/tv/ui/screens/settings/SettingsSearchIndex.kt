@@ -304,6 +304,7 @@ internal val SETTINGS_SEARCH_ENTRIES: List<SettingsSearchEntry> = listOf(
     SettingsSearchEntry(R.string.v2_experience_title, R.string.v2_experience_subtitle, SettingsCategory.APPEARANCE, keywords = listOf("nuvio v2", "original")),
     SettingsSearchEntry(R.string.ui_scale_title, R.string.ui_scale_group_subtitle, SettingsCategory.APPEARANCE, keywords = listOf("size", "zoom", "bigger", "smaller")),
     SettingsSearchEntry(R.string.appearance_color_theme, R.string.appearance_color_theme_subtitle, SettingsCategory.APPEARANCE, keywords = listOf("colour")),
+    SettingsSearchEntry(R.string.kai_ke_style_title, R.string.kai_ke_style_subtitle, SettingsCategory.APPEARANCE, look = SettingsSearchLook.V2, keywords = listOf("ke", "marquee", "diseño", "estilo")),
     SettingsSearchEntry(R.string.v2_intro_animation_title, R.string.v2_intro_animation_subtitle, SettingsCategory.APPEARANCE, look = SettingsSearchLook.V2),
     SettingsSearchEntry(R.string.v2_intro_sound_title, R.string.v2_intro_sound_subtitle, SettingsCategory.APPEARANCE, look = SettingsSearchLook.V2),
     SettingsSearchEntry(R.string.v2_visual_style_title, 0, SettingsCategory.APPEARANCE, look = SettingsSearchLook.V2, keywords = listOf("cinematic glass", "pure liquid dark")),

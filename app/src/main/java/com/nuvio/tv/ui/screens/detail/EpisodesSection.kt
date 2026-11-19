@@ -459,12 +459,21 @@ fun EpisodesRow(
     val isOverlayOpen = optionsEpisode != null
     val originalMetrics = rememberEpisodeCardMetrics(posterCardCornerRadiusDp)
     val compactEpisodes = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current != null
-    val cardMetrics = remember(originalMetrics, compactEpisodes) {
-        if (compactEpisodes) originalMetrics.copy(cardHeight = v2EpisodeCardHeight(originalMetrics.cardWidth),
-            cornerRadius = 8.dp, itemSpacing = 16.dp, rowVerticalPadding = 12.dp) else originalMetrics
+    val keEpisodes = com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current?.keStyle == true
+    val cardMetrics = remember(originalMetrics, compactEpisodes, keEpisodes) {
+        when {
+            // Kai: KE's shorter tiles, about four and a half across the screen.
+            keEpisodes -> (originalMetrics.cardWidth * KE_EPISODE_WIDTH_SHARE).let { width ->
+                originalMetrics.copy(cardWidth = width, cardHeight = v2EpisodeCardHeight(width),
+                    cornerRadius = 10.dp, itemSpacing = 16.dp, rowVerticalPadding = 12.dp)
+            }
+            compactEpisodes -> originalMetrics.copy(cardHeight = v2EpisodeCardHeight(originalMetrics.cardWidth),
+                cornerRadius = 8.dp, itemSpacing = 16.dp, rowVerticalPadding = 12.dp)
+            else -> originalMetrics
+        }
     }
     val synopsisUnderRow = showEpisodeSynopsisUnderRow(
-        settingOn = showFocusedSynopsis,
+        settingOn = showFocusedSynopsis && !keEpisodes, // Kai: KE shows it above the row
         compactLook = compactEpisodes,
         rowHasSynopsis = remember(dedupedEpisodes) { rowHasEpisodeSynopsis(dedupedEpisodes) }
     )
@@ -903,6 +912,37 @@ private fun EpisodeCard(
             }
         }
 
+    if (isV2 && com.nuvio.tv.ui.v2.appearance.LocalV2Appearance.current?.keStyle == true) {
+        // Kai: Nuvio KE's episode card. A short 16:9 tile with the episode number in a corner and the
+        // title inside, over a bottom shade; the focused episode's details show above the row.
+        Card(onClick = cardClick,
+            modifier = interactiveModifier.nuvioV2Focus(isFocused, shape),
+            shape = cardShape, colors = cardColors, border = cardBorder, scale = cardScale, glow = cardGlow) {
+            Box(Modifier.fillMaxWidth().height(cardMetrics.cardHeight).clip(shape).background(cardBgColor)) {
+                AsyncImage(thumbnailRequest, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Box(Modifier.fillMaxSize().background(overlayBrush))
+                episode.episode?.let { number ->
+                    Text("E$number", style = episodeBadgeStyle, color = Color.White,
+                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp)
+                            .background(badgeBgColor, badgeShape).padding(horizontal = 6.dp, vertical = 2.dp))
+                }
+                if (showCompletedBadge) WatchedMarker(Modifier.align(Alignment.TopEnd).padding(8.dp),
+                    size = 22.dp, iconSize = 14.dp)
+                if (isUnavailable) Text(strUnavailable, style = typography.labelSmall, color = Color.White,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(top = if (showCompletedBadge) 36.dp else 8.dp, end = 8.dp)
+                        .background(Color(0xCC5D4037)).padding(6.dp))
+                Text(episode.title.localizeEpisodeTitle(context), style = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.BottomStart).fillMaxWidth()
+                        .padding(start = 12.dp, end = 12.dp, bottom = if (showProgress) 12.dp else 10.dp))
+                if (showProgress) Box(Modifier.align(Alignment.BottomStart).padding(horizontal = 12.dp, vertical = 5.dp)
+                    .fillMaxWidth().height(3.dp).clip(RoundedCornerShape(2.dp)).background(Color.White.copy(alpha = .25f))) {
+                    Box(Modifier.fillMaxWidth(progressPercent.coerceIn(0f, 1f)).height(3.dp).background(progressFillColor))
+                }
+            }
+        }
+        return
+    }
     if (isV2) {
         Column(Modifier.width(cardMetrics.cardWidth)) {
             Card(onClick = cardClick,
@@ -1362,6 +1402,9 @@ private fun rememberEpisodeCardMetrics(posterCardCornerRadiusDp: Int = 12): Epis
 /** The V2 look takes the Original look's width steps and keeps its own 16:9 picture. */
 internal fun v2EpisodeCardHeight(cardWidth: Dp): Dp = cardWidth * 9f / 16f
 
+/** Kai: KE episode tiles are this share of the regular card width. */
+private const val KE_EPISODE_WIDTH_SHARE = 0.72f
+
 private fun formatEpisodeRuntime(runtimeMinutes: Int): String {
     if (runtimeMinutes <= 0) return ""
     val hours = runtimeMinutes / 60
@@ -1373,7 +1416,7 @@ private fun formatEpisodeRuntime(runtimeMinutes: Int): String {
     }
 }
 
-private fun formatEpisodeCardDate(isoDate: String): String {
+internal fun formatEpisodeCardDate(isoDate: String): String {
     val locale = Locale.getDefault()
     val bestPattern = android.text.format.DateFormat.getBestDateTimePattern(locale, "dMMMMy")
     val formatter = java.time.format.DateTimeFormatter.ofPattern(bestPattern, locale)
