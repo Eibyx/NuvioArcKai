@@ -39,6 +39,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusRestorer
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.text.style.TextOverflow
@@ -115,6 +116,7 @@ fun V2TopNavigation(
                     LazyRow(Modifier.weight(1f), contentPadding = PaddingValues(4.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
                         items(items, key = { it.route }) { item ->
+                            val focusFill = topNavFocusFill(NuvioTheme.colors.Secondary, .38f)
                             val isSelected = item.route == selectedRoute
                             var itemFocused by remember { mutableStateOf(false) }
                             Button(onClick = {
@@ -130,9 +132,9 @@ fun V2TopNavigation(
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                                 colors = ButtonDefaults.colors(
                                     containerColor = if (isSelected) NuvioTheme.colors.Secondary.copy(alpha = .20f) else Color.Transparent,
-                                    focusedContainerColor = NuvioTheme.colors.Secondary.copy(alpha = .38f),
+                                    focusedContainerColor = focusFill.container,
                                     contentColor = if (isSelected) Color.White else NuvioTheme.colors.TextSecondary,
-                                    focusedContentColor = Color.White)) {
+                                    focusedContentColor = focusFill.content)) {
                                 when {
                                     item.icon != null -> androidx.tv.material3.Icon(item.icon, null, Modifier.size(14.dp))
                                     item.iconRes != null -> androidx.tv.material3.Icon(com.nuvio.tv.ui.util.rememberRawSvgPainter(item.iconRes, 14.dp), null, Modifier.size(14.dp))
@@ -145,6 +147,7 @@ fun V2TopNavigation(
                     if (profile != null) {
                         Spacer(Modifier.width(12.dp))
                         var profileFocused by remember { mutableStateOf(false) }
+                        val profileFill = topNavFocusFill(NuvioTheme.colors.Secondary, .3f)
                         Button(onSwitchProfile, Modifier.focusProperties { down = contentFocus }
                             .onFocusChanged { profileFocused = it.isFocused }
                             .nuvioV2Focus(profileFocused, RoundedCornerShape(7.dp)),
@@ -152,8 +155,8 @@ fun V2TopNavigation(
                             contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                             scale = ButtonDefaults.scale(focusedScale = 1f),
                             colors = ButtonDefaults.colors(containerColor = Color.Transparent,
-                                focusedContainerColor = NuvioTheme.colors.Secondary.copy(alpha = .3f),
-                                contentColor = Color.White, focusedContentColor = Color.White)) {
+                                focusedContainerColor = profileFill.container,
+                                contentColor = Color.White, focusedContentColor = profileFill.content)) {
                             NuvioAvatar(profile, 26.dp, description = null)
                             Spacer(Modifier.width(8.dp))
                             Text(profile.name, style = androidx.tv.material3.MaterialTheme.typography.labelLarge,
@@ -165,3 +168,12 @@ fun V2TopNavigation(
         }
     }
 }
+
+/** Kai: a light accent (e.g. taken from bright artwork) gets a solid fill and dark text, so a focused tab stays readable. */
+internal data class TopNavFocusFill(val container: Color, val content: Color)
+
+internal fun topNavFocusFill(accent: Color, alpha: Float): TopNavFocusFill =
+    if (accent.luminance() > LIGHT_ACCENT_LUMINANCE) TopNavFocusFill(accent.copy(alpha = 1f), Color.Black)
+    else TopNavFocusFill(accent.copy(alpha = alpha), Color.White)
+
+private const val LIGHT_ACCENT_LUMINANCE = .45f

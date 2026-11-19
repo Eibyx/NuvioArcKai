@@ -46,10 +46,13 @@ object V2AppearancePreferenceStore {
     private val transparency = intPreferencesKey("glass_transparency_percent")
     private val blurStrength = intPreferencesKey("glass_blur_strength_percent")
     private val keStyle = booleanPreferencesKey("kai_ke_style")
+    // 1.2.1 turned KE on with see-through glass over the poster wall; revision 2 is the solid KE look.
+    private val keStyleRevision = intPreferencesKey("kai_ke_style_revision")
+    private const val KE_STYLE_REVISION = 2
 
     internal fun decode(p: androidx.datastore.preferences.core.Preferences): V2AppearancePreferences {
         val preset = GlassPreset.entries.firstOrNull { it.name == p[glassPreset] } ?: GlassPreset.BALANCED
-        return V2AppearancePreferences(
+        val decoded = V2AppearancePreferences(
             visualStyle = VisualStyle.entries.firstOrNull { it.name == p[style] } ?: VisualStyle.CINEMATIC_GLASS,
             navigationStyle = NavigationStyle.entries.firstOrNull { it.name == p[navigation] } ?: NavigationStyle.FLOATING_SIDEBAR,
             focusStyle = FocusStyle.entries.firstOrNull { it.name == p[focus] } ?: FocusStyle.CINEMATIC_FOCUS,
@@ -65,6 +68,8 @@ object V2AppearancePreferenceStore {
             glassBlurStrengthPercent = (p[blurStrength] ?: preset.blurStrengthPercent).coerceIn(0, 100),
             keStyle = p[keStyle] ?: false
         )
+        val outdatedKe = decoded.keStyle && (p[keStyleRevision] ?: 1) < KE_STYLE_REVISION
+        return if (outdatedKe) decoded.withKeStyle() else decoded
     }
 
     fun flow(context: Context) = context.v2AppearanceDataStore.data
@@ -92,6 +97,7 @@ object V2AppearancePreferenceStore {
         p[transparency] = next.glassTransparencyPercent.coerceIn(0, 100)
         p[blurStrength] = next.glassBlurStrengthPercent.coerceIn(0, 100)
         p[keStyle] = next.keStyle
+        p[keStyleRevision] = KE_STYLE_REVISION
     }
 }
 

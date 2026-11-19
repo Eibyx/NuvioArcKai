@@ -60,8 +60,7 @@ internal fun V2PreferenceControls(initialFocusRequester: FocusRequester? = null)
             }
         )
         if (appearance != null) {
-            // Kai: Nuvio KE's look in one press: top bar, colours from the artwork, glass without blur
-            // (cheap on small TVs), KE episode cards and the focused episode on the detail page.
+            // Kai: Nuvio KE's look in one press (see V2AppearancePreferences.withKeStyle).
             SettingsToggleRow(
                 title = stringResource(R.string.kai_ke_style_title),
                 subtitle = stringResource(R.string.kai_ke_style_subtitle),
@@ -69,11 +68,7 @@ internal fun V2PreferenceControls(initialFocusRequester: FocusRequester? = null)
                 onToggle = { scope.launch {
                     V2AppearancePreferenceStore.update(context) { current ->
                         if (current.keStyle) current.copy(keStyle = false)
-                        else current.withGlassPreset(GlassPreset.CLEAR).copy(
-                            keStyle = true,
-                            navigationStyle = NavigationStyle.TOP_NAVIGATION,
-                            accentMode = AccentMode.ADAPTIVE_ARTWORK
-                        )
+                        else current.withKeStyle()
                     }
                 } }
             )

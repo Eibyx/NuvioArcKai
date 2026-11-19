@@ -42,10 +42,25 @@ data class V2AppearancePreferences(
         glassBlurStrengthPercent = preset.blurStrengthPercent
     )
 
+    /**
+     * Kai: Nuvio KE's look in one press. KE draws solid dark panels, so the glass is nearly opaque and
+     * without blur (cheap on small TVs) and settings sit on a plain dark page instead of the poster wall.
+     */
+    fun withKeStyle() = withGlassPreset(GlassPreset.FROSTED).copy(
+        keStyle = true,
+        navigationStyle = NavigationStyle.TOP_NAVIGATION,
+        accentMode = AccentMode.ADAPTIVE_ARTWORK,
+        settingsBackground = SettingsBackground.CHARCOAL,
+        glassTransparencyPercent = KE_GLASS_TRANSPARENCY_PERCENT,
+        glassBlurStrengthPercent = 0
+    )
+
     val isGlassFineTuned: Boolean get() =
         glassTransparencyPercent != glassPreset.transparencyPercent ||
             glassBlurStrengthPercent != glassPreset.blurStrengthPercent
 }
+
+const val KE_GLASS_TRANSPARENCY_PERCENT = 10
 
 /** Device-local, excluded from profile sync. Unset installations use Nuvio v2; explicit choices are retained. */
 data class DeviceUiPreferences(
