@@ -152,3 +152,14 @@ https://github.com/Eibyx/NuvioArcKai/actions/runs/43805163784 (rama `kai/arc-1.2
 APK verificado: SHA-256 `2deafe78bc4598b0a67e7e8bb8091d8b2d61c26a005f8ade39e14c014f56a9a2` (coincide con `SHA256SUMS.txt`),
 mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 8 / `1.2.0`,
 solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes. Mismo código que 1.2.0-kai.1 salvo el nombre de versión.
+
+### Release 1.2.1 publicada (release normal, no pre-release)
+
+https://github.com/Eibyx/NuvioArcKai/releases/tag/1.2.1 — ejecución
+https://github.com/Eibyx/NuvioArcKai/actions/runs/44551212187 (rama `kai/arc-1.2.0-arc3`, commit `dc36de16`, `prerelease=false`).
+La ejecución 44547909941 falló antes de compilar: Maven Central no devolvió `gson 2.10.1` (dependencia del plugin
+foojay-resolver de Gradle); fallo de red pasajero, sin cambios en el código, la siguiente ejecución pasó.
+APK verificado: SHA-256 `a72dd1238aff1a6dbe73c297d608c5e67f0ddf9bac08ca49e52eeb52f40953e7` (coincide con `SHA256SUMS.txt`),
+mismo certificado `b5f906aecd445cf51d6abfcc1276b40eb2a2c29739efeacc1d73fc88bd940feb`, versionCode 9 / `1.2.1`,
+solo `armeabi-v7a`, `libasskt.so` y `libmpv.so` presentes. Contiene Arc 1.2.0-arc.3, elección 1/2/3 conexiones tras la
+prueba de red, TV en vivo (Reshaped) y estilo Nuvio KE. NO VERIFICADO en el televisor.
